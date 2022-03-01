@@ -18,10 +18,10 @@ use super::super::instructions::{self, Instruction};
 use bit_set::BitSet;
 use ethereum_types::H256;
 use hash::KECCAK_EMPTY;
-use memory_cache::MemoryLruCache;
+//use memory_cache::MemoryLruCache;
 use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
-use parking_lot::Mutex;
-use std::sync::Arc;
+//use parking_lot::Mutex;
+use alloc::sync::Arc;
 
 const DEFAULT_CACHE_SIZE: usize = 4 * 1024 * 1024;
 
@@ -43,15 +43,15 @@ struct CacheItem {
 
 /// Global cache for EVM interpreter
 pub struct SharedCache {
-    jump_destinations: Mutex<MemoryLruCache<H256, CacheItem>>,
+    //jump_destinations: Mutex<MemoryLruCache<H256, CacheItem>>,
 }
 
 impl SharedCache {
     /// Create a jump destinations cache with a maximum size in bytes
     /// to cache.
-    pub fn new(max_size: usize) -> Self {
+    pub fn new(_max_size: usize) -> Self {
         SharedCache {
-            jump_destinations: Mutex::new(MemoryLruCache::new(max_size)),
+     //       jump_destinations: Mutex::new(MemoryLruCache::new(max_size)),
         }
     }
 
@@ -67,16 +67,20 @@ impl SharedCache {
                 return (cache_item.jump_destination.0, cache_item.sub_entrypoint.0);
             }
 
+			/*
             if let Some(d) = self.jump_destinations.lock().get_mut(code_hash) {
                 return (d.jump_destination.0.clone(), d.sub_entrypoint.0.clone());
             }
+			 */
         }
 
         let d = Self::find_jump_and_sub_destinations(code);
 
+		/*
         if let Some(ref code_hash) = code_hash {
             self.jump_destinations.lock().insert(*code_hash, d.clone());
         }
+		 */
 
         (d.jump_destination.0, d.sub_entrypoint.0)
     }

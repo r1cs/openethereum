@@ -16,7 +16,7 @@
 
 use super::u256_to_address;
 use ethereum_types::{Address, BigEndianHash, U256};
-use std::cmp;
+use core::cmp;
 
 use super::stack::VecStack;
 use evm;

@@ -17,6 +17,7 @@
 use ethereum_types::U256;
 use vm::ReturnData;
 
+use alloc::vec::Vec;
 const MAX_RETURN_WASTE_BYTES: usize = 16384;
 
 pub trait Memory {

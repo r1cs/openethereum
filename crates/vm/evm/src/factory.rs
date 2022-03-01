@@ -18,7 +18,8 @@
 //!
 use super::{interpreter::SharedCache, vm::ActionParams, vmtype::VMType};
 use ethereum_types::U256;
-use std::sync::Arc;
+use alloc::sync::Arc;
+use alloc::boxed::Box;
 use vm::{Exec, Schedule};
 
 /// Evm factory. Creates appropriate Evm.

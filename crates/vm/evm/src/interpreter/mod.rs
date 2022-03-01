@@ -27,7 +27,10 @@ use bytes::Bytes;
 use ethereum_types::{Address, BigEndianHash, H256, U256};
 use hash::keccak;
 use num_bigint::BigUint;
-use std::{cmp, marker::PhantomData, mem, sync::Arc};
+use core::{cmp, marker::PhantomData, mem};
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use alloc::boxed::Box;
 
 use vm::{
     self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress,
@@ -832,10 +835,7 @@ impl<Cost: CostType> Interpreter<Cost> {
                         true,
                         CallType::StaticCall,
                     ),
-                    _ => panic!(format!(
-                        "Unexpected instruction {:?} in CALL branch.",
-                        instruction
-                    )),
+                    _ => panic!("Unexpected instruction {:?} in CALL branch.", instruction ),
                 };
 
                 // clear return data buffer before creating new call frame.

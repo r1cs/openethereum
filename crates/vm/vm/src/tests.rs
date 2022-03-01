@@ -14,10 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Arc,
-};
+#[cfg(not(feature = "std"))]
+use core as core_;
+#[cfg(feature = "std")]
+use std as core_;
+
+use hashbrown::{HashSet, HashMap};
+
+use alloc::{ sync::Arc, vec::Vec, };
 
 use crate::access_list::AccessList;
 use bytes::Bytes;
@@ -214,7 +218,7 @@ impl Ext for FakeExt {
         code: &[u8],
         address: CreateContractAddress,
         _trap: bool,
-    ) -> ::std::result::Result<ContractCreateResult, TrapKind> {
+    ) -> core_::result::Result<ContractCreateResult, TrapKind> {
         self.calls.insert(FakeCall {
             call_type: FakeCallType::Create,
             create_scheme: Some(address),
@@ -243,7 +247,7 @@ impl Ext for FakeExt {
         code_address: &Address,
         _call_type: CallType,
         _trap: bool,
-    ) -> ::std::result::Result<MessageCallResult, TrapKind> {
+    ) -> core_::result::Result<MessageCallResult, TrapKind> {
         self.calls.insert(FakeCall {
             call_type: FakeCallType::Call,
             create_scheme: None,

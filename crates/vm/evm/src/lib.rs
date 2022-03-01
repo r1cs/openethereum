@@ -15,6 +15,10 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Ethereum virtual machine.
+//!
+#![no_std]
+
+extern crate alloc;
 
 extern crate bit_set;
 extern crate ethcore_builtin as builtin;

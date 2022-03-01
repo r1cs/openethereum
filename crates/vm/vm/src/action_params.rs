@@ -19,10 +19,9 @@ use super::access_list::AccessList;
 use bytes::Bytes;
 use call_type::CallType;
 use ethereum_types::{Address, H256, U256};
-use ethjson;
-use hash::{keccak, KECCAK_EMPTY};
+use hash::KECCAK_EMPTY;
 
-use std::sync::Arc;
+use alloc::sync::Arc;
 
 /// Transaction value
 #[derive(Clone, Debug)]
@@ -109,30 +108,6 @@ impl Default for ActionParams {
             code: None,
             data: None,
             call_type: CallType::None,
-            params_type: ParamsType::Separate,
-            access_list: AccessList::default(),
-        }
-    }
-}
-
-impl From<ethjson::vm::Transaction> for ActionParams {
-    fn from(t: ethjson::vm::Transaction) -> Self {
-        let address: Address = t.address.into();
-        ActionParams {
-            code_address: Address::default(),
-            code_hash: Some(keccak(&*t.code)),
-            address: address,
-            sender: t.sender.into(),
-            origin: t.origin.into(),
-            code: Some(Arc::new(t.code.into())),
-            data: Some(t.data.into()),
-            gas: t.gas.into(),
-            gas_price: t.gas_price.into(),
-            value: ActionValue::Transfer(t.value.into()),
-            call_type: match address.is_zero() {
-                true => CallType::None,
-                false => CallType::Call,
-            }, // TODO @debris is this correct?
             params_type: ParamsType::Separate,
             access_list: AccessList::default(),
         }

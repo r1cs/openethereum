@@ -15,6 +15,17 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Façade crate for `patricia_trie` for Ethereum specific impls
+//!
+
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use core as core_;
+#[cfg(feature = "std")]
+use std as core_;
 
 extern crate elastic_array;
 extern crate ethereum_types;

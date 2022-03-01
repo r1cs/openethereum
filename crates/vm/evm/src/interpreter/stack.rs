@@ -15,7 +15,9 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use instructions;
-use std::fmt;
+use core::fmt;
+use alloc::vec::Vec;
+
 
 /// Stack trait with VM-friendly API
 pub trait Stack<T> {
