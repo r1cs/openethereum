@@ -29,8 +29,8 @@ default-features = false
 version = "0.12.4"
 default-features = false
 
-[dependencies.hashmap_core]
-version = "0.1"
+[dependencies.hashbrown]
+version = "0.11.2"
 
 [dependencies.log]
 version = "0.4"
@@ -61,4 +61,4 @@ version = "0.12.4"
 
 [features]
 default = ["std"]
-std = ["elastic-array/std", "hash-db/std", "rand/std", "hashmap_core/disable"]
+std = ["elastic-array/std", "hash-db/std", "rand/std"]

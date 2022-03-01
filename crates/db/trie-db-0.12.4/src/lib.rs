@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
 
 //! Trie interface and implementation.
 
@@ -43,7 +42,7 @@ extern crate keccak_hasher;
 extern crate reference_trie;
 
 #[cfg(not(feature = "std"))]
-extern crate hashmap_core;
+extern crate hashbrown;
 
 #[cfg(feature = "std")]
 use std as core_;
