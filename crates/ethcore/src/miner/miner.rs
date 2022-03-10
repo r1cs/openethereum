@@ -31,7 +31,6 @@ use ethcore_miner::{
     local_accounts::LocalAccounts,
     pool::{
         self,
-        transaction_filter::{match_filter, TransactionFilter},
         PrioritizationStrategy, QueueStatus, TransactionQueue, VerifiedTransaction,
     },
     service_transaction_checker::ServiceTransactionChecker,
@@ -1179,11 +1178,10 @@ impl miner::MinerService for Miner {
         }
     }
 
-    fn ready_transactions_filtered<C>(
+    fn ready_transactions<C>(
         &self,
         chain: &C,
         max_len: usize,
-        filter: Option<TransactionFilter>,
         ordering: miner::PendingOrdering,
     ) -> Vec<Arc<VerifiedTransaction>>
     where
@@ -1211,11 +1209,7 @@ impl miner::MinerService for Miner {
                 enforce_priority_fees: false,
             };
 
-            if let Some(ref f) = filter {
-                self.transaction_queue.pending_filtered(client, settings, f)
-            } else {
-                self.transaction_queue.pending(client, settings)
-            }
+			self.transaction_queue.pending(client, settings)
         };
 
         let from_pending = || {
@@ -1229,7 +1223,6 @@ impl miner::MinerService for Miner {
                                 signed.clone(),
                             )
                         })
-                        .filter(|tx| match_filter(&filter, tx))
                         .map(Arc::new)
                         .take(max_len)
                         .collect()

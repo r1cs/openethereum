@@ -182,16 +182,6 @@ pub fn verify_block_family<C: BlockInfo + CallContract>(
 
     // t_nb 6.3.2 verify uncles
     verify_uncles(params.block, params.block_provider, engine)?;
-
-    // t_nb 6.3.3 verify all transactions
-    for tx in &params.block.transactions {
-        // transactions are verified against the parent header since the current
-        // state wasn't available when the tx was created
-        engine
-            .machine()
-            .verify_transaction(tx, parent, params.client)?;
-    }
-
     Ok(())
 }
 

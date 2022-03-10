@@ -55,7 +55,6 @@ extern crate ethkey;
 #[cfg(test)]
 extern crate rustc_hex;
 
-pub mod external;
 #[cfg(feature = "price-info")]
 pub mod gas_price_calibrator;
 pub mod gas_pricer;

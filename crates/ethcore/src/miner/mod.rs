@@ -29,7 +29,7 @@ pub mod stratum;
 pub use self::miner::{Author, AuthoringParams, Miner, MinerOptions, Penalization, PendingSet};
 pub use ethcore_miner::{
     local_accounts::LocalAccounts,
-    pool::{transaction_filter::TransactionFilter, PendingOrdering},
+    pool::{PendingOrdering},
 };
 
 use std::{
@@ -213,22 +213,6 @@ pub trait MinerService: Send + Sync {
     where
         C: ChainInfo + Sync;
 
-    /// Get a list of all ready transactions either ordered by priority or unordered (cheaper),
-    /// and optionally filtered by sender, recipient, gas, gas price, value and/or nonce.
-    ///
-    /// Depending on the settings may look in transaction pool or only in pending block.
-    /// If you don't need a full set of transactions, you can add `max_len` and create only a limited set of
-    /// transactions.
-    fn ready_transactions_filtered<C>(
-        &self,
-        chain: &C,
-        max_len: usize,
-        filter: Option<TransactionFilter>,
-        ordering: PendingOrdering,
-    ) -> Vec<Arc<VerifiedTransaction>>
-    where
-        C: BlockChain + Nonce + Sync;
-
     /// Get an unfiltered list of all ready transactions.
     fn ready_transactions<C>(
         &self,
@@ -237,10 +221,7 @@ pub trait MinerService: Send + Sync {
         ordering: PendingOrdering,
     ) -> Vec<Arc<VerifiedTransaction>>
     where
-        C: BlockChain + Nonce + Sync,
-    {
-        self.ready_transactions_filtered(chain, max_len, None, ordering)
-    }
+        C: BlockChain + Nonce + Sync;
 
     /// Get a list of all transactions in the pool (some of them might not be ready for inclusion yet).
     fn queued_transactions(&self) -> Vec<Arc<VerifiedTransaction>>;

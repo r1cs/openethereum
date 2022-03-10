@@ -128,7 +128,6 @@ pub mod verification;
 mod account_db;
 mod externalities;
 mod factory;
-mod tx_filter;
 
 #[cfg(feature = "json-tests")]
 pub mod json_tests;

@@ -142,10 +142,6 @@ pub struct Params {
     pub max_transaction_size: Option<Uint>,
     /// See main EthashParams docs.
     pub max_code_size_transition: Option<Uint>,
-    /// Transaction permission contract address.
-    pub transaction_permission_contract: Option<Address>,
-    /// Block at which the transaction permission contract should start being used.
-    pub transaction_permission_contract_transition: Option<Uint>,
     /// Wasm activation block height, if not activated from start
     pub wasm_activation_transition: Option<Uint>,
     /// Wasm deactivation block height, if activated.

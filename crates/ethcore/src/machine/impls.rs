@@ -38,14 +38,11 @@ use vm::{
 
 use block::ExecutedBlock;
 use builtin::Builtin;
-use call_contract::CallContract;
-use client::BlockInfo;
 use error::Error;
 use executive::Executive;
 use spec::CommonParams;
 use state::{CleanupMode, Substate};
 use trace::{NoopTracer, NoopVMTracer};
-use tx_filter::TransactionFilter;
 
 /// Ethash-specific extensions.
 #[derive(Debug, Clone)]
@@ -87,7 +84,6 @@ pub type ScheduleCreationRules = dyn Fn(&mut Schedule, BlockNumber) + Sync + Sen
 pub struct EthereumMachine {
     params: CommonParams,
     builtins: Arc<BTreeMap<Address, Builtin>>,
-    tx_filter: Option<Arc<TransactionFilter>>,
     ethash_extensions: Option<EthashExtensions>,
     schedule_rules: Option<Box<ScheduleCreationRules>>,
 }
@@ -95,11 +91,9 @@ pub struct EthereumMachine {
 impl EthereumMachine {
     /// Regular ethereum machine.
     pub fn regular(params: CommonParams, builtins: BTreeMap<Address, Builtin>) -> EthereumMachine {
-        let tx_filter = TransactionFilter::from_params(&params).map(Arc::new);
         EthereumMachine {
-            params: params,
+            params,
             builtins: Arc::new(builtins),
-            tx_filter: tx_filter,
             ethash_extensions: None,
             schedule_rules: None,
         }
@@ -405,22 +399,6 @@ impl EthereumMachine {
             None
         };
         t.verify_basic(check_low_s, chain_id)?;
-
-        Ok(())
-    }
-
-    /// Does verification of the transaction against the parent state.
-    pub fn verify_transaction<C: BlockInfo + CallContract>(
-        &self,
-        t: &SignedTransaction,
-        parent: &Header,
-        client: &C,
-    ) -> Result<(), transaction::Error> {
-        if let Some(ref filter) = self.tx_filter.as_ref() {
-            if !filter.transaction_allowed(&parent.hash(), parent.number() + 1, t, client) {
-                return Err(transaction::Error::NotAllowed.into());
-            }
-        }
 
         Ok(())
     }

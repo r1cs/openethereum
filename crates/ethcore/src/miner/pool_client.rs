@@ -175,10 +175,7 @@ where
         tx: &SignedTransaction,
         header: &Header,
     ) -> Result<(), transaction::Error> {
-        self.engine.machine().verify_transaction_basic(tx, header)?;
-        self.engine
-            .machine()
-            .verify_transaction(tx, &self.best_block_header, self.chain)
+        self.engine.machine().verify_transaction_basic(tx, header)
     }
 }
 
@@ -215,10 +212,6 @@ where
             .verify_transaction_basic(&tx, &self.best_block_header)?;
 
         let tx = SignedTransaction::new(tx)?;
-
-        self.engine
-            .machine()
-            .verify_transaction(&tx, &self.best_block_header, self.chain)?;
         Ok(tx)
     }
 
