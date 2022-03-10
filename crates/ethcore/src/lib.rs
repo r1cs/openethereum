@@ -106,12 +106,6 @@ extern crate serde_derive;
 #[cfg_attr(test, macro_use)]
 extern crate evm;
 
-#[cfg(all(test, feature = "price-info"))]
-extern crate fetch;
-
-#[cfg(all(test, feature = "price-info"))]
-extern crate parity_runtime;
-
 pub mod block;
 pub mod client;
 pub mod engines;
