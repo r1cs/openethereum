@@ -488,52 +488,6 @@ impl Importer {
             .epoch_transition(parent.number(), *header.parent_hash())
             .is_some();
 
-        if header.number() >= engine.params().validate_service_transactions_transition {
-            // Check if zero gas price transactions are certified to be service transactions
-            // using the Certifier contract. If they are not certified, the block is treated as invalid.
-            let service_transaction_checker = self.miner.service_transaction_checker();
-            if service_transaction_checker.is_some() {
-                match service_transaction_checker.unwrap().refresh_cache(client) {
-                    Ok(true) => {
-                        trace!(target: "client", "Service transaction cache was refreshed successfully");
-                    }
-                    Ok(false) => {
-                        trace!(target: "client", "Registrar or/and service transactions contract does not exist");
-                    }
-                    Err(e) => {
-                        error!(target: "client", "Error occurred while refreshing service transaction cache: {}", e)
-                    }
-                };
-            };
-            for t in &block.transactions {
-                if t.has_zero_gas_price() {
-                    match self.miner.service_transaction_checker() {
-                        None => {
-                            let e = "Service transactions are not allowed. You need to enable Certifier contract.";
-                            warn!(target: "client", "Service tx checker error: {:?}", e);
-                            bail!(e);
-                        }
-                        Some(ref checker) => match checker.check(client, &t) {
-                            Ok(true) => {}
-                            Ok(false) => {
-                                let e = format!(
-                                    "Service transactions are not allowed for the sender {:?}",
-                                    t.sender()
-                                );
-                                warn!(target: "client", "Service tx checker error: {:?}", e);
-                                bail!(e);
-                            }
-                            Err(e) => {
-                                debug!(target: "client", "Unable to verify service transaction: {:?}", e);
-                                warn!(target: "client", "Service tx checker error: {:?}", e);
-                                bail!(e);
-                            }
-                        },
-                    }
-                };
-            }
-        }
-
         // t_nb 8.0 Block enacting. Execution of transactions.
         let enact_result = enact_verified(
             block,
@@ -2789,15 +2743,7 @@ impl BlockChainClient for Client {
         }: TransactionRequest,
     ) -> Result<SignedTransaction, transaction::Error> {
         let authoring_params = self.importer.miner.authoring_params();
-        let service_transaction_checker = self.importer.miner.service_transaction_checker();
-        let gas_price = if let Some(checker) = service_transaction_checker {
-            match checker.check_address(self, authoring_params.author) {
-                Ok(true) => U256::zero(),
-                _ => gas_price.unwrap_or_else(|| self.importer.miner.sensible_gas_price()),
-            }
-        } else {
-            self.importer.miner.sensible_gas_price()
-        };
+        let gas_price = self.importer.miner.sensible_gas_price() ;
         let transaction = TypedTransaction::Legacy(transaction::Transaction {
             nonce: nonce.unwrap_or_else(|| self.latest_nonce(&authoring_params.author)),
             action,

@@ -20,7 +20,6 @@ use std::fmt;
 
 use ethcore_miner::{
     local_accounts::LocalAccounts, pool, pool::client::NonceClient,
-    service_transaction_checker::ServiceTransactionChecker,
 };
 use ethereum_types::{Address, H256, U256};
 use types::{
@@ -124,7 +123,6 @@ pub struct PoolClient<'a, C: 'a> {
     engine: &'a dyn EthEngine,
     accounts: &'a dyn LocalAccounts,
     best_block_header: Header,
-    service_transaction_checker: Option<&'a ServiceTransactionChecker>,
 }
 
 impl<'a, C: 'a> Clone for PoolClient<'a, C> {
@@ -136,7 +134,6 @@ impl<'a, C: 'a> Clone for PoolClient<'a, C> {
             engine: self.engine,
             accounts: self.accounts.clone(),
             best_block_header: self.best_block_header.clone(),
-            service_transaction_checker: self.service_transaction_checker.clone(),
         }
     }
 }
@@ -152,7 +149,6 @@ where
         cached_balances: &'a Cache<Address, U256>,
         engine: &'a dyn EthEngine,
         accounts: &'a dyn LocalAccounts,
-        service_transaction_checker: Option<&'a ServiceTransactionChecker>,
     ) -> Self {
         let best_block_header = chain.best_block_header();
         PoolClient {
@@ -162,7 +158,6 @@ where
             engine,
             accounts,
             best_block_header,
-            service_transaction_checker,
         }
     }
 
@@ -229,17 +224,7 @@ where
     }
 
     fn transaction_type(&self, tx: &SignedTransaction) -> pool::client::TransactionType {
-        match self.service_transaction_checker {
-            None => pool::client::TransactionType::Regular,
-            Some(ref checker) => match checker.check(self.chain, &tx) {
-                Ok(true) => pool::client::TransactionType::Service,
-                Ok(false) => pool::client::TransactionType::Regular,
-                Err(e) => {
-                    debug!(target: "txqueue", "Unable to verify service transaction: {:?}", e);
-                    pool::client::TransactionType::Regular
-                }
-            },
-        }
+		pool::client::TransactionType::Regular
     }
 
     fn decode_transaction(

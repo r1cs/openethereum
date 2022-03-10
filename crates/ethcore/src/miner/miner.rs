@@ -33,7 +33,6 @@ use ethcore_miner::{
         self,
         PrioritizationStrategy, QueueStatus, TransactionQueue, VerifiedTransaction,
     },
-    service_transaction_checker::ServiceTransactionChecker,
 };
 use ethereum_types::{Address, H256, U256};
 use io::IoChannel;
@@ -154,8 +153,6 @@ pub struct MinerOptions {
     pub tx_queue_penalization: Penalization,
     /// Do we want to mark transactions recieved locally (e.g. RPC) as local if we don't have the sending account?
     pub tx_queue_no_unfamiliar_locals: bool,
-    /// Do we refuse to accept service transactions even if sender is certified.
-    pub refuse_service_transactions: bool,
     /// Transaction pool limits.
     pub pool_limits: pool::Options,
     /// Initial transaction verification options.
@@ -178,7 +175,6 @@ impl Default for MinerOptions {
             tx_queue_strategy: PrioritizationStrategy::GasPriceOnly,
             tx_queue_penalization: Penalization::Disabled,
             tx_queue_no_unfamiliar_locals: false,
-            refuse_service_transactions: false,
             pool_limits: pool::Options {
                 max_count: 8_192,
                 max_per_sender: 81,
@@ -258,7 +254,6 @@ pub struct Miner {
     engine: Arc<dyn EthEngine>,
     accounts: Arc<dyn LocalAccounts>,
     io_channel: RwLock<Option<IoChannel<ClientIoMessage>>>,
-    service_transaction_checker: Option<ServiceTransactionChecker>,
 }
 
 impl Miner {
@@ -286,7 +281,6 @@ impl Miner {
         let tx_queue_strategy = options.tx_queue_strategy;
         let nonce_cache_size = cmp::max(4096, limits.max_count / 4);
         let balance_cache_size = cmp::max(4096, limits.max_count / 4);
-        let refuse_service_transactions = options.refuse_service_transactions;
         let engine = spec.engine.clone();
 
         Miner {
@@ -313,11 +307,6 @@ impl Miner {
             accounts: Arc::new(accounts),
             engine,
             io_channel: RwLock::new(None),
-            service_transaction_checker: if refuse_service_transactions {
-                None
-            } else {
-                Some(ServiceTransactionChecker::default())
-            },
         }
     }
 
@@ -407,11 +396,6 @@ impl Miner {
         }
     }
 
-    /// Returns ServiceTransactionChecker
-    pub fn service_transaction_checker(&self) -> Option<ServiceTransactionChecker> {
-        self.service_transaction_checker.clone()
-    }
-
     /// Retrieves an existing pending block iff it's not older than given block number.
     ///
     /// NOTE: This will not prepare a new pending block if it's not existing.
@@ -440,7 +424,6 @@ impl Miner {
             &self.balance_cache,
             &*self.engine,
             &*self.accounts,
-            self.service_transaction_checker.as_ref(),
         )
     }
 
@@ -1526,7 +1509,6 @@ impl miner::MinerService for Miner {
                 let balance_cache = self.balance_cache.clone();
                 let engine = self.engine.clone();
                 let accounts = self.accounts.clone();
-                let service_transaction_checker = self.service_transaction_checker.clone();
 
                 let cull = move |chain: &::client::Client| {
                     let client = PoolClient::new(
@@ -1535,7 +1517,6 @@ impl miner::MinerService for Miner {
                         &balance_cache,
                         &*engine,
                         &*accounts,
-                        service_transaction_checker.as_ref(),
                     );
                     // t_nb 10.5 do culling
                     queue.cull(client);
@@ -1559,20 +1540,6 @@ impl miner::MinerService for Miner {
                 }
             }
         }
-        // t_nb 10.6 For service transaction checker update addresses to latest block
-        if let Some(ref service_transaction_checker) = self.service_transaction_checker {
-            match service_transaction_checker.refresh_cache(chain) {
-                Ok(true) => {
-                    trace!(target: "client", "Service transaction cache was refreshed successfully");
-                }
-                Ok(false) => {
-                    trace!(target: "client", "Registrar or/and service transactions contract does not exist");
-                }
-                Err(e) => {
-                    error!(target: "client", "Error occurred while refreshing service transaction cache: {}", e)
-                }
-            };
-        };
     }
 
     fn pending_state(&self, latest_block_number: BlockNumber) -> Option<Self::State> {

@@ -60,6 +60,5 @@ pub mod gas_price_calibrator;
 pub mod gas_pricer;
 pub mod local_accounts;
 pub mod pool;
-pub mod service_transaction_checker;
 #[cfg(feature = "work-notify")]
 pub mod work_notify;
