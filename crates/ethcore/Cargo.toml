@@ -26,7 +26,6 @@ ethcore-call-contract = { path = "../vm/call-contract" }
 ethcore-db = { path = "../db/db" }
 ethcore-io = { path = "../runtime/io" }
 ethcore-miner = { path = "../concensus/miner" }
-ethcore-stratum = { path = "../concensus/miner/stratum", optional = true }
 ethereum-types = "0.9.2"
 ethjson = { path = "../ethjson" }
 ethkey = { path = "../accounts/ethkey" }
@@ -95,8 +94,7 @@ tempdir = "0.3"
 trie-standardmap = "0.15.2"
 
 [features]
-parity = ["stratum"]
-stratum = [ "ethcore-stratum" ]
+parity = []
 
 # Disables seal verification for mined blocks.
 # This allows you to submit any seal via RPC to test and benchmark

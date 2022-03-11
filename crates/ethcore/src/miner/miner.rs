@@ -33,7 +33,6 @@ use ethcore_miner::{
     },
 };
 use ethereum_types::{Address, H256, U256};
-use io::IoChannel;
 use miner::{
     self,
     cache::Cache,
@@ -249,7 +248,6 @@ pub struct Miner {
     transaction_queue: Arc<TransactionQueue>,
     engine: Arc<dyn EthEngine>,
     accounts: Arc<dyn LocalAccounts>,
-    io_channel: RwLock<Option<IoChannel<ClientIoMessage>>>,
 }
 
 impl Miner {

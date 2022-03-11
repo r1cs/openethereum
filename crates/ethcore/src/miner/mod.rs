@@ -23,8 +23,6 @@ mod cache;
 mod miner;
 
 pub mod pool_client;
-#[cfg(feature = "stratum")]
-pub mod stratum;
 
 pub use self::miner::{Author, AuthoringParams, Miner, MinerOptions, Penalization, PendingSet};
 pub use ethcore_miner::{

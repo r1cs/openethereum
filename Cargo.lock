@@ -873,7 +873,6 @@ dependencies = [
  "ethcore-db",
  "ethcore-io",
  "ethcore-miner",
- "ethcore-stratum",
  "ethereum-types 0.9.2",
  "ethjson",
  "ethkey",
@@ -1085,21 +1084,6 @@ dependencies = [
  "trace-time",
  "txpool",
  "url",
-]
-
-[[package]]
-name = "ethcore-stratum"
-version = "1.12.0"
-dependencies = [
- "env_logger",
- "ethereum-types 0.9.2",
- "jsonrpc-core",
- "jsonrpc-tcp-server",
- "keccak-hash",
- "log",
- "parking_lot 0.11.1",
- "tokio",
- "tokio-io",
 ]
 
 [[package]]
@@ -1783,48 +1767,6 @@ dependencies = [
  "parity-util-mem",
  "parking_lot 0.11.1",
  "rlp",
-]
-
-[[package]]
-name = "jsonrpc-core"
-version = "15.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f30b12567a31d48588a65b6cf870081e6ba1d7b2ae353977cb9820d512e69c70"
-dependencies = [
- "futures",
- "log",
- "serde",
- "serde_derive",
- "serde_json",
-]
-
-[[package]]
-name = "jsonrpc-server-utils"
-version = "15.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c623e1895d0d9110cb0ea7736cfff13191ff52335ad33b21bd5c775ea98b27af"
-dependencies = [
- "bytes",
- "globset",
- "jsonrpc-core",
- "lazy_static",
- "log",
- "tokio",
- "tokio-codec",
- "unicase",
-]
-
-[[package]]
-name = "jsonrpc-tcp-server"
-version = "15.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b7d4a377ea231ca0d14fe1fb515ca89d6a46a33169efa6bdd5d0e56b9f359fc"
-dependencies = [
- "jsonrpc-core",
- "jsonrpc-server-utils",
- "log",
- "parking_lot 0.10.2",
- "tokio-service",
 ]
 
 [[package]]
@@ -3694,15 +3636,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio-service"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24da22d077e0f15f55162bdbdc661228c1581892f52074fb242678d015b45162"
-dependencies = [
- "futures",
-]
-
-[[package]]
 name = "tokio-sync"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3875,15 +3808,6 @@ dependencies = [
 [[package]]
 name = "unexpected"
 version = "0.1.0"
-
-[[package]]
-name = "unicase"
-version = "2.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e2e6bd1e59e56598518beb94fd6db628ded570326f0a98c679a304bd9f00150"
-dependencies = [
- "version_check",
-]
 
 [[package]]
 name = "unicode-bidi"

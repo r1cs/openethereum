@@ -69,8 +69,6 @@ extern crate blooms_db;
 extern crate env_logger;
 #[cfg(test)]
 extern crate ethcore_accounts as accounts;
-#[cfg(feature = "stratum")]
-extern crate ethcore_stratum;
 #[cfg(feature = "json-tests")]
 extern crate globset;
 #[cfg(any(test, feature = "kvdb-rocksdb"))]
