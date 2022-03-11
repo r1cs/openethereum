@@ -16,12 +16,10 @@
 
 //! Blockchain database client.
 
-mod ancient_import;
 mod client;
 mod config;
 #[cfg(any(test, feature = "test-helpers"))]
 mod evm_test_client;
-mod io_message;
 #[cfg(any(test, feature = "test-helpers"))]
 pub mod test_client;
 mod trace;
@@ -31,13 +29,12 @@ pub use self::evm_test_client::{EvmTestClient, EvmTestError, TransactErr, Transa
 #[cfg(any(test, feature = "test-helpers"))]
 pub use self::test_client::{EachBlockWith, TestBlockChainClient};
 pub use self::{
-    chain_notify::{ChainMessageType, ChainNotify, ChainRoute, ChainRouteType, NewBlocks},
+    chain_notify::{ChainMessageType, ChainRoute, ChainRouteType},
     client::*,
     config::{BlockChainConfig, ClientConfig, DatabaseCompactionProfile, Mode, VMType},
-    io_message::ClientIoMessage,
     traits::{
         AccountData, Balance, BlockChain, BlockChainClient, BlockChainReset, BlockInfo,
-        BlockProducer, BroadcastProposalBlock, Call, ChainInfo, EngineClient, EngineInfo,
+        BlockProducer, Call, ChainInfo, EngineClient, EngineInfo,
         ImportBlock, ImportExportBlocks, ImportSealedBlock, IoClient, Nonce, PrepareOpenBlock,
         ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter, StateClient,
         StateOrBlock, TransactionInfo,

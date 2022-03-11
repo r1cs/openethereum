@@ -347,18 +347,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "chrono"
-version = "0.4.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8493056968583b0193c1bb04d6f7684586f3726992d6c573261941a895dbd68"
-dependencies = [
- "libc",
- "num-integer",
- "num-traits",
- "time",
-]
-
-[[package]]
 name = "clap"
 version = "2.33.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -511,16 +499,6 @@ checksum = "e54ea8bc3fb1ee042f5aace6e3c6e025d3874866da222930f70ce62aceba0bfa"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-utils 0.8.7",
-]
-
-[[package]]
-name = "crossbeam-deque"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05e44b8cf3e1a625844d1750e1f7820da46044ff6d28f4d43e455ba3e5bb2c13"
-dependencies = [
- "crossbeam-epoch",
- "crossbeam-utils 0.6.6",
 ]
 
 [[package]]
@@ -870,7 +848,6 @@ dependencies = [
  "ethcore-bloom-journal",
  "ethcore-builtin",
  "ethcore-db",
- "ethcore-io",
  "ethcore-miner",
  "ethereum-types 0.9.2",
  "ethjson",
@@ -1022,23 +999,6 @@ dependencies = [
  "rlp",
  "rlp_derive",
  "stats",
-]
-
-[[package]]
-name = "ethcore-io"
-version = "1.12.0"
-dependencies = [
- "crossbeam-deque 0.6.3",
- "fnv",
- "futures",
- "log",
- "mio",
- "num_cpus",
- "parking_lot 0.11.1",
- "slab",
- "time",
- "timer",
- "tokio",
 ]
 
 [[package]]
@@ -2896,7 +2856,7 @@ version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83a27732a533a1be0a0035a111fe76db89ad312f6f0347004c220c57f209a123"
 dependencies = [
- "crossbeam-deque 0.7.1",
+ "crossbeam-deque",
  "either",
  "rayon-core",
 ]
@@ -2907,7 +2867,7 @@ version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98dcf634205083b17d0861252431eb2acbfb698ab7478a2d20de07954f47ec7b"
 dependencies = [
- "crossbeam-deque 0.7.1",
+ "crossbeam-deque",
  "crossbeam-queue 0.1.2",
  "crossbeam-utils 0.6.6",
  "lazy_static",
@@ -3454,15 +3414,6 @@ name = "time-utils"
 version = "0.1.0"
 
 [[package]]
-name = "timer"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31d42176308937165701f50638db1c31586f183f1aab416268216577aec7306b"
-dependencies = [
- "chrono",
-]
-
-[[package]]
 name = "tiny-keccak"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3654,7 +3605,7 @@ version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df720b6581784c118f0eb4310796b12b1d242a7eb95f716a8367855325c25f89"
 dependencies = [
- "crossbeam-deque 0.7.1",
+ "crossbeam-deque",
  "crossbeam-queue 0.2.3",
  "crossbeam-utils 0.7.2",
  "futures",

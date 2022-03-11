@@ -60,7 +60,7 @@ use block::{ClosedBlock, OpenBlock, SealedBlock};
 use client::{
     traits::{ForceUpdateSealing, TransactionRequest},
     AccountData, Balance, BlockChain, BlockChainClient, BlockChainInfo, BlockId,
-    BlockInfo, BlockProducer, BlockStatus, BroadcastProposalBlock, Call, CallAnalytics, ChainInfo,
+    BlockInfo, BlockProducer, BlockStatus, Call, CallAnalytics, ChainInfo,
     EngineInfo, ImportBlock, ImportSealedBlock, IoClient, LastHashes, Mode, Nonce,
     PrepareOpenBlock, ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter,
     StateClient, StateOrBlock, TraceFilter, TraceId, TransactionId, TransactionInfo, UncleId,
@@ -483,10 +483,6 @@ impl ImportSealedBlock for TestBlockChainClient {
 }
 
 impl BlockProducer for TestBlockChainClient {}
-
-impl BroadcastProposalBlock for TestBlockChainClient {
-    fn broadcast_proposal_block(&self, _block: SealedBlock) {}
-}
 
 impl SealedBlockImporter for TestBlockChainClient {}
 
@@ -1092,29 +1088,6 @@ impl BlockChainClient for TestBlockChainClient {
     }
 }
 
-impl IoClient for TestBlockChainClient {
-    fn queue_transactions(&self, transactions: Vec<Bytes>, _peer_id: usize) {
-        // import right here
-        let txs = transactions
-            .into_iter()
-            .filter_map(|bytes| TypedTransaction::decode(&bytes).ok())
-            .collect();
-        self.miner.import_external_transactions(self, txs);
-    }
-
-    fn ancient_block_queue_fullness(&self) -> f32 {
-        0.0
-    }
-
-    fn queue_ancient_block(&self, unverified: Unverified, _r: Bytes) -> EthcoreResult<H256> {
-        self.import_block(unverified)
-    }
-
-    fn queue_consensus_message(&self, message: Bytes) {
-        self.spec.engine.handle_message(&message).unwrap();
-    }
-}
-
 impl ProvingBlockChainClient for TestBlockChainClient {
     fn prove_storage(&self, _: H256, _: H256, _: BlockId) -> Option<(Vec<Bytes>, H256)> {
         None
@@ -1147,8 +1120,6 @@ impl super::traits::EngineClient for TestBlockChainClient {
             warn!(target: "poa", "Wrong internal seal submission! {:?}", err);
         }
     }
-
-    fn broadcast_consensus_message(&self, _message: Bytes) {}
 
     fn epoch_transition_for(&self, _block_hash: H256) -> Option<::engines::EpochTransition> {
         None

@@ -6,7 +6,6 @@ use globset::Glob;
 use log::info;
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
-use tempfile::tempdir;
 use trie::TrieSpec;
 
 /// Result of tests execution
@@ -91,9 +90,6 @@ impl TestRunner {
         }
         for t in &self.0.state {
             res += Self::run_state_tests(&t);
-        }
-        for t in &self.0.difficulty {
-            res += Self::run_difficuly_tests(&t);
         }
         for t in &self.0.executive {
             res += Self::run_executive_tests(&t);
@@ -187,28 +183,6 @@ impl TestRunner {
                 super::state::json_state_test(&test, &path, &json, &mut |_, _| {})
             },
         )
-    }
-
-    fn run_difficuly_tests(test: &DifficultyTests) -> TestResult {
-        let mut acc = TestResult::zero();
-        for path in &test.path {
-            acc += Self::run1(
-                test,
-                &path,
-                |test: &DifficultyTests, path: &Path, json: &[u8]| {
-                    let spec = match &test.chainspec {
-                        TestChainSpec::Foundation => {
-                            crate::ethereum::new_foundation(&tempdir().unwrap().path())
-                        }
-                        TestChainSpec::ByzantiumTest => crate::ethereum::new_byzantium_test(),
-                        TestChainSpec::FrontierTest => crate::ethereum::new_frontier_test(),
-                        TestChainSpec::HomesteadTest => crate::ethereum::new_homestead_test(),
-                    };
-                    super::difficulty::json_difficulty_test(&path, &json, spec, &mut |_, _| {})
-                },
-            )
-        }
-        acc
     }
 
     fn run_executive_tests(test: &ExecutiveTests) -> TestResult {

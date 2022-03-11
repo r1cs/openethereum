@@ -28,7 +28,6 @@ use db::KeyValueDB;
 use ethereum_types::{Address, H256, U256};
 use evm::Factory as EvmFactory;
 use hash::keccak;
-use io::IoChannel;
 use kvdb_rocksdb::{self, Database, DatabaseConfig};
 use parking_lot::RwLock;
 use rlp::{self, RlpStream};
@@ -44,7 +43,7 @@ use types::{
 
 use block::{Drain, OpenBlock};
 use client::{
-    ChainInfo, ChainMessageType, ChainNotify, Client, ClientConfig, ImportBlock, PrepareOpenBlock,
+    ChainInfo, ChainMessageType, Client, ClientConfig, ImportBlock, PrepareOpenBlock,
 };
 use engines::EngineSigner;
 use ethjson::crypto::publickey::{Public, Signature};
@@ -162,7 +161,6 @@ where
         &test_spec,
         client_db,
         Arc::new(miner),
-        IoChannel::disconnected(),
     )
     .unwrap();
     let test_engine = &*test_spec.engine;
@@ -330,7 +328,6 @@ pub fn get_test_client_with_blocks(blocks: Vec<Bytes>) -> Arc<Client> {
         &test_spec,
         client_db,
         Arc::new(Miner::new_for_tests(&test_spec, None)),
-        IoChannel::disconnected(),
     )
     .unwrap();
 
@@ -636,15 +633,6 @@ pub fn get_bad_state_dummy_block() -> Bytes {
 pub struct TestNotify {
     /// Messages store
     pub messages: RwLock<Vec<Bytes>>,
-}
-
-impl ChainNotify for TestNotify {
-    fn broadcast(&self, message: ChainMessageType) {
-        let data = match message {
-            ChainMessageType::Consensus(data) => data,
-        };
-        self.messages.write().push(data);
-    }
 }
 
 /// Returns engine signer with specified address

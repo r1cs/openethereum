@@ -51,8 +51,8 @@ use using_queue::{GetAction, UsingQueue};
 
 use block::{ClosedBlock, SealedBlock};
 use client::{
-    traits::{EngineClient, ForceUpdateSealing},
-    BlockChain, BlockId, BlockProducer, ChainInfo, ClientIoMessage, Nonce, SealedBlockImporter,
+    traits::{ForceUpdateSealing},
+    BlockChain, BlockId, BlockProducer, ChainInfo, Nonce, SealedBlockImporter,
     TransactionId, TransactionInfo,
 };
 use engines::{EngineSigner, EthEngine, Seal, SealingState};
@@ -731,7 +731,6 @@ impl Miner {
                     .lock()
                     .seal(&*self.engine, seal)
                     .map(|sealed| {
-                        chain.broadcast_proposal_block(sealed);
                         true
                     })
                     .unwrap_or_else(|e| {
@@ -1486,11 +1485,9 @@ mod tests {
     use rustc_hex::FromHex;
     use types::BlockNumber;
 
-    use client::{ChainInfo, EachBlockWith, ImportSealedBlock, TestBlockChainClient};
+    use client::{ChainInfo, EngineClient, EachBlockWith, ImportSealedBlock, TestBlockChainClient};
     use miner::{MinerService, PendingOrdering};
-    use test_helpers::{
-        dummy_engine_signer_with_address, generate_dummy_client, generate_dummy_client_with_spec,
-    };
+    use test_helpers::{dummy_engine_signer_with_address, generate_dummy_client};
     use types::transaction::{Transaction, TypedTransaction};
 
     #[test]

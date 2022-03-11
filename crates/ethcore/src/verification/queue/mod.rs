@@ -18,11 +18,9 @@
 //! Sorts them ready for blockchain insertion.
 
 use blockchain::BlockChain;
-use client::ClientIoMessage;
 use engines::EthEngine;
 use error::{BlockError, Error, ErrorKind, ImportErrorKind};
 use ethereum_types::{H256, U256};
-use io::*;
 use len_caching_lock::LenCachingMutex;
 use parity_util_mem::{MallocSizeOf, MallocSizeOfExt};
 use parking_lot::{Condvar, Mutex, RwLock};
@@ -164,7 +162,6 @@ pub struct VerificationQueue<K: Kind> {
 struct QueueSignal {
     deleting: Arc<AtomicBool>,
     signalled: AtomicBool,
-    message_channel: Mutex<IoChannel<ClientIoMessage>>,
 }
 
 impl QueueSignal {
@@ -179,10 +176,6 @@ impl QueueSignal {
             .compare_exchange(false, true, AtomicOrdering::SeqCst, AtomicOrdering::SeqCst)
             .is_ok()
         {
-            let channel = self.message_channel.lock().clone();
-            if let Err(e) = channel.send_sync(ClientIoMessage::BlockVerified) {
-                debug!("Error sending BlockVerified message: {:?}", e);
-            }
         }
     }
 
@@ -197,10 +190,6 @@ impl QueueSignal {
             .compare_exchange(false, true, AtomicOrdering::SeqCst, AtomicOrdering::SeqCst)
             .is_ok()
         {
-            let channel = self.message_channel.lock().clone();
-            if let Err(e) = channel.send(ClientIoMessage::BlockVerified) {
-                debug!("Error sending BlockVerified message: {:?}", e);
-            }
         }
     }
 
@@ -224,7 +213,6 @@ impl<K: Kind> VerificationQueue<K> {
     pub fn new(
         config: Config,
         engine: Arc<dyn EthEngine>,
-        message_channel: IoChannel<ClientIoMessage>,
         check_seal: bool,
     ) -> Self {
         let verification = Arc::new(Verification {
@@ -244,7 +232,6 @@ impl<K: Kind> VerificationQueue<K> {
         let ready_signal = Arc::new(QueueSignal {
             deleting: deleting.clone(),
             signalled: AtomicBool::new(false),
-            message_channel: Mutex::new(message_channel),
         });
         let empty = Arc::new(Condvar::new());
         let scale_verifiers = config.verifier_settings.scale_verifiers;
@@ -873,7 +860,6 @@ mod tests {
     use super::{kind::blocks::Unverified, BlockQueue, Config, State};
     use bytes::Bytes;
     use error::*;
-    use io::*;
     use spec::Spec;
     use test_helpers::{get_good_dummy_block, get_good_dummy_block_seq};
     use types::{view, views::BlockView, BlockNumber};
@@ -886,7 +872,7 @@ mod tests {
 
         let mut config = Config::default();
         config.verifier_settings.scale_verifiers = auto_scale;
-        BlockQueue::new(config, engine, IoChannel::disconnected(), true)
+        BlockQueue::new(config, engine,true)
     }
 
     fn get_test_config(num_verifiers: usize, is_auto_scale: bool) -> Config {
@@ -905,7 +891,7 @@ mod tests {
         // TODO better test
         let spec = Spec::new_test();
         let engine = spec.engine;
-        let _ = BlockQueue::new(Config::default(), engine, IoChannel::disconnected(), true);
+        let _ = BlockQueue::new(Config::default(), engine,  true);
     }
 
     #[test]
@@ -997,7 +983,7 @@ mod tests {
         let engine = spec.engine;
         let mut config = Config::default();
         config.max_mem_use = super::MIN_MEM_LIMIT; // empty queue uses about 15000
-        let queue = BlockQueue::new(config, engine, IoChannel::disconnected(), true);
+        let queue = BlockQueue::new(config, engine,  true);
         assert!(!queue.queue_info().is_full());
         let mut blocks = get_good_dummy_block_seq(50);
         for b in blocks.drain(..) {
@@ -1049,7 +1035,7 @@ mod tests {
         let spec = Spec::new_test();
         let engine = spec.engine;
         let config = get_test_config(1, false);
-        let queue = BlockQueue::new(config, engine, IoChannel::disconnected(), true);
+        let queue = BlockQueue::new(config, engine,  true);
 
         assert_eq!(queue.num_verifiers(), 1);
     }
@@ -1059,7 +1045,7 @@ mod tests {
         let spec = Spec::new_test();
         let engine = spec.engine;
         let config = get_test_config(0, false);
-        let queue = BlockQueue::new(config, engine, IoChannel::disconnected(), true);
+        let queue = BlockQueue::new(config, engine,  true);
 
         assert_eq!(queue.num_verifiers(), 1);
     }
@@ -1069,7 +1055,7 @@ mod tests {
         let spec = Spec::new_test();
         let engine = spec.engine;
         let config = get_test_config(10_000, false);
-        let queue = BlockQueue::new(config, engine, IoChannel::disconnected(), true);
+        let queue = BlockQueue::new(config, engine,  true);
         let num_cpus = ::num_cpus::get();
 
         assert_eq!(queue.num_verifiers(), num_cpus);
@@ -1083,7 +1069,7 @@ mod tests {
             let spec = Spec::new_test();
             let engine = spec.engine;
             let config = get_test_config(num_cpus - 1, true);
-            let queue = BlockQueue::new(config, engine, IoChannel::disconnected(), true);
+            let queue = BlockQueue::new(config, engine,  true);
             queue.scale_verifiers(num_cpus);
 
             assert_eq!(queue.num_verifiers(), num_cpus);

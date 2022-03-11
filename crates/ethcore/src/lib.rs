@@ -25,7 +25,6 @@ extern crate ethash;
 extern crate ethcore_blockchain as blockchain;
 extern crate ethcore_builtin as builtin;
 extern crate ethcore_db as db;
-extern crate ethcore_io as io;
 extern crate ethcore_miner;
 extern crate ethereum_types;
 extern crate ethjson;
@@ -76,8 +75,6 @@ extern crate kvdb_rocksdb;
 extern crate rlp_compress;
 #[cfg(any(test, feature = "tempdir"))]
 extern crate tempdir;
-#[cfg(feature = "json-tests")]
-extern crate tempfile;
 #[cfg(feature = "json-tests")]
 extern crate walkdir;
 

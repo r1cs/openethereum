@@ -21,7 +21,6 @@ use client::{BlockChainClient, Client, ClientConfig, *};
 use crypto::publickey::KeyPair;
 use ethereum_types::{Address, U256};
 use hash::keccak;
-use io::*;
 use miner::Miner;
 use spec::*;
 use std::{str::FromStr, sync::Arc};
@@ -49,7 +48,6 @@ fn can_trace_block_and_uncle_reward() {
         &spec,
         db,
         Arc::new(Miner::new_for_tests(&spec, None)),
-        IoChannel::disconnected(),
     )
     .unwrap();
 

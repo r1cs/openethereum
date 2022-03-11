@@ -513,7 +513,7 @@ fn ecip1017_eras_block_reward(era_rounds: u64, mut reward: U256, block_number: u
 #[cfg(test)]
 mod tests {
     use super::{
-        super::{new_homestead_test_machine, new_mcip3_test, new_morden},
+        super::{new_homestead_test_machine, new_morden},
         ecip1017_eras_block_reward, Ethash, EthashParams,
     };
     use block::*;

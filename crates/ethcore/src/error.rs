@@ -184,10 +184,6 @@ error_chain! {
             display("The queue is full ({})", limit)
         }
     }
-
-    foreign_links {
-        Channel(::io::IoError) #[doc = "Io channel error"];
-    }
 }
 
 error_chain! {
@@ -247,7 +243,6 @@ error_chain! {
     }
 
     foreign_links {
-        Io(::io::IoError) #[doc = "Io create error"];
         StdIo(::std::io::Error) #[doc = "Error concerning the Rust standard library's IO subsystem."];
         Trie(TrieError) #[doc = "Error concerning TrieDBs."];
         Execution(ExecutionError) #[doc = "Error concerning EVM code execution."];

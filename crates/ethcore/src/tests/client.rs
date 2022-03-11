@@ -30,7 +30,6 @@ use ethereum;
 use ethereum_types::{Address, U256};
 use executive::{Executive, TransactOptions};
 use hash::keccak;
-use io::IoChannel;
 use miner::{Miner, MinerService, PendingOrdering};
 use rustc_hex::ToHex;
 use spec::Spec;
@@ -61,7 +60,6 @@ fn imports_from_empty() {
         &spec,
         db,
         Arc::new(Miner::new_for_tests(&spec, None)),
-        IoChannel::disconnected(),
     )
     .unwrap();
     client.import_verified_blocks();
@@ -79,7 +77,6 @@ fn should_return_registrar() {
         &spec,
         db,
         Arc::new(Miner::new_for_tests(&spec, None)),
-        IoChannel::disconnected(),
     )
     .unwrap();
     let params = client.additional_params();
@@ -99,7 +96,6 @@ fn imports_good_block() {
         &spec,
         db,
         Arc::new(Miner::new_for_tests(&spec, None)),
-        IoChannel::disconnected(),
     )
     .unwrap();
     let good_block = get_good_dummy_block();
@@ -126,7 +122,6 @@ fn query_none_block() {
         &spec,
         db,
         Arc::new(Miner::new_for_tests(&spec, None)),
-        IoChannel::disconnected(),
     )
     .unwrap();
     let non_existant = client.block_header(BlockId::Number(188));
@@ -328,7 +323,6 @@ fn change_history_size() {
             &test_spec,
             db.clone(),
             Arc::new(Miner::new_for_tests(&test_spec, None)),
-            IoChannel::disconnected(),
         )
         .unwrap();
 
@@ -360,7 +354,6 @@ fn change_history_size() {
         &test_spec,
         db,
         Arc::new(Miner::new_for_tests(&test_spec, None)),
-        IoChannel::disconnected(),
     )
     .unwrap();
     assert_eq!(client.state().balance(&address).unwrap(), 100.into());

@@ -15,10 +15,8 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use blockchain::ImportRoute;
-use bytes::Bytes;
-use ethereum_types::{H256, U256};
-use std::{collections::HashMap, time::Duration};
-use types::transaction::UnverifiedTransaction;
+use ethereum_types::{H256};
+use std::{collections::HashMap};
 
 /// Messages to broadcast via chain
 pub enum ChainMessageType {
@@ -118,80 +116,5 @@ impl ChainRoute {
     /// All blocks in the route.
     pub fn route(&self) -> &[(H256, ChainRouteType)] {
         &self.route
-    }
-}
-
-/// Used by `ChainNotify` `new_blocks()`
-pub struct NewBlocks {
-    /// Imported blocks
-    pub imported: Vec<H256>,
-    /// Invalid blocks
-    pub invalid: Vec<H256>,
-    /// Route
-    pub route: ChainRoute,
-    /// Sealed
-    pub sealed: Vec<H256>,
-    /// Block bytes.
-    pub proposed: Vec<Bytes>,
-    /// Duration
-    pub duration: Duration,
-    /// Has more blocks to import
-    pub has_more_blocks_to_import: bool,
-}
-
-impl NewBlocks {
-    /// Constructor
-    pub fn new(
-        imported: Vec<H256>,
-        invalid: Vec<H256>,
-        route: ChainRoute,
-        sealed: Vec<H256>,
-        proposed: Vec<Bytes>,
-        duration: Duration,
-        has_more_blocks_to_import: bool,
-    ) -> NewBlocks {
-        NewBlocks {
-            imported,
-            invalid,
-            route,
-            sealed,
-            proposed,
-            duration,
-            has_more_blocks_to_import,
-        }
-    }
-}
-
-/// Represents what has to be handled by actor listening to chain events
-pub trait ChainNotify: Send + Sync {
-    /// fires when chain has new blocks.
-    fn new_blocks(&self, _new_blocks: NewBlocks) {
-        // does nothing by default
-    }
-
-    /// fires when chain achieves active mode
-    fn start(&self) {
-        // does nothing by default
-    }
-
-    /// fires when chain achieves passive mode
-    fn stop(&self) {
-        // does nothing by default
-    }
-
-    /// fires when chain broadcasts a message
-    fn broadcast(&self, _message_type: ChainMessageType) {
-        // does nothing by default
-    }
-
-    /// fires when new block is about to be imported
-    /// implementations should be light
-    fn block_pre_import(&self, _bytes: &Bytes, _hash: &H256, _difficulty: &U256) {
-        // does nothing by default
-    }
-
-    /// fires when new transactions are received from a peer
-    fn transactions_received(&self, _txs: &[UnverifiedTransaction], _peer_id: usize) {
-        // does nothing by default
     }
 }

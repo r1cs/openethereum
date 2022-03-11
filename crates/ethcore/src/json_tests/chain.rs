@@ -21,7 +21,6 @@ use client::{
 };
 use ethereum_types::{H256, U256};
 use ethjson;
-use io::IoChannel;
 use log::warn;
 use miner::Miner;
 use rustc_hex::ToHex;
@@ -198,7 +197,6 @@ pub fn json_chain_test<H: FnMut(&str, HookType)>(
                     &spec,
                     db,
                     Arc::new(Miner::new_for_tests(&spec, None)),
-                    IoChannel::disconnected(),
                 )
                 .expect("Failed to instantiate a new Client");
 
