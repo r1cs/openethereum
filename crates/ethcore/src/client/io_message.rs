@@ -14,10 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use bytes::Bytes;
 use client::Client;
-use ethereum_types::H256;
-use snapshot::ManifestData;
 use std::fmt;
 
 /// Message type for external and internal events
@@ -27,14 +24,6 @@ pub enum ClientIoMessage {
     NewChainHead,
     /// A block is ready
     BlockVerified,
-    /// Begin snapshot restoration
-    BeginRestoration(ManifestData),
-    /// Feed a state chunk to the snapshot service
-    FeedStateChunk(H256, Bytes),
-    /// Feed a block chunk to the snapshot service
-    FeedBlockChunk(H256, Bytes),
-    /// Take a snapshot for the block with given number.
-    TakeSnapshot(u64),
     /// Execute wrapped closure
     Execute(Callback),
 }

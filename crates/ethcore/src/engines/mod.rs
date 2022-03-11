@@ -49,7 +49,6 @@ use std::{
 
 use builtin::Builtin;
 use error::Error;
-use snapshot::SnapshotComponents;
 use spec::CommonParams;
 use types::{
     header::{ExtendedHeader, Header},
@@ -488,17 +487,6 @@ pub trait Engine<M: Machine>: Sync + Send {
 
     /// Trigger next step of the consensus engine.
     fn step(&self) {}
-
-    /// Create a factory for building snapshot chunks and restoring from them.
-    /// Returning `None` indicates that this engine doesn't support snapshot creation.
-    fn snapshot_components(&self) -> Option<Box<dyn SnapshotComponents>> {
-        None
-    }
-
-    /// Whether this engine supports warp sync.
-    fn supports_warp(&self) -> bool {
-        self.snapshot_components().is_some()
-    }
 
     /// Return a new open block header timestamp based on the parent timestamp.
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {

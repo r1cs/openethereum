@@ -20,7 +20,6 @@ use std::{
 };
 
 use journaldb;
-use snapshot::SnapshotConfiguration;
 use verification::{QueueConfig, VerifierType};
 
 pub use blockchain::Config as BlockChainConfig;
@@ -125,8 +124,6 @@ pub struct ClientConfig {
     pub transaction_verification_queue_size: usize,
     /// Maximal number of blocks to import at each round.
     pub max_round_blocks_to_import: usize,
-    /// Snapshot configuration
-    pub snapshot: SnapshotConfiguration,
 }
 
 impl Default for ClientConfig {
@@ -152,7 +149,6 @@ impl Default for ClientConfig {
             check_seal: true,
             transaction_verification_queue_size: 8192,
             max_round_blocks_to_import: 1,
-            snapshot: Default::default(),
         }
     }
 }

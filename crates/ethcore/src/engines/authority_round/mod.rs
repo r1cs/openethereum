@@ -2273,14 +2273,6 @@ impl Engine<EthereumMachine> for AuthorityRound {
             .sign(hash)?)
     }
 
-    fn snapshot_components(&self) -> Option<Box<dyn crate::snapshot::SnapshotComponents>> {
-        if self.immediate_transitions {
-            None
-        } else {
-            Some(Box::new(::snapshot::PoaSnapshot))
-        }
-    }
-
     fn fork_choice(&self, new: &ExtendedHeader, current: &ExtendedHeader) -> super::ForkChoice {
         super::total_difficulty_fork_choice(new, current)
     }

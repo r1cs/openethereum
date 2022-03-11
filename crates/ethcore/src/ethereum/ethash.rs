@@ -41,12 +41,6 @@ use error::{BlockError, Error};
 use ethash::{self, quick_get_difficulty, slow_hash_block_number, EthashManager, OptimizeFor};
 use machine::EthereumMachine;
 
-/// Number of blocks in an ethash snapshot.
-// make dependent on difficulty incrment divisor?
-const SNAPSHOT_BLOCKS: u64 = 1000;
-/// Maximum number of blocks allowed in an ethash snapshot.
-const MAX_SNAPSHOT_BLOCKS: u64 = 10000;
-
 /// Ethash specific seal
 #[derive(Debug, PartialEq)]
 pub struct Seal {
@@ -446,13 +440,6 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
         _proof: &'a [u8],
     ) -> engines::ConstructedVerifier<'a, EthereumMachine> {
         engines::ConstructedVerifier::Trusted(Box::new(self.clone()))
-    }
-
-    fn snapshot_components(&self) -> Option<Box<dyn crate::snapshot::SnapshotComponents>> {
-        Some(Box::new(::snapshot::PowSnapshot::new(
-            SNAPSHOT_BLOCKS,
-            MAX_SNAPSHOT_BLOCKS,
-        )))
     }
 
     fn fork_choice(&self, new: &ExtendedHeader, current: &ExtendedHeader) -> engines::ForkChoice {

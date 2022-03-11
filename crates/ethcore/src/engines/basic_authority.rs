@@ -214,10 +214,6 @@ impl Engine<EthereumMachine> for BasicAuthority {
             .sign(hash)?)
     }
 
-    fn snapshot_components(&self) -> Option<Box<dyn crate::snapshot::SnapshotComponents>> {
-        None
-    }
-
     fn fork_choice(&self, new: &ExtendedHeader, current: &ExtendedHeader) -> super::ForkChoice {
         super::total_difficulty_fork_choice(new, current)
     }

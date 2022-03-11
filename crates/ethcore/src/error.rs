@@ -27,7 +27,6 @@ use ethereum_types::{Address, Bloom, H256, U256};
 use ethtrie::TrieError;
 use rlp;
 use snappy::InvalidInput;
-use snapshot::Error as SnapshotError;
 use types::{transaction::Error as TransactionError, BlockNumber};
 use unexpected::{Mismatch, OutOfBounds};
 
@@ -261,12 +260,6 @@ error_chain! {
     }
 
     errors {
-        #[doc = "Snapshot error."]
-        Snapshot(err: SnapshotError) {
-            description("Snapshot error.")
-            display("Snapshot error {}", err)
-        }
-
         #[doc = "PoW hash is invalid or out of date."]
         PowHashInvalid {
             description("PoW hash is invalid or out of date.")
@@ -283,17 +276,6 @@ error_chain! {
         UnknownEngineName(name: String) {
             description("Unknown engine name")
             display("Unknown engine name ({})", name)
-        }
-    }
-}
-
-impl From<SnapshotError> for Error {
-    fn from(err: SnapshotError) -> Error {
-        match err {
-            SnapshotError::Io(err) => ErrorKind::StdIo(err).into(),
-            SnapshotError::Trie(err) => ErrorKind::Trie(err).into(),
-            SnapshotError::Decoder(err) => err.into(),
-            other => ErrorKind::Snapshot(other).into(),
         }
     }
 }

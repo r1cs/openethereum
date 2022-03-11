@@ -1639,7 +1639,6 @@ mod tests {
                 tx_queue_penalization: Penalization::Disabled,
                 tx_queue_strategy: PrioritizationStrategy::GasPriceOnly,
                 tx_queue_no_unfamiliar_locals: false,
-                refuse_service_transactions: false,
                 pool_limits: Default::default(),
                 pool_verification_options: pool::verifier::Options {
                     minimal_gas_price: 0.into(),

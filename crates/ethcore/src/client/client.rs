@@ -86,7 +86,6 @@ use executive::{contract_address, Executed, Executive, TransactOptions};
 use factory::{Factories, VmFactory};
 use io::IoChannel;
 use miner::{Miner, MinerService};
-use snapshot::{self, io as snapshot_io, SnapshotClient};
 use spec::Spec;
 use state::{self, State};
 use state_db::StateDB;
@@ -1431,69 +1430,6 @@ impl Client {
         }
     }
 
-    /// Take a snapshot at the given block.
-    /// If the ID given is "latest", this will default to 1000 blocks behind.
-    pub fn take_snapshot<W: snapshot_io::SnapshotWriter + Send>(
-        &self,
-        writer: W,
-        at: BlockId,
-        p: &snapshot::Progress,
-    ) -> Result<(), EthcoreError> {
-        let db = self.state_db.read().journal_db().boxed_clone();
-        let block_number = self
-            .block_number(at)
-            .ok_or_else(|| snapshot::Error::InvalidStartingBlock(at))?;
-
-        if db.is_pruned() && self.pruning_info().earliest_state > block_number {
-            return Err(snapshot::Error::OldBlockPrunedDB.into());
-        }
-
-        let history = ::std::cmp::min(self.history, 1000);
-
-        let (snapshot_block_number, start_hash) = match at {
-            BlockId::Latest => {
-                let best_block_number = self.chain_info().best_block_number;
-                let start_num = match db.earliest_era() {
-                    Some(era) => ::std::cmp::max(era, best_block_number.saturating_sub(history)),
-                    None => best_block_number.saturating_sub(history),
-                };
-
-                match self.block_hash(BlockId::Number(start_num)) {
-                    Some(h) => (start_num, h),
-                    None => return Err(snapshot::Error::InvalidStartingBlock(at).into()),
-                }
-            }
-            _ => match self.block_hash(at) {
-                Some(hash) => (block_number, hash),
-                None => return Err(snapshot::Error::InvalidStartingBlock(at).into()),
-            },
-        };
-
-        let processing_threads = self.config.snapshot.processing_threads;
-        let chunker = self
-            .engine
-            .snapshot_components()
-            .ok_or(snapshot::Error::SnapshotsUnsupported)?;
-        self.snapshotting_at
-            .store(snapshot_block_number, AtomicOrdering::SeqCst);
-        {
-            scopeguard::defer! {{
-                info!(target: "snapshot", "Re-enabling pruning.");
-                self.snapshotting_at.store(0, AtomicOrdering::SeqCst)
-            }};
-            snapshot::take_snapshot(
-                chunker,
-                &self.chain.read(),
-                start_hash,
-                db.as_hash_db(),
-                writer,
-                p,
-                processing_threads,
-            )?;
-        }
-        Ok(())
-    }
-
     /// Ask the client what the history parameter is.
     pub fn pruning_history(&self) -> u64 {
         self.history
@@ -1665,35 +1601,6 @@ impl Client {
                 .block_header(id)
                 .and_then(|h| h.decode(self.engine.params().eip1559_transition).ok()),
         }
-    }
-}
-
-impl snapshot::DatabaseRestore for Client {
-    /// Restart the client with a new backend
-    fn restore_db(&self, new_db: &str) -> Result<(), EthcoreError> {
-        trace!(target: "snapshot", "Replacing client database with {:?}", new_db);
-
-        let _import_lock = self.importer.import_lock.lock();
-        let mut state_db = self.state_db.write();
-        let mut chain = self.chain.write();
-        let mut tracedb = self.tracedb.write();
-        self.importer.miner.clear();
-        let db = self.db.write();
-        db.restore(new_db)?;
-
-        let cache_size = state_db.cache_size();
-        *state_db = StateDB::new(
-            journaldb::new(db.key_value().clone(), self.pruning, ::db::COL_STATE),
-            cache_size,
-        );
-        *chain = Arc::new(BlockChain::new(
-            self.config.blockchain.clone(),
-            &[],
-            db.clone(),
-            self.engine.params().eip1559_transition,
-        ));
-        *tracedb = TraceDB::new(self.config.tracing.clone(), db.clone(), chain.clone());
-        Ok(())
     }
 }
 
@@ -3154,8 +3061,6 @@ impl ProvingBlockChainClient for Client {
             .map(|pending| pending.proof)
     }
 }
-
-impl SnapshotClient for Client {}
 
 impl ImportExportBlocks for Client {
     fn export_blocks<'a>(
