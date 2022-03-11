@@ -60,7 +60,7 @@ use block::{ClosedBlock, OpenBlock, SealedBlock};
 use call_contract::{CallContract, RegistryInfo};
 use client::{
     traits::{ForceUpdateSealing, TransactionRequest},
-    AccountData, BadBlocks, Balance, BlockChain, BlockChainClient, BlockChainInfo, BlockId,
+    AccountData, Balance, BlockChain, BlockChainClient, BlockChainInfo, BlockId,
     BlockInfo, BlockProducer, BlockStatus, BroadcastProposalBlock, Call, CallAnalytics, ChainInfo,
     EngineInfo, ImportBlock, ImportSealedBlock, IoClient, LastHashes, Mode, Nonce,
     PrepareOpenBlock, ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter,
@@ -75,7 +75,6 @@ use miner::{self, Miner, MinerService};
 use spec::Spec;
 use state::StateInfo;
 use state_db::StateDB;
-use stats::{PrometheusMetrics, PrometheusRegistry};
 use trace::LocalizedTrace;
 use verification::queue::{kind::blocks::Unverified, QueueInfo};
 
@@ -742,20 +741,6 @@ impl EngineInfo for TestBlockChainClient {
     }
 }
 
-impl BadBlocks for TestBlockChainClient {
-    fn bad_blocks(&self) -> Vec<(Unverified, String)> {
-        vec![(
-            Unverified {
-                header: Default::default(),
-                transactions: vec![],
-                uncles: vec![],
-                bytes: vec![1, 2, 3],
-            },
-            "Invalid block".into(),
-        )]
-    }
-}
-
 impl BlockChainClient for TestBlockChainClient {
     fn replay(&self, _id: TransactionId, _analytics: CallAnalytics) -> Result<Executed, CallError> {
         self.execution_result.read().clone().unwrap()
@@ -1198,8 +1183,4 @@ impl super::traits::EngineClient for TestBlockChainClient {
     fn block_header(&self, id: BlockId) -> Option<encoded::Header> {
         <dyn BlockChainClient>::block_header(self, id)
     }
-}
-
-impl PrometheusMetrics for TestBlockChainClient {
-    fn prometheus_metrics(&self, _r: &mut PrometheusRegistry) {}
 }

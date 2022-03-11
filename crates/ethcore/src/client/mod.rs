@@ -17,7 +17,6 @@
 //! Blockchain database client.
 
 mod ancient_import;
-mod bad_blocks;
 mod client;
 mod config;
 #[cfg(any(test, feature = "test-helpers"))]
@@ -37,7 +36,7 @@ pub use self::{
     config::{BlockChainConfig, ClientConfig, DatabaseCompactionProfile, Mode, VMType},
     io_message::ClientIoMessage,
     traits::{
-        AccountData, BadBlocks, Balance, BlockChain, BlockChainClient, BlockChainReset, BlockInfo,
+        AccountData, Balance, BlockChain, BlockChainClient, BlockChainReset, BlockInfo,
         BlockProducer, BroadcastProposalBlock, Call, ChainInfo, EngineClient, EngineInfo,
         ImportBlock, ImportExportBlocks, ImportSealedBlock, IoClient, Nonce, PrepareOpenBlock,
         ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter, StateClient,

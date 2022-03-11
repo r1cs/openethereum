@@ -64,9 +64,8 @@ use block::{enact_verified, ClosedBlock, Drain, LockedBlock, OpenBlock, SealedBl
 use call_contract::RegistryInfo;
 use client::{
     ancient_import::AncientVerifier,
-    bad_blocks,
     traits::{ForceUpdateSealing, TransactionRequest},
-    AccountData, BadBlocks, Balance, BlockChain as BlockChainTrait, BlockChainClient,
+    AccountData, Balance, BlockChain as BlockChainTrait, BlockChainClient,
     BlockChainReset, BlockId, BlockInfo, BlockProducer, BroadcastProposalBlock, Call,
     CallAnalytics, ChainInfo, ChainMessageType, ChainNotify, ChainRoute, ClientConfig,
     ClientIoMessage, EngineInfo, ImportBlock, ImportExportBlocks, ImportSealedBlock, IoClient,
@@ -89,7 +88,6 @@ use miner::{Miner, MinerService};
 use spec::Spec;
 use state::{self, State};
 use state_db::StateDB;
-use stats::{PrometheusMetrics, PrometheusRegistry};
 use trace::{
     self, Database as TraceDatabase, ImportRequest as TraceImportRequest, LocalizedTrace, TraceDB,
 };
@@ -186,9 +184,6 @@ struct Importer {
 
     /// Ethereum engine to be used during import
     pub engine: Arc<dyn EthEngine>,
-
-    /// A lru cache of recently detected bad blocks
-    pub bad_blocks: bad_blocks::BadBlocks,
 }
 
 /// Blockchain database client backed by a persistent database. Owns and manages a blockchain and a block queue.
@@ -217,9 +212,6 @@ pub struct Client {
     db: RwLock<Arc<dyn BlockChainDB>>,
 
     state_db: RwLock<StateDB>,
-
-    /// Report on the status of client
-    report: RwLock<ClientReport>,
 
     sleep_state: Mutex<SleepState>,
 
@@ -277,7 +269,6 @@ impl Importer {
             miner,
             ancient_verifier: AncientVerifier::new(engine.clone()),
             engine,
-            bad_blocks: Default::default(),
         })
     }
 
@@ -348,17 +339,8 @@ impl Importer {
                         );
                         trace!(target:"block_import","Block #{}({}) commited",header.number(),header.hash());
                         import_results.push(route);
-                        client
-                            .report
-                            .write()
-                            .accrue_block(&header, transactions_len);
                     }
                     Err(err) => {
-                        self.bad_blocks.report(
-                            bytes,
-                            format!("{:?}", err),
-                            self.engine.params().eip1559_transition,
-                        );
                         invalid_blocks.insert(hash);
                     }
                 }
@@ -976,7 +958,6 @@ impl Client {
             snapshotting_at: AtomicU64::new(0),
             db: RwLock::new(db.clone()),
             state_db: RwLock::new(state_db),
-            report: RwLock::new(Default::default()),
             io_channel: RwLock::new(message_channel),
             notify: RwLock::new(Vec::new()),
             queue_transactions: IoChannelQueue::new(config.transaction_verification_queue_size),
@@ -1372,13 +1353,6 @@ impl Client {
     /// Get info on the cache.
     pub fn blockchain_cache_info(&self) -> BlockChainCacheSize {
         self.chain.read().cache_size()
-    }
-
-    /// Get the report.
-    pub fn report(&self) -> ClientReport {
-        let mut report = self.report.read().clone();
-        self.state_db.read().get_sizes(&mut report.item_sizes);
-        report
     }
 
     /// Tick the client.
@@ -1809,11 +1783,6 @@ impl ImportBlock for Client {
             }
             // t_nb 2.5 if block is not okay print error. we only care about block errors (not import errors)
             Err((Some(block), EthcoreError(EthcoreErrorKind::Block(err), _))) => {
-                self.importer.bad_blocks.report(
-                    block.bytes,
-                    err.to_string(),
-                    self.engine.params().eip1559_transition,
-                );
                 bail!(EthcoreErrorKind::Block(err))
             }
             Err((None, EthcoreError(EthcoreErrorKind::Block(err), _))) => {
@@ -2010,14 +1979,6 @@ impl Call for Client {
 impl EngineInfo for Client {
     fn engine(&self) -> &dyn EthEngine {
         Client::engine(self)
-    }
-}
-
-impl BadBlocks for Client {
-    fn bad_blocks(&self) -> Vec<(Unverified, String)> {
-        self.importer
-            .bad_blocks
-            .bad_blocks(self.engine.params().eip1559_transition)
     }
 }
 
@@ -2892,11 +2853,6 @@ impl ImportSealedBlock for Client {
         let route = {
             // Do a super duper basic verification to detect potential bugs
             if let Err(e) = self.engine.verify_block_basic(&header) {
-                self.importer.bad_blocks.report(
-                    block.rlp_bytes(),
-                    format!("Detected an issue with locally sealed block: {}", e),
-                    self.engine.params().eip1559_transition,
-                );
                 return Err(e.into());
             }
 
@@ -3300,146 +3256,6 @@ impl IoChannelQueue {
         self.currently_queued
             .fetch_add(count, AtomicOrdering::SeqCst);
         Ok(())
-    }
-}
-
-impl PrometheusMetrics for Client {
-    fn prometheus_metrics(&self, r: &mut PrometheusRegistry) {
-        // gas, tx & blocks
-        let report = self.report();
-
-        for (key, value) in report.item_sizes.iter() {
-            r.register_gauge(
-                &key,
-                format!("Total item number of {}", key).as_str(),
-                *value as i64,
-            );
-        }
-
-        r.register_counter(
-            "import_gas",
-            "Gas processed",
-            report.gas_processed.as_u64() as i64,
-        );
-        r.register_counter(
-            "import_blocks",
-            "Blocks imported",
-            report.blocks_imported as i64,
-        );
-        r.register_counter(
-            "import_txs",
-            "Transactions applied",
-            report.transactions_applied as i64,
-        );
-
-        let state_db = self.state_db.read();
-        r.register_gauge(
-            "statedb_cache_size",
-            "State DB cache size",
-            state_db.cache_size() as i64,
-        );
-
-        // blockchain cache
-        let blockchain_cache_info = self.blockchain_cache_info();
-        r.register_gauge(
-            "blockchaincache_block_details",
-            "BlockDetails cache size",
-            blockchain_cache_info.block_details as i64,
-        );
-        r.register_gauge(
-            "blockchaincache_block_recipts",
-            "Block receipts size",
-            blockchain_cache_info.block_receipts as i64,
-        );
-        r.register_gauge(
-            "blockchaincache_blocks",
-            "Blocks cache size",
-            blockchain_cache_info.blocks as i64,
-        );
-        r.register_gauge(
-            "blockchaincache_txaddrs",
-            "Transaction addresses cache size",
-            blockchain_cache_info.transaction_addresses as i64,
-        );
-        r.register_gauge(
-            "blockchaincache_size",
-            "Total blockchain cache size",
-            blockchain_cache_info.total() as i64,
-        );
-
-        // chain info
-        let chain = self.chain_info();
-
-        let gap = chain
-            .ancient_block_number
-            .map(|x| U256::from(x + 1))
-            .and_then(|first| {
-                chain
-                    .first_block_number
-                    .map(|last| (first, U256::from(last)))
-            });
-        if let Some((first, last)) = gap {
-            r.register_gauge(
-                "chain_warpsync_gap_first",
-                "Warp sync gap, first block",
-                first.as_u64() as i64,
-            );
-            r.register_gauge(
-                "chain_warpsync_gap_last",
-                "Warp sync gap, last block",
-                last.as_u64() as i64,
-            );
-        }
-
-        r.register_gauge(
-            "chain_block",
-            "Best block number",
-            chain.best_block_number as i64,
-        );
-
-        // prunning info
-        let prunning = self.pruning_info();
-        r.register_gauge(
-            "prunning_earliest_chain",
-            "The first block which everything can be served after",
-            prunning.earliest_chain as i64,
-        );
-        r.register_gauge(
-            "prunning_earliest_state",
-            "The first block where state requests may be served",
-            prunning.earliest_state as i64,
-        );
-
-        // queue info
-        let queue = self.queue_info();
-        r.register_gauge(
-            "queue_mem_used",
-            "Queue heap memory used in bytes",
-            queue.mem_used as i64,
-        );
-        r.register_gauge(
-            "queue_size_total",
-            "The total size of the queues",
-            queue.total_queue_size() as i64,
-        );
-        r.register_gauge(
-            "queue_size_unverified",
-            "Number of queued items pending verification",
-            queue.unverified_queue_size as i64,
-        );
-        r.register_gauge(
-            "queue_size_verified",
-            "Number of verified queued items pending import",
-            queue.verified_queue_size as i64,
-        );
-        r.register_gauge(
-            "queue_size_verifying",
-            "Number of items being verified",
-            queue.verifying_queue_size as i64,
-        );
-
-        // database info
-        self.db.read().key_value().prometheus_metrics(r);
     }
 }
 
