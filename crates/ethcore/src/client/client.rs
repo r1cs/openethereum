@@ -15,7 +15,6 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::{
-    cmp,
     collections::{BTreeMap, HashSet, VecDeque},
     io::{BufRead, BufReader},
     str::{from_utf8, FromStr},
@@ -55,14 +54,14 @@ use vm::{EnvInfo, LastHashes};
 use ansi_term::Colour;
 use block::{enact_verified, ClosedBlock, Drain, LockedBlock, OpenBlock, SealedBlock};
 use client::{
-    traits::{ForceUpdateSealing, TransactionRequest},
+    traits::ForceUpdateSealing,
     AccountData, Balance, BlockChain as BlockChainTrait, BlockChainClient,
     BlockChainReset, BlockId, BlockInfo, BlockProducer, Call,
     CallAnalytics, ChainInfo, ChainRoute, ClientConfig,
     EngineInfo, ImportBlock, ImportExportBlocks, ImportSealedBlock,
     Mode, Nonce, PrepareOpenBlock, ProvingBlockChainClient, PruningInfo, ReopenBlock,
     ScheduleInfo, SealedBlockImporter, StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
-    TransactionId, TransactionInfo, UncleId,
+    TransactionId, TransactionInfo,
 };
 use engines::{
     epoch::PendingTransition, EngineError, EpochTransition, EthEngine, ForkChoice, SealingState,
@@ -94,7 +93,6 @@ use db::{keys::BlockDetails, Readable, Writable};
 pub use reth_util::queue::ExecutionQueue;
 pub use types::{block_status::BlockStatus, blockchain_info::BlockChainInfo};
 pub use verification::QueueInfo as BlockQueueInfo;
-use_contract!(registry, "res/contracts/registrar.json");
 
 // Max number of blocks imported at once.
 const MAX_QUEUE_SIZE_TO_SLEEP_ON: usize = 2;
@@ -208,12 +206,6 @@ pub struct Client {
 
     /// An action to be done if a mode/spec_name change happens
     on_user_defaults_change: Mutex<Option<Box<dyn FnMut(Option<Mode>) + 'static + Send>>>,
-
-    registrar_address: Option<Address>,
-
-    /// A closure to call when we want to restart the client
-    exit_handler: Mutex<Option<Box<dyn Fn(String) + 'static + Send>>>,
-
     importer: Importer,
 }
 
@@ -838,15 +830,6 @@ impl Client {
         };
 
         let importer = Importer::new(&config, engine.clone(), miner)?;
-
-        let registrar_address = engine
-            .additional_params()
-            .get("registrar")
-            .and_then(|s| Address::from_str(s).ok());
-        if let Some(ref addr) = registrar_address {
-            trace!(target: "client", "Found registrar at {}", addr);
-        }
-
         let client = Arc::new(Client {
             enabled: AtomicBool::new(true),
             sleep_state: Mutex::new(SleepState::new(awake)),
@@ -862,8 +845,6 @@ impl Client {
             factories,
             history,
             on_user_defaults_change: Mutex::new(None),
-            registrar_address,
-            exit_handler: Mutex::new(None),
             importer,
             config,
         });
@@ -1800,63 +1781,6 @@ impl BlockChainClient for Client {
         })))
     }
 
-    fn mode(&self) -> Mode {
-        let r = self.mode.lock().clone().into();
-        trace!(target: "mode", "Asked for mode = {:?}. returning {:?}", &*self.mode.lock(), r);
-        r
-    }
-
-    fn disable(&self) {
-        self.set_mode(Mode::Off);
-        self.enabled.store(false, AtomicOrdering::SeqCst);
-        self.clear_queue();
-    }
-
-    fn set_mode(&self, new_mode: Mode) {
-        trace!(target: "mode", "Client::set_mode({:?})", new_mode);
-        if !self.enabled.load(AtomicOrdering::SeqCst) {
-            return;
-        }
-        {
-            let mut mode = self.mode.lock();
-            *mode = new_mode.clone().into();
-            trace!(target: "mode", "Mode now {:?}", &*mode);
-            if let Some(ref mut f) = *self.on_user_defaults_change.lock() {
-                trace!(target: "mode", "Making callback...");
-                f(Some((&*mode).clone()))
-            }
-        }
-        match new_mode {
-            Mode::Active => self.wake_up(),
-            Mode::Off => self.sleep(true),
-            _ => {
-                (*self.sleep_state.lock()).last_activity = Some(Instant::now());
-            }
-        }
-    }
-
-    fn spec_name(&self) -> String {
-        self.config.spec_name.clone()
-    }
-
-    fn is_canon(&self, hash: &H256) -> bool {
-        self.chain.read().is_canon(hash)
-    }
-
-    fn set_spec_name(&self, new_spec_name: String) -> Result<(), ()> {
-        trace!(target: "mode", "Client::set_spec_name({:?})", new_spec_name);
-        if !self.enabled.load(AtomicOrdering::SeqCst) {
-            return Err(());
-        }
-        if let Some(ref h) = *self.exit_handler.lock() {
-            (*h)(new_spec_name);
-            Ok(())
-        } else {
-            warn!("Not hypervised; cannot change chain.");
-            Err(())
-        }
-    }
-
     fn block_number(&self, id: BlockId) -> Option<BlockNumber> {
         self.block_number_ref(&id)
     }
@@ -1874,21 +1798,6 @@ impl BlockChainClient for Client {
             Some(hash) => self.importer.block_queue.status(&hash).into(),
             None => BlockStatus::Unknown,
         }
-    }
-
-    fn is_processing_fork(&self) -> bool {
-        let chain = self.chain.read();
-        self.importer
-            .block_queue
-            .is_processing_fork(&chain.best_block_hash(), &chain)
-    }
-
-    fn block_total_difficulty(&self, id: BlockId) -> Option<U256> {
-        let chain = self.chain.read();
-
-        Self::block_hash(&chain, id)
-            .and_then(|hash| chain.block_details(&hash))
-            .map(|d| d.total_difficulty)
     }
 
     fn storage_root(&self, address: &Address, id: BlockId) -> Option<H256> {
@@ -2027,22 +1936,6 @@ impl BlockChainClient for Client {
         Some(keys)
     }
 
-    fn block_transaction(&self, id: TransactionId) -> Option<LocalizedTransaction> {
-        self.transaction_address(id)
-            .and_then(|address| self.chain.read().transaction(&address))
-    }
-
-    fn queued_transaction(&self, hash: H256) -> Option<Arc<VerifiedTransaction>> {
-        self.importer.miner.transaction(&hash)
-    }
-
-    fn uncle(&self, id: UncleId) -> Option<encoded::Header> {
-        let index = id.position;
-        self.block_body(id.block)
-            .and_then(|body| body.view().uncle_rlp_at(index))
-            .map(encoded::Header::new)
-    }
-
     fn transaction_receipt(&self, id: TransactionId) -> Option<LocalizedReceipt> {
         // NOTE Don't use block_receipts here for performance reasons
         let address = self.transaction_address(id)?;
@@ -2128,24 +2021,12 @@ impl BlockChainClient for Client {
         }
     }
 
-    fn find_uncles(&self, hash: &H256) -> Option<Vec<H256>> {
-        self.chain.read().find_uncle_hashes(hash, MAX_UNCLE_AGE)
-    }
-
     fn block_receipts(&self, hash: &H256) -> Option<BlockReceipts> {
         self.chain.read().block_receipts(hash)
     }
 
     fn queue_info(&self) -> BlockQueueInfo {
         self.importer.block_queue.queue_info()
-    }
-
-    fn is_queue_empty(&self) -> bool {
-        self.importer.block_queue.is_empty()
-    }
-
-    fn clear_queue(&self) {
-        self.importer.block_queue.clear();
     }
 
     fn additional_params(&self) -> BTreeMap<String, String> {
@@ -2303,63 +2184,12 @@ impl BlockChainClient for Client {
             })
     }
 
-    fn block_traces(&self, block: BlockId) -> Option<Vec<LocalizedTrace>> {
-        if !self.tracedb.read().tracing_enabled() {
-            return None;
-        }
-
-        self.block_number(block)
-            .and_then(|number| self.tracedb.read().block_traces(number))
-    }
-
     fn last_hashes(&self) -> LastHashes {
         (*self.build_last_hashes(&self.chain.read().best_block_hash())).clone()
     }
 
-    fn transactions_to_propagate(&self) -> Vec<Arc<VerifiedTransaction>> {
-        const PROPAGATE_FOR_BLOCKS: u32 = 4;
-        const MIN_TX_TO_PROPAGATE: usize = 256;
-
-        let block_gas_limit = *self.best_block_header().gas_limit();
-        let min_tx_gas: U256 = self.latest_schedule().tx_gas.into();
-
-        let max_len = if min_tx_gas.is_zero() {
-            usize::max_value()
-        } else {
-            cmp::max(
-                MIN_TX_TO_PROPAGATE,
-                cmp::min(
-                    (block_gas_limit / min_tx_gas) * PROPAGATE_FOR_BLOCKS,
-                    // never more than usize
-                    usize::max_value().into(),
-                )
-                .as_u64() as usize,
-            )
-        };
-        self.importer
-            .miner
-            .ready_transactions(self, max_len, ::miner::PendingOrdering::Priority)
-    }
-
     fn transaction(&self, tx_hash: &H256) -> Option<Arc<VerifiedTransaction>> {
         self.importer.miner.transaction(tx_hash)
-    }
-
-    fn signing_chain_id(&self) -> Option<u64> {
-        self.engine.signing_chain_id(&self.latest_env_info())
-    }
-
-    fn block_extra_info(&self, id: BlockId) -> Option<BTreeMap<String, String>> {
-        self.block_header_decoded(id)
-            .map(|header| self.engine.extra_info(&header))
-    }
-
-    fn uncle_extra_info(&self, id: UncleId) -> Option<BTreeMap<String, String>> {
-        self.uncle(id).and_then(|h| {
-            h.decode(self.engine.params().eip1559_transition)
-                .map(|dh| self.engine.extra_info(&dh))
-                .ok()
-        })
     }
 
     fn pruning_info(&self) -> PruningInfo {
@@ -2372,47 +2202,6 @@ impl BlockChainClient for Client {
                 .earliest_era()
                 .unwrap_or(0),
         }
-    }
-
-    fn create_transaction(
-        &self,
-        TransactionRequest {
-            action,
-            data,
-            gas,
-            gas_price: _gas_price,
-            nonce,
-        }: TransactionRequest,
-    ) -> Result<SignedTransaction, transaction::Error> {
-        let authoring_params = self.importer.miner.authoring_params();
-        let gas_price = self.importer.miner.sensible_gas_price() ;
-        let transaction = TypedTransaction::Legacy(transaction::Transaction {
-            nonce: nonce.unwrap_or_else(|| self.latest_nonce(&authoring_params.author)),
-            action,
-            gas: gas.unwrap_or_else(|| self.importer.miner.sensible_gas_limit()),
-            gas_price,
-            value: U256::zero(),
-            data,
-        });
-        let chain_id = self.engine.signing_chain_id(&self.latest_env_info());
-        let signature = self
-            .engine
-            .sign(transaction.signature_hash(chain_id))
-            .map_err(|e| transaction::Error::InvalidSignature(e.to_string()))?;
-        Ok(SignedTransaction::new(
-            transaction.with_signature(signature, chain_id),
-        )?)
-    }
-
-    fn transact(&self, tx_request: TransactionRequest) -> Result<(), transaction::Error> {
-        let signed = self.create_transaction(tx_request)?;
-        self.importer
-            .miner
-            .import_own_transaction(self, signed.into())
-    }
-
-    fn registrar_address(&self) -> Option<Address> {
-        self.registrar_address.clone()
     }
 
     fn state_data(&self, hash: &H256) -> Option<Bytes> {

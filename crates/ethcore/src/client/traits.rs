@@ -39,13 +39,12 @@ use types::{
     pruning_info::PruningInfo,
     receipt::LocalizedReceipt,
     trace_filter::Filter as TraceFilter,
-    transaction::{self, Action, LocalizedTransaction, SignedTransaction, TypedTxId},
+    transaction::{Action, SignedTransaction, TypedTxId},
     BlockNumber,
 };
 use vm::LastHashes;
 
 use block::{ClosedBlock, OpenBlock, SealedBlock};
-use client::Mode;
 use engines::EthEngine;
 use error::{Error, EthcoreResult};
 use executed::CallError;
@@ -244,9 +243,6 @@ pub trait BlockChainClient:
     /// Get block status by block header hash.
     fn block_status(&self, id: BlockId) -> BlockStatus;
 
-    /// Get block total difficulty.
-    fn block_total_difficulty(&self, id: BlockId) -> Option<U256>;
-
     /// Attempt to get address storage root at given block.
     /// May not fail on BlockId::Latest.
     fn storage_root(&self, address: &Address, id: BlockId) -> Option<H256>;
@@ -262,9 +258,6 @@ pub trait BlockChainClient:
         self.code(address, BlockId::Latest.into())
             .expect("code will return Some if given BlockId::Latest; qed")
     }
-
-    /// Returns true if the given block is known and in the canon chain.
-    fn is_canon(&self, hash: &H256) -> bool;
 
     /// Get address code hash at given block's state.
 
@@ -300,15 +293,6 @@ pub trait BlockChainClient:
         count: u64,
     ) -> Option<Vec<H256>>;
 
-    /// Get transaction with given hash.
-    fn block_transaction(&self, id: TransactionId) -> Option<LocalizedTransaction>;
-
-    /// Get pool transaction with a given hash.
-    fn queued_transaction(&self, hash: H256) -> Option<Arc<VerifiedTransaction>>;
-
-    /// Get uncle with given id.
-    fn uncle(&self, id: UncleId) -> Option<encoded::Header>;
-
     /// Get transaction receipt with given hash.
     fn transaction_receipt(&self, id: TransactionId) -> Option<LocalizedReceipt>;
 
@@ -319,9 +303,6 @@ pub trait BlockChainClient:
     /// See `BlockChain::tree_route`.
     fn tree_route(&self, from: &H256, to: &H256) -> Option<TreeRoute>;
 
-    /// Get all possible uncle hashes for a block.
-    fn find_uncles(&self, hash: &H256) -> Option<Vec<H256>>;
-
     /// Get latest state node
     fn state_data(&self, hash: &H256) -> Option<Bytes>;
 
@@ -330,14 +311,6 @@ pub trait BlockChainClient:
 
     /// Get block queue information.
     fn queue_info(&self) -> BlockQueueInfo;
-
-    /// Returns true if block queue is empty.
-    fn is_queue_empty(&self) -> bool {
-        self.queue_info().is_empty()
-    }
-
-    /// Clear block queue and abort all import activity.
-    fn clear_queue(&self);
 
     /// Get the registrar address, if it exists.
     fn additional_params(&self) -> BTreeMap<String, String>;
@@ -364,14 +337,8 @@ pub trait BlockChainClient:
     /// Returns traces created by transaction.
     fn transaction_traces(&self, trace: TransactionId) -> Option<Vec<LocalizedTrace>>;
 
-    /// Returns traces created by transaction from block.
-    fn block_traces(&self, trace: BlockId) -> Option<Vec<LocalizedTrace>>;
-
     /// Get last hashes starting from best block.
     fn last_hashes(&self) -> LastHashes;
-
-    /// List all ready transactions that should be propagated to other peers.
-    fn transactions_to_propagate(&self) -> Vec<Arc<VerifiedTransaction>>;
 
     /// Get verified transaction with specified transaction hash.
     fn transaction(&self, tx_hash: &H256) -> Option<Arc<VerifiedTransaction>>;
@@ -439,49 +406,8 @@ pub trait BlockChainClient:
         corpus.into()
     }
 
-    /// Get the preferred chain ID to sign on
-    fn signing_chain_id(&self) -> Option<u64>;
-
-    /// Get the mode.
-    fn mode(&self) -> Mode;
-
-    /// Set the mode.
-    fn set_mode(&self, mode: Mode);
-
-    /// Get the chain spec name.
-    fn spec_name(&self) -> String;
-
-    /// Set the chain via a spec name.
-    fn set_spec_name(&self, spec_name: String) -> Result<(), ()>;
-
-    /// Disable the client from importing blocks. This cannot be undone in this session and indicates
-    /// that a subsystem has reason to believe this executable incapable of syncing the chain.
-    fn disable(&self);
-
-    /// Returns engine-related extra info for `BlockId`.
-    fn block_extra_info(&self, id: BlockId) -> Option<BTreeMap<String, String>>;
-
-    /// Returns engine-related extra info for `UncleId`.
-    fn uncle_extra_info(&self, id: UncleId) -> Option<BTreeMap<String, String>>;
-
     /// Returns information about pruning/data availability.
     fn pruning_info(&self) -> PruningInfo;
-
-    /// Returns a transaction signed with the key configured in the engine signer.
-    fn create_transaction(
-        &self,
-        tx_request: TransactionRequest,
-    ) -> Result<SignedTransaction, transaction::Error>;
-
-    /// Schedule state-altering transaction to be executed on the next pending
-    /// block with the given gas and nonce parameters.
-    fn transact(&self, tx_request: TransactionRequest) -> Result<(), transaction::Error>;
-
-    /// Get the address of the registry itself.
-    fn registrar_address(&self) -> Option<Address>;
-
-    /// Returns true, if underlying import queue is processing possible fork at the moment
-    fn is_processing_fork(&self) -> bool;
 }
 
 /// The data required for a `Client` to create a transaction.

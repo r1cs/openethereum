@@ -25,12 +25,10 @@ use client::{
     },
     Client, ClientConfig, ImportSealedBlock, PrepareOpenBlock,
 };
-use crypto::publickey::KeyPair;
 use ethereum;
 use ethereum_types::{Address, U256};
 use executive::{Executive, TransactOptions};
-use hash::keccak;
-use miner::{Miner, MinerService, PendingOrdering};
+use miner::Miner;
 use rustc_hex::ToHex;
 use spec::Spec;
 use state::{self, CleanupMode, State, StateInfo};
@@ -44,7 +42,7 @@ use types::{
     data_format::DataFormat,
     filter::Filter,
     ids::BlockId,
-    transaction::{Action, Condition, PendingTransaction, Transaction, TypedTransaction},
+    transaction::{Action, Transaction, TypedTransaction},
     view,
     views::BlockView,
 };
@@ -357,64 +355,6 @@ fn change_history_size() {
     )
     .unwrap();
     assert_eq!(client.state().balance(&address).unwrap(), 100.into());
-}
-
-#[test]
-fn does_not_propagate_delayed_transactions() {
-    let key = KeyPair::from_secret(keccak("test").into()).unwrap();
-    let secret = key.secret();
-    let tx0 = PendingTransaction::new(
-        TypedTransaction::Legacy(Transaction {
-            nonce: 0.into(),
-            gas_price: 0.into(),
-            gas: 21000.into(),
-            action: Action::Call(Address::default()),
-            value: 0.into(),
-            data: Vec::new(),
-        })
-        .sign(secret, None),
-        Some(Condition::Number(2)),
-    );
-    let tx1 = PendingTransaction::new(
-        TypedTransaction::Legacy(Transaction {
-            nonce: 1.into(),
-            gas_price: 0.into(),
-            gas: 21000.into(),
-            action: Action::Call(Address::default()),
-            value: 0.into(),
-            data: Vec::new(),
-        })
-        .sign(secret, None),
-        None,
-    );
-    let client = generate_dummy_client(1);
-
-    client
-        .miner()
-        .import_own_transaction(&*client, tx0)
-        .unwrap();
-    client
-        .miner()
-        .import_own_transaction(&*client, tx1)
-        .unwrap();
-    assert_eq!(0, client.transactions_to_propagate().len());
-    assert_eq!(
-        0,
-        client
-            .miner()
-            .ready_transactions(&*client, 10, PendingOrdering::Priority)
-            .len()
-    );
-    push_blocks_to_client(&client, 53, 2, 2);
-    client.flush_queue();
-    assert_eq!(2, client.transactions_to_propagate().len());
-    assert_eq!(
-        2,
-        client
-            .miner()
-            .ready_transactions(&*client, 10, PendingOrdering::Priority)
-            .len()
-    );
 }
 
 #[test]

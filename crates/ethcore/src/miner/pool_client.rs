@@ -18,9 +18,7 @@
 
 use std::fmt;
 
-use ethcore_miner::{
-    local_accounts::LocalAccounts, pool, pool::client::NonceClient,
-};
+use ethcore_miner::{pool, pool::client::NonceClient};
 use ethereum_types::{Address, H256, U256};
 use types::{
     header::Header,
@@ -120,7 +118,6 @@ pub struct PoolClient<'a, C: 'a> {
     cached_nonces: CachedNonceClient<'a, C>,
     cached_balances: CachedBalanceClient<'a, C>,
     engine: &'a dyn EthEngine,
-    accounts: &'a dyn LocalAccounts,
     best_block_header: Header,
 }
 
@@ -131,7 +128,6 @@ impl<'a, C: 'a> Clone for PoolClient<'a, C> {
             cached_nonces: self.cached_nonces.clone(),
             cached_balances: self.cached_balances.clone(),
             engine: self.engine,
-            accounts: self.accounts.clone(),
             best_block_header: self.best_block_header.clone(),
         }
     }
@@ -147,7 +143,6 @@ where
         cached_nonces: &'a Cache<Address, U256>,
         cached_balances: &'a Cache<Address, U256>,
         engine: &'a dyn EthEngine,
-        accounts: &'a dyn LocalAccounts,
     ) -> Self {
         let best_block_header = chain.best_block_header();
         PoolClient {
@@ -155,7 +150,6 @@ where
             cached_nonces: CachedNonceClient::new(chain, cached_nonces),
             cached_balances: CachedBalanceClient::new(chain, cached_balances),
             engine,
-            accounts,
             best_block_header,
         }
     }
@@ -214,7 +208,7 @@ where
             nonce: self.cached_nonces.account_nonce(address),
             balance: self.cached_balances.account_balance(address),
             code_hash: self.chain.code_hash(address, BlockId::Latest),
-            is_local: self.accounts.is_local(address),
+            is_local: false,
         }
     }
 

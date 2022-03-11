@@ -246,9 +246,4 @@ fn can_trace_block_and_uncle_reward() {
         })
         .collect();
     assert_eq!(uncle_reward_traces.len(), 1);
-
-    // Test1. Check block filter
-    let traces = client.block_traces(BlockId::Number(3));
-    client.shutdown();
-    assert_eq!(traces.unwrap().len(), 3);
 }

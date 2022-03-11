@@ -740,10 +740,6 @@ impl BlockChainClient for TestBlockChainClient {
         ))
     }
 
-    fn block_total_difficulty(&self, _id: BlockId) -> Option<U256> {
-        Some(U256::zero())
-    }
-
     fn block_hash(&self, id: BlockId) -> Option<H256> {
         Self::block_hash(self, id)
     }
@@ -790,20 +786,6 @@ impl BlockChainClient for TestBlockChainClient {
     ) -> Option<Vec<H256>> {
         None
     }
-    fn block_transaction(&self, _id: TransactionId) -> Option<LocalizedTransaction> {
-        None // Simple default.
-    }
-    fn queued_transaction(&self, _hash: H256) -> Option<Arc<VerifiedTransaction>> {
-        None
-    }
-
-    fn uncle(&self, _id: UncleId) -> Option<encoded::Header> {
-        None // Simple default.
-    }
-
-    fn uncle_extra_info(&self, _id: UncleId) -> Option<BTreeMap<String, String>> {
-        None
-    }
 
     fn transaction_receipt(&self, id: TransactionId) -> Option<LocalizedReceipt> {
         self.receipts.read().get(&id).cloned()
@@ -829,10 +811,6 @@ impl BlockChainClient for TestBlockChainClient {
 
     fn last_hashes(&self) -> LastHashes {
         unimplemented!();
-    }
-
-    fn is_canon(&self, _hash: &H256) -> bool {
-        unimplemented!()
     }
 
     fn block_number(&self, id: BlockId) -> Option<BlockNumber> {
@@ -861,12 +839,6 @@ impl BlockChainClient for TestBlockChainClient {
         })
     }
 
-    fn block_extra_info(&self, id: BlockId) -> Option<BTreeMap<String, String>> {
-        self.block(id)
-            .map(|block| block.view().header(BlockNumber::max_value()))
-            .map(|header| self.spec.engine.extra_info(&header))
-    }
-
     fn block_status(&self, id: BlockId) -> BlockStatus {
         match id {
             BlockId::Number(number) if (number as usize) < self.blocks.read().len() => {
@@ -878,10 +850,6 @@ impl BlockChainClient for TestBlockChainClient {
             BlockId::Latest | BlockId::Earliest => BlockStatus::InChain,
             _ => BlockStatus::Unknown,
         }
-    }
-
-    fn is_processing_fork(&self) -> bool {
-        false
     }
 
     // works only if blocks are one after another 1 -> 2 -> 3
@@ -922,10 +890,6 @@ impl BlockChainClient for TestBlockChainClient {
         })
     }
 
-    fn find_uncles(&self, _hash: &H256) -> Option<Vec<H256>> {
-        None
-    }
-
     fn block_receipts(&self, hash: &H256) -> Option<BlockReceipts> {
         // starts with 'f' ?
         if *hash
@@ -956,8 +920,6 @@ impl BlockChainClient for TestBlockChainClient {
         }
     }
 
-    fn clear_queue(&self) {}
-
     fn additional_params(&self) -> BTreeMap<String, String> {
         Default::default()
     }
@@ -977,39 +939,6 @@ impl BlockChainClient for TestBlockChainClient {
         self.traces.read().clone()
     }
 
-    fn block_traces(&self, _trace: BlockId) -> Option<Vec<LocalizedTrace>> {
-        self.traces.read().clone()
-    }
-
-    fn transactions_to_propagate(&self) -> Vec<Arc<VerifiedTransaction>> {
-        self.miner
-            .ready_transactions(self, 4096, miner::PendingOrdering::Priority)
-    }
-
-    fn signing_chain_id(&self) -> Option<u64> {
-        None
-    }
-
-    fn mode(&self) -> Mode {
-        Mode::Active
-    }
-
-    fn set_mode(&self, _: Mode) {
-        unimplemented!();
-    }
-
-    fn spec_name(&self) -> String {
-        "foundation".into()
-    }
-
-    fn set_spec_name(&self, _: String) -> Result<(), ()> {
-        unimplemented!();
-    }
-
-    fn disable(&self) {
-        self.disabled.store(true, AtomicOrder::SeqCst);
-    }
-
     fn pruning_info(&self) -> PruningInfo {
         let best_num = self.chain_info().best_block_number;
         PruningInfo {
@@ -1021,43 +950,6 @@ impl BlockChainClient for TestBlockChainClient {
                 .map(|x| best_num - x)
                 .unwrap_or(0),
         }
-    }
-
-    fn create_transaction(
-        &self,
-        TransactionRequest {
-            action,
-            data,
-            gas,
-            gas_price,
-            nonce,
-        }: TransactionRequest,
-    ) -> Result<SignedTransaction, transaction::Error> {
-        let transaction = TypedTransaction::Legacy(Transaction {
-            nonce: nonce
-                .unwrap_or_else(|| self.latest_nonce(&self.miner.authoring_params().author)),
-            action,
-            gas: gas.unwrap_or(self.spec.gas_limit),
-            gas_price: gas_price.unwrap_or_else(U256::zero),
-            value: U256::default(),
-            data: data,
-        });
-        let chain_id = Some(self.spec.chain_id());
-        let sig = self
-            .spec
-            .engine
-            .sign(transaction.signature_hash(chain_id))
-            .unwrap();
-        Ok(SignedTransaction::new(transaction.with_signature(sig, chain_id)).unwrap())
-    }
-
-    fn transact(&self, tx_request: TransactionRequest) -> Result<(), transaction::Error> {
-        let signed = self.create_transaction(tx_request)?;
-        self.miner.import_own_transaction(self, signed.into())
-    }
-
-    fn registrar_address(&self) -> Option<Address> {
-        None
     }
 
     fn state_data(&self, hash: &H256) -> Option<Bytes> {

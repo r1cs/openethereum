@@ -20,7 +20,6 @@
 
 extern crate ansi_term;
 extern crate common_types as types;
-extern crate ethabi;
 extern crate ethash;
 extern crate ethcore_blockchain as blockchain;
 extern crate ethcore_builtin as builtin;
@@ -78,8 +77,6 @@ extern crate tempdir;
 #[cfg(feature = "json-tests")]
 extern crate walkdir;
 
-#[macro_use]
-extern crate ethabi_contract;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]

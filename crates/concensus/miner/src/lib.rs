@@ -51,5 +51,4 @@ extern crate ethkey;
 extern crate rustc_hex;
 
 pub mod gas_pricer;
-pub mod local_accounts;
 pub mod pool;

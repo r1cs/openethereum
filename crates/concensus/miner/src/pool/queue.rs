@@ -293,14 +293,6 @@ impl TransactionQueue {
         *self.options.write() = options;
     }
 
-    /// Sets the in-chain transaction checker for pool listener.
-    pub fn set_in_chain_checker<F>(&self, f: F)
-    where
-        F: Fn(&H256) -> bool + Send + Sync + 'static,
-    {
-        self.pool.write().listener_mut().0.set_in_chain_checker(f)
-    }
-
     // t_nb 10.2
     /// Import a set of transactions to the pool.
     ///
@@ -764,12 +756,6 @@ impl TransactionQueue {
             .iter()
             .map(|(a, b)| (*a, b.clone()))
             .collect()
-    }
-
-    /// Add a callback to be notified about all transactions entering the pool.
-    pub fn add_listener(&self, f: Box<dyn Fn(&[H256]) + Send + Sync>) {
-        let mut pool = self.pool.write();
-        (pool.listener_mut().1).0.add(f);
     }
 
     /// Check if pending set is cached.
