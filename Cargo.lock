@@ -1077,7 +1077,6 @@ dependencies = [
  "parity-runtime",
  "parity-util-mem",
  "parking_lot 0.11.1",
- "price-info",
  "rlp",
  "rustc-hex 1.0.0",
  "serde",
@@ -1209,15 +1208,6 @@ dependencies = [
  "parking_lot 0.11.1",
  "rustc-hex 1.0.0",
  "vm",
-]
-
-[[package]]
-name = "fake-fetch"
-version = "0.0.1"
-dependencies = [
- "fetch",
- "futures",
- "hyper",
 ]
 
 [[package]]
@@ -2590,19 +2580,6 @@ name = "ppv-lite86"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74490b50b9fbe561ac330df47c08f3f33073d2d00c150f719147d7c54522fa1b"
-
-[[package]]
-name = "price-info"
-version = "1.12.0"
-dependencies = [
- "fake-fetch",
- "fetch",
- "futures",
- "log",
- "parity-runtime",
- "parking_lot 0.11.1",
- "serde_json",
-]
 
 [[package]]
 name = "primal"

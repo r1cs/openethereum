@@ -32,13 +32,9 @@ extern crate parity_crypto as crypto;
 extern crate parity_runtime;
 extern crate parity_util_mem;
 extern crate parking_lot;
-#[cfg(feature = "price-info")]
-extern crate price_info;
 extern crate rlp;
 extern crate txpool;
 
-#[macro_use]
-extern crate ethabi_contract;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]
@@ -55,8 +51,6 @@ extern crate ethkey;
 #[cfg(test)]
 extern crate rustc_hex;
 
-#[cfg(feature = "price-info")]
-pub mod gas_price_calibrator;
 pub mod gas_pricer;
 pub mod local_accounts;
 pub mod pool;
