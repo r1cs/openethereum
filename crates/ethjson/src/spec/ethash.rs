@@ -169,9 +169,6 @@ mod tests {
                     duration_limit: Some(Uint(U256::from(0x0d))),
                     homestead_transition: Some(Uint(U256::from(0x42))),
                     block_reward: Some(BlockReward::Single(Uint(U256::from(0x100)))),
-                    block_reward_contract_address: None,
-                    block_reward_contract_code: None,
-                    block_reward_contract_transition: None,
                     dao_hardfork_transition: Some(Uint(U256::from(0x08))),
                     dao_hardfork_beneficiary: Some(Address(
                         H160::from_str("abcabcabcabcabcabcabcabcabcabcabcabcabca").unwrap()

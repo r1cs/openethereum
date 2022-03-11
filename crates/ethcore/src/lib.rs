@@ -20,7 +20,6 @@
 
 extern crate ansi_term;
 extern crate common_types as types;
-extern crate derive_more;
 extern crate ethabi;
 extern crate ethash;
 extern crate ethcore_blockchain as blockchain;

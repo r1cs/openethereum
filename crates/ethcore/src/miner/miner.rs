@@ -851,17 +851,6 @@ impl Miner {
             (work, is_new)
         };
 
-        #[cfg(feature = "work-notify")]
-        {
-            if is_new {
-                work.map(|(pow_hash, difficulty, number)| {
-                    for notifier in self.listeners.read().iter() {
-                        notifier.notify(pow_hash, difficulty, number)
-                    }
-                });
-            }
-        }
-
         // NB: hack to use variables to avoid warning.
         #[cfg(not(feature = "work-notify"))]
         {
@@ -2024,22 +2013,6 @@ mod tests {
     }
 
     #[test]
-    fn should_not_fail_setting_engine_signer_without_account_provider() {
-        let spec = Spec::new_test_round;
-        let tap = Arc::new(AccountProvider::transient_provider());
-        let addr = tap.insert_account(keccak("1").into(), &"".into()).unwrap();
-        let client = generate_dummy_client_with_spec(spec);
-        let engine_signer = Box::new((tap.clone(), addr, "".into()));
-        let msg = [1u8; 32].into();
-        assert!(client.engine().sign(msg).is_err());
-
-        // should set engine signer and miner author
-        client.miner().set_author(Author::Sealer(engine_signer));
-        assert_eq!(client.miner().authoring_params().author, addr);
-        assert!(client.engine().sign(msg).is_ok());
-    }
-
-    #[test]
     fn should_mine_if_internal_sealing_is_enabled() {
         let spec = Spec::new_instant();
         let miner = Miner::new_for_tests(&spec, None);
@@ -2052,7 +2025,7 @@ mod tests {
 
     #[test]
     fn should_not_mine_if_internal_sealing_is_disabled() {
-        let spec = Spec::new_test_round();
+        let spec = Spec::new_test();
         let miner = Miner::new_for_tests(&spec, None);
 
         let client = generate_dummy_client(2);
@@ -2092,13 +2065,6 @@ mod tests {
     }
 
     #[test]
-    fn should_not_mine_if_is_not_allowed_to_seal() {
-        let spec = Spec::new_test_round();
-        let miner = Miner::new_for_tests_force_sealing(&spec, None, true);
-        assert!(!miner.is_currently_sealing());
-    }
-
-    #[test]
     fn should_mine_if_is_allowed_to_seal() {
         let verifier: Address = [
             0x7d, 0x57, 0x7a, 0x59, 0x7b, 0x27, 0x42, 0xb4, 0x98, 0xcb, 0x5c, 0xf0, 0xc2, 0x6c,
@@ -2106,7 +2072,7 @@ mod tests {
         ]
         .into();
 
-        let spec = Spec::new_test_round();
+        let spec = Spec::new_instant();
         let client: Arc<dyn EngineClient> = generate_dummy_client(2);
 
         let miner = Miner::new_for_tests_force_sealing(&spec, None, true);

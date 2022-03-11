@@ -35,7 +35,6 @@ pub mod validator_set;
 
 pub use self::{
     account::Account,
-    authority_round::{AuthorityRound, AuthorityRoundParams},
     basic_authority::{BasicAuthority, BasicAuthorityParams},
     builtin::{Builtin, Linear, Pricing},
     clique::{Clique, CliqueParams},

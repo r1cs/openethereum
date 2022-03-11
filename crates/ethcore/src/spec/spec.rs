@@ -36,7 +36,7 @@ use vm::{AccessList, ActionParams, ActionValue, CallType, EnvInfo, ParamsType};
 
 use builtin::Builtin;
 use engines::{
-    AuthorityRound, BasicAuthority, Clique, EthEngine, InstantSeal, InstantSealParams, NullEngine,
+    BasicAuthority, Clique, EthEngine, InstantSeal, InstantSealParams, NullEngine,
     DEFAULT_BLOCKHASH_CONTRACT,
 };
 use error::Error;
@@ -794,10 +794,6 @@ impl Spec {
             }
             ethjson::spec::Engine::Clique(clique) => Clique::new(clique.params.into(), machine)
                 .expect("Failed to start Clique consensus engine."),
-            ethjson::spec::Engine::AuthorityRound(authority_round) => {
-                AuthorityRound::new(authority_round.params.into(), machine)
-                    .expect("Failed to start AuthorityRound consensus engine.")
-            }
         };
 
         // Dummy value is a filler for non-existent transitions
@@ -1144,36 +1140,6 @@ impl Spec {
     #[cfg(any(test, feature = "test-helpers"))]
     pub fn new_test_eip3607() -> Self {
         load_bundled!("test/eip3607_test")
-    }
-
-    /// Create a new Spec with Autority Round randomness contract
-    #[cfg(any(test, feature = "test-helpers"))]
-    pub fn new_test_round_randomness_contract() -> Spec {
-        load_bundled!("test/authority_round_randomness_contract")
-    }
-
-    /// Create a new Spec with AuthorityRound consensus which does internal sealing (not
-    /// requiring work).
-    /// Accounts with secrets keccak("0") and keccak("1") are the validators.
-    #[cfg(any(test, feature = "test-helpers"))]
-    pub fn new_test_round() -> Self {
-        load_bundled!("test/authority_round")
-    }
-
-    /// Create a new Spec with AuthorityRound consensus which does internal sealing (not
-    /// requiring work) with empty step messages enabled.
-    /// Accounts with secrets keccak("0") and keccak("1") are the validators.
-    #[cfg(any(test, feature = "test-helpers"))]
-    pub fn new_test_round_empty_steps() -> Self {
-        load_bundled!("test/authority_round_empty_steps")
-    }
-
-    /// Create a new Spec with AuthorityRound consensus (with empty steps) using a block reward
-    /// contract. The contract source code can be found at:
-    /// https://github.com/openethereum/block-reward/blob/daf7d44383b6cdb11cb6b953b018648e2b027cfb/contracts/ExampleBlockReward.sol
-    #[cfg(any(test, feature = "test-helpers"))]
-    pub fn new_test_round_block_reward_contract() -> Self {
-        load_bundled!("test/authority_round_block_reward_contract")
     }
 
     /// TestList.sol used in both specs: https://github.com/paritytech/contracts/pull/30/files (link not valid)

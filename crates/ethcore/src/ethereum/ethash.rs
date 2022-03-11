@@ -34,7 +34,7 @@ use unexpected::{Mismatch, OutOfBounds};
 use block::ExecutedBlock;
 use engines::{
     self,
-    block_reward::{self, BlockRewardContract, RewardKind},
+    block_reward::{self, RewardKind},
     Engine,
 };
 use error::{BlockError, Error};
@@ -100,10 +100,6 @@ pub struct EthashParams {
     pub expip2_transition: u64,
     /// EXPIP-2 duration limit
     pub expip2_duration_limit: u64,
-    /// Block reward contract transition block.
-    pub block_reward_contract_transition: u64,
-    /// Block reward contract.
-    pub block_reward_contract: Option<BlockRewardContract>,
     /// Difficulty bomb delays.
     pub difficulty_bomb_delays: BTreeMap<BlockNumber, BlockNumber>,
     /// Block to transition to progpow
@@ -162,17 +158,6 @@ impl From<ethjson::spec::EthashParams> for EthashParams {
             expip2_transition: p.expip2_transition.map_or(u64::max_value(), Into::into),
             expip2_duration_limit: p.expip2_duration_limit.map_or(30, Into::into),
             progpow_transition: p.progpow_transition.map_or(u64::max_value(), Into::into),
-            block_reward_contract_transition: p
-                .block_reward_contract_transition
-                .map_or(0, Into::into),
-            block_reward_contract: match (
-                p.block_reward_contract_code,
-                p.block_reward_contract_address,
-            ) {
-                (Some(code), _) => Some(BlockRewardContract::new_from_code(Arc::new(code.into()))),
-                (_, Some(address)) => Some(BlockRewardContract::new_from_address(address.into())),
-                (None, None) => None,
-            },
             difficulty_bomb_delays: p
                 .difficulty_bomb_delays
                 .unwrap_or_default()
@@ -271,25 +256,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
         let author = *block.header.author();
         let number = block.header.number();
 
-        let rewards = match self.ethash_params.block_reward_contract {
-            Some(ref c) if number >= self.ethash_params.block_reward_contract_transition => {
-                let mut beneficiaries = Vec::new();
-
-                beneficiaries.push((author, RewardKind::Author));
-                for u in &block.uncles {
-                    let uncle_author = u.author();
-                    beneficiaries.push((*uncle_author, RewardKind::uncle(number, u.number())));
-                }
-
-                let mut call = engines::default_system_or_code_call(&self.machine, block);
-
-                let rewards = c.reward(&beneficiaries, &mut call)?;
-                rewards
-                    .into_iter()
-                    .map(|(author, amount)| (author, RewardKind::External, amount))
-                    .collect()
-            }
-            _ => {
+        let rewards = {
                 let mut rewards = Vec::new();
 
                 let (_, reward) = self.ethash_params.block_reward.iter()
@@ -327,7 +294,6 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
                 }
 
                 rewards
-            }
         };
 
         block_reward::apply_block_rewards(&rewards, block, &self.machine)
@@ -586,8 +552,6 @@ mod tests {
             ecip1017_era_rounds: u64::max_value(),
             expip2_transition: u64::max_value(),
             expip2_duration_limit: 30,
-            block_reward_contract: None,
-            block_reward_contract_transition: 0,
             difficulty_bomb_delays: BTreeMap::new(),
             progpow_transition: u64::max_value(),
         }
@@ -696,47 +660,6 @@ mod tests {
         assert_eq!(
             b.state.balance(&uncle_author).unwrap(),
             "3cb71f51fc558000".into()
-        );
-    }
-
-    #[test]
-    fn has_valid_mcip3_era_block_rewards() {
-        let spec = new_mcip3_test();
-        let engine = &*spec.engine;
-        let genesis_header = spec.genesis_header();
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
-        let last_hashes = Arc::new(vec![genesis_header.hash()]);
-        let b = OpenBlock::new(
-            engine,
-            Default::default(),
-            false,
-            db,
-            &genesis_header,
-            last_hashes,
-            Address::zero(),
-            (3141562.into(), 31415620.into()),
-            vec![],
-            false,
-            None,
-        )
-        .unwrap();
-        let b = b.close().unwrap();
-
-        let ubi_contract = Address::from_str("00efdd5883ec628983e9063c7d969fe268bbf310").unwrap();
-        let dev_contract = Address::from_str("00756cf8159095948496617f5fb17ed95059f536").unwrap();
-        assert_eq!(
-            b.state.balance(&Address::zero()).unwrap(),
-            U256::from_str("d8d726b7177a80000").unwrap()
-        );
-        assert_eq!(
-            b.state.balance(&ubi_contract).unwrap(),
-            U256::from_str("2b5e3af16b1880000").unwrap()
-        );
-        assert_eq!(
-            b.state.balance(&dev_contract).unwrap(),
-            U256::from_str("c249fdd327780000").unwrap()
         );
     }
 

@@ -17,19 +17,12 @@
 //! A module with types for declaring block rewards and a client interface for interacting with a
 //! block reward contract.
 
-use ethabi::{self, ParamType};
-use ethereum_types::{Address, H160, U256};
+use ethereum_types::{Address, U256};
 
-use super::{SystemOrCodeCall, SystemOrCodeCallKind};
 use block::ExecutedBlock;
-use error::Error;
-use hash::keccak;
 use machine::Machine;
-use std::sync::Arc;
 use trace::{self, ExecutiveTracer, Tracer, Tracing};
 use types::BlockNumber;
-
-use_contract!(block_reward_contract, "res/contracts/block_reward.json");
 
 /// The kind of block reward.
 /// Depending on the consensus engine the allocated block reward might have
@@ -82,93 +75,6 @@ impl Into<trace::RewardType> for RewardKind {
     }
 }
 
-/// A client for the block reward contract.
-#[derive(PartialEq, Debug)]
-pub struct BlockRewardContract {
-    kind: SystemOrCodeCallKind,
-}
-
-impl BlockRewardContract {
-    /// Create a new block reward contract client targeting the system call kind.
-    pub fn new(kind: SystemOrCodeCallKind) -> BlockRewardContract {
-        BlockRewardContract { kind }
-    }
-
-    /// Create a new block reward contract client targeting the contract address.
-    pub fn new_from_address(address: Address) -> BlockRewardContract {
-        Self::new(SystemOrCodeCallKind::Address(address))
-    }
-
-    /// Create a new block reward contract client targeting the given code.
-    pub fn new_from_code(code: Arc<Vec<u8>>) -> BlockRewardContract {
-        let code_hash = keccak(&code[..]);
-
-        Self::new(SystemOrCodeCallKind::Code(code, code_hash))
-    }
-
-    /// Calls the block reward contract with the given beneficiaries list (and associated reward kind)
-    /// and returns the reward allocation (address - value). The block reward contract *must* be
-    /// called by the system address so the `caller` must ensure that (e.g. using
-    /// `machine.execute_as_system`).
-    pub fn reward(
-        &self,
-        beneficiaries: &[(Address, RewardKind)],
-        caller: &mut SystemOrCodeCall,
-    ) -> Result<Vec<(Address, U256)>, Error> {
-        let input = block_reward_contract::functions::reward::encode_input(
-            beneficiaries
-                .iter()
-                .map(|&(address, _)| H160::from(address)),
-            beneficiaries
-                .iter()
-                .map(|&(_, ref reward_kind)| u16::from(*reward_kind)),
-        );
-
-        let output = caller(self.kind.clone(), input)
-            .map_err(Into::into)
-            .map_err(::engines::EngineError::FailedSystemCall)?;
-
-        // since this is a non-constant call we can't use ethabi's function output
-        // deserialization, sadness ensues.
-        let types = &[
-            ParamType::Array(Box::new(ParamType::Address)),
-            ParamType::Array(Box::new(ParamType::Uint(256))),
-        ];
-
-        let tokens = ethabi::decode(types, &output)
-            .map_err(|err| err.to_string())
-            .map_err(::engines::EngineError::FailedSystemCall)?;
-
-        assert!(tokens.len() == 2);
-
-        let addresses = tokens[0]
-            .clone()
-            .to_array()
-            .expect("type checked by ethabi::decode; qed");
-        let rewards = tokens[1]
-            .clone()
-            .to_array()
-            .expect("type checked by ethabi::decode; qed");
-
-        if addresses.len() != rewards.len() {
-            return Err(::engines::EngineError::FailedSystemCall(
-                "invalid data returned by reward contract: both arrays must have the same size"
-                    .into(),
-            )
-            .into());
-        }
-
-        let addresses = addresses
-            .into_iter()
-            .map(|t| t.to_address().expect("type checked by ethabi::decode; qed"));
-        let rewards = rewards
-            .into_iter()
-            .map(|t| t.to_uint().expect("type checked by ethabi::decode; qed"));
-
-        Ok(addresses.zip(rewards).collect())
-    }
-}
-
 /// Applies the given block rewards, i.e. adds the given balance to each beneficiary' address.
 /// If tracing is enabled the operations are recorded.
 pub fn apply_block_rewards<M: Machine>(
@@ -191,91 +97,4 @@ pub fn apply_block_rewards<M: Machine>(
     }
 
     Ok(())
-}
-
-#[cfg(test)]
-mod test {
-    use client::PrepareOpenBlock;
-    use ethereum_types::{H160, U256};
-    use spec::Spec;
-    use test_helpers::generate_dummy_client_with_spec;
-
-    use super::{BlockRewardContract, RewardKind};
-    use engines::SystemOrCodeCallKind;
-    use std::str::FromStr;
-
-    #[test]
-    fn block_reward_contract() {
-        let client = generate_dummy_client_with_spec(Spec::new_test_round_block_reward_contract);
-
-        let machine = Spec::new_test_machine();
-
-        // the spec has a block reward contract defined at the given address
-        let block_reward_contract = BlockRewardContract::new_from_address(
-            H160::from_str("0000000000000000000000000000000000000042").unwrap(),
-        );
-
-        let mut call = |to, data| {
-            let mut block = client
-                .prepare_open_block(
-                    H160::from_str("0000000000000000000000000000000000000001").unwrap(),
-                    (3141562.into(), 31415620.into()),
-                    vec![],
-                )
-                .unwrap();
-
-            let result = match to {
-                SystemOrCodeCallKind::Address(to) => {
-                    machine.execute_as_system(block.block_mut(), to, U256::max_value(), Some(data))
-                }
-                _ => panic!(
-                    "Test reward contract is created by an address, we never reach this branch."
-                ),
-            };
-
-            result.map_err(|e| format!("{}", e))
-        };
-
-        // if no beneficiaries are given no rewards are attributed
-        assert!(block_reward_contract
-            .reward(&vec![], &mut call)
-            .unwrap()
-            .is_empty());
-
-        // the contract rewards (1000 + kind) for each benefactor
-        let beneficiaries = vec![
-            (
-                H160::from_str("0000000000000000000000000000000000000033").unwrap(),
-                RewardKind::Author,
-            ),
-            (
-                H160::from_str("0000000000000000000000000000000000000034").unwrap(),
-                RewardKind::Uncle(1),
-            ),
-            (
-                H160::from_str("0000000000000000000000000000000000000035").unwrap(),
-                RewardKind::EmptyStep,
-            ),
-        ];
-
-        let rewards = block_reward_contract
-            .reward(&beneficiaries, &mut call)
-            .unwrap();
-        let expected = vec![
-            (
-                H160::from_str("0000000000000000000000000000000000000033").unwrap(),
-                U256::from(1000),
-            ),
-            (
-                H160::from_str("0000000000000000000000000000000000000034").unwrap(),
-                U256::from(1000 + 101),
-            ),
-            (
-                H160::from_str("0000000000000000000000000000000000000035").unwrap(),
-                U256::from(1000 + 2),
-            ),
-        ];
-
-        assert_eq!(expected, rewards);
-    }
 }

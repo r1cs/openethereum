@@ -357,13 +357,6 @@ pub fn new_mcip3_test_machine() -> EthereumMachine {
     load_machine(include_bytes!("../../res/chainspec/test/mcip3_test.json"))
 }
 
-/// Create new Kovan spec with wasm activated at certain block
-pub fn new_kovan_wasm_test_machine() -> EthereumMachine {
-    load_machine(include_bytes!(
-        "../../res/chainspec/test/kovan_wasm_test.json"
-    ))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
