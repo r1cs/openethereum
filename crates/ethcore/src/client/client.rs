@@ -216,9 +216,6 @@ pub struct Client {
     liveness: AtomicBool,
     io_channel: RwLock<IoChannel<ClientIoMessage>>,
 
-    /// List of actors to be notified on certain chain events
-    notify: RwLock<Vec<Weak<dyn ChainNotify>>>,
-
     /// Queued transactions from IO
     queue_transactions: IoChannelQueue,
     /// Ancient blocks import queue
@@ -284,13 +281,10 @@ impl Importer {
             import_results,
             invalid_blocks,
             imported,
-            proposed_blocks,
-            duration,
             has_more_blocks_to_import,
         ) = {
             let mut imported_blocks = Vec::with_capacity(max_blocks_to_import);
             let mut invalid_blocks = HashSet::new();
-            let proposed_blocks = Vec::with_capacity(max_blocks_to_import);
             let mut import_results = Vec::with_capacity(max_blocks_to_import);
 
             let _import_lock = self.import_lock.lock();
@@ -301,7 +295,6 @@ impl Importer {
                 return 0;
             }
             trace_time!("import_verified_blocks");
-            let start = Instant::now();
 
             for block in blocks {
                 let header = block.header.clone();
@@ -355,8 +348,6 @@ impl Importer {
                 import_results,
                 invalid_blocks,
                 imported,
-                proposed_blocks,
-                start.elapsed(),
                 has_more_blocks_to_import,
             )
         };
@@ -377,19 +368,6 @@ impl Importer {
                         false,
                     );
                 }
-
-                // t_nb 11 notify rest of system about new block inclusion
-                client.notify(|notify| {
-                    notify.new_blocks(NewBlocks::new(
-                        imported_blocks.clone(),
-                        invalid_blocks.clone(),
-                        route.clone(),
-                        Vec::new(),
-                        proposed_blocks.clone(),
-                        duration,
-                        has_more_blocks_to_import,
-                    ));
-                });
             }
         }
         trace!(target:"block_import","Flush block to db");
@@ -955,7 +933,6 @@ impl Client {
             db: RwLock::new(db.clone()),
             state_db: RwLock::new(state_db),
             io_channel: RwLock::new(message_channel),
-            notify: RwLock::new(Vec::new()),
             queue_transactions: IoChannelQueue::new(config.transaction_verification_queue_size),
             queued_ancient_blocks: Default::default(),
             queued_ancient_blocks_executer: Default::default(),
@@ -1076,25 +1053,9 @@ impl Client {
         }
     }
 
-    /// Adds an actor to be notified on certain events
-    pub fn add_notify(&self, target: Arc<dyn ChainNotify>) {
-        self.notify.write().push(Arc::downgrade(&target));
-    }
-
     /// Returns engine reference.
     pub fn engine(&self) -> &dyn EthEngine {
         &*self.engine
-    }
-
-    fn notify<F>(&self, f: F)
-    where
-        F: Fn(&dyn ChainNotify),
-    {
-        for np in &*self.notify.read() {
-            if let Some(n) = np.upgrade() {
-                f(&*n);
-            }
-        }
     }
 
     /// Register an action to be done if a mode/spec_name change happens.
@@ -1429,7 +1390,6 @@ impl Client {
     fn wake_up(&self) {
         if !self.liveness.load(AtomicOrdering::SeqCst) {
             self.liveness.store(true, AtomicOrdering::SeqCst);
-            self.notify(|n| n.start());
             info!(target: "mode", "wake_up: Waking.");
         }
     }
@@ -1439,7 +1399,6 @@ impl Client {
             // only sleep if the import queue is mostly empty.
             if force || (self.queue_info().total_queue_size() <= MAX_QUEUE_SIZE_TO_SLEEP_ON) {
                 self.liveness.store(false, AtomicOrdering::SeqCst);
-                self.notify(|n| n.stop());
                 info!(target: "mode", "sleep: Sleeping.");
             } else {
                 info!(target: "mode", "sleep: Cannot sleep - syncing ongoing.");
@@ -1771,10 +1730,6 @@ impl ImportBlock for Client {
         // t_nb 2.3
         match self.importer.block_queue.import(unverified) {
             Ok(hash) => {
-                // t_nb 2.4 If block is okay and the queue is empty we propagate the block in a `PriorityTask` to be rebrodcasted
-                if let Some((raw, hash, difficulty)) = raw {
-                    self.notify(move |n| n.block_pre_import(&raw, &hash, &difficulty));
-                }
                 Ok(hash)
             }
             // t_nb 2.5 if block is not okay print error. we only care about block errors (not import errors)
@@ -2660,10 +2615,6 @@ impl IoClient for Client {
                     })
                     .collect();
 
-                client.notify(|notify| {
-                    notify.transactions_received(&txs, peer_id);
-                });
-
                 client
                     .importer
                     .miner
@@ -2844,8 +2795,6 @@ impl ImportSealedBlock for Client {
         let raw = block.rlp_bytes();
         let header = block.header.clone();
         let hash = header.hash();
-        self.notify(|n| n.block_pre_import(&raw, &hash, header.difficulty()));
-
         let route = {
             // Do a super duper basic verification to detect potential bugs
             if let Err(e) = self.engine.verify_block_basic(&header) {
@@ -2887,17 +2836,6 @@ impl ImportSealedBlock for Client {
             route.retracted(),
             self.engine.sealing_state() != SealingState::External,
         );
-        self.notify(|notify| {
-            notify.new_blocks(NewBlocks::new(
-                vec![hash],
-                vec![],
-                route.clone(),
-                vec![hash],
-                vec![],
-                start.elapsed(),
-                false,
-            ));
-        });
         self.db
             .read()
             .key_value()
@@ -2908,20 +2846,7 @@ impl ImportSealedBlock for Client {
 }
 
 impl BroadcastProposalBlock for Client {
-    fn broadcast_proposal_block(&self, block: SealedBlock) {
-        const DURATION_ZERO: Duration = Duration::from_millis(0);
-        self.notify(|notify| {
-            notify.new_blocks(NewBlocks::new(
-                vec![],
-                vec![],
-                ChainRoute::default(),
-                vec![],
-                vec![block.rlp_bytes()],
-                DURATION_ZERO,
-                false,
-            ));
-        });
-    }
+    fn broadcast_proposal_block(&self, block: SealedBlock) { }
 }
 
 impl SealedBlockImporter for Client {}
@@ -2945,9 +2870,7 @@ impl super::traits::EngineClient for Client {
         }
     }
 
-    fn broadcast_consensus_message(&self, message: Bytes) {
-        self.notify(|notify| notify.broadcast(ChainMessageType::Consensus(message.clone())));
-    }
+    fn broadcast_consensus_message(&self, message: Bytes) { }
 
     fn epoch_transition_for(&self, parent_hash: H256) -> Option<::engines::EpochTransition> {
         self.chain.read().epoch_transition_for(parent_hash)

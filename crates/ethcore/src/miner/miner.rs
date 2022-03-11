@@ -24,8 +24,6 @@ use std::{
 use ansi_term::Colour;
 use bytes::Bytes;
 use call_contract::CallContract;
-#[cfg(feature = "work-notify")]
-use ethcore_miner::work_notify::NotifyWork;
 use ethcore_miner::{
     gas_pricer::GasPricer,
     local_accounts::LocalAccounts,
@@ -243,8 +241,6 @@ pub struct Miner {
     // NOTE [ToDr]  When locking always lock in this order!
     sealing: Mutex<SealingWork>,
     params: RwLock<AuthoringParams>,
-    #[cfg(feature = "work-notify")]
-    listeners: RwLock<Vec<Box<dyn NotifyWork>>>,
     nonce_cache: Cache<Address, U256>,
     balance_cache: Cache<Address, U256>,
     gas_pricer: Mutex<GasPricer>,
@@ -257,13 +253,6 @@ pub struct Miner {
 }
 
 impl Miner {
-    /// Push listener that will handle new jobs
-    #[cfg(feature = "work-notify")]
-    pub fn add_work_listener(&self, notifier: Box<dyn NotifyWork>) {
-        self.listeners.write().push(notifier);
-        self.sealing.lock().enabled = true;
-    }
-
     /// Set a callback to be notified about imported transactions' hashes.
     pub fn add_transactions_listener(&self, f: Box<dyn Fn(&[H256]) + Send + Sync>) {
         self.transaction_queue.add_listener(f);
@@ -293,8 +282,6 @@ impl Miner {
                 last_request: None,
             }),
             params: RwLock::new(AuthoringParams::default()),
-            #[cfg(feature = "work-notify")]
-            listeners: RwLock::new(vec![]),
             gas_pricer: Mutex::new(gas_pricer),
             nonce_cache: Cache::<Address, U256>::new("Nonce", nonce_cache_size),
             balance_cache: Cache::<Address, U256>::new("Balance", balance_cache_size),
@@ -306,7 +293,6 @@ impl Miner {
             )),
             accounts: Arc::new(accounts),
             engine,
-            io_channel: RwLock::new(None),
         }
     }
 
@@ -344,11 +330,6 @@ impl Miner {
             spec,
             accounts.unwrap_or_default(),
         )
-    }
-
-    /// Sets `IoChannel`
-    pub fn set_io_channel(&self, io_channel: IoChannel<ClientIoMessage>) {
-        *self.io_channel.write() = Some(io_channel);
     }
 
     /// Sets in-blockchain checker for transactions.
@@ -656,18 +637,7 @@ impl Miner {
     /// 1. --force-sealing CLI parameter is provided
     /// 2. There are listeners awaiting new work packages (e.g. remote work notifications or stratum).
     fn forced_sealing(&self) -> bool {
-        let listeners_empty = {
-            #[cfg(feature = "work-notify")]
-            {
-                self.listeners.read().is_empty()
-            }
-            #[cfg(not(feature = "work-notify"))]
-            {
-                true
-            }
-        };
-
-        self.options.force_sealing || !listeners_empty
+        self.options.force_sealing
     }
 
     /// Check is reseal is allowed and necessary.
@@ -801,7 +771,6 @@ impl Miner {
 
     /// Prepares work which has to be done to seal.
     fn prepare_work(&self, block: ClosedBlock, original_work_hash: Option<H256>) {
-        let (work, is_new) = {
             let block_header = block.header.clone();
             let block_hash = block_header.hash();
 
@@ -824,14 +793,6 @@ impl Miner {
 
                 sealing.queue.set_pending(block);
 
-                #[cfg(feature = "work-notify")]
-                {
-                    // If push notifications are enabled we assume all work items are used.
-                    if is_new && !self.listeners.read().is_empty() {
-                        sealing.queue.use_last_ref();
-                    }
-                }
-
                 (
                     Some((
                         block_hash,
@@ -848,15 +809,6 @@ impl Miner {
                 "prepare_work: leaving (last={:?})",
                 sealing.queue.peek_last_ref().map(|b| b.header.hash())
             );
-            (work, is_new)
-        };
-
-        // NB: hack to use variables to avoid warning.
-        #[cfg(not(feature = "work-notify"))]
-        {
-            let _work = work;
-            let _is_new = is_new;
-        }
     }
 
     /// Prepare a pending block. Returns the preparation status.
@@ -1016,12 +968,6 @@ impl miner::MinerService for Miner {
                 });
 
                 Ok(true)
-            }
-            #[cfg(feature = "price-info")]
-            GasPricer::Calibrated(_) => {
-                let error_msg =
-                    "Can't update fixed gas price while automatic gas calibration is enabled.";
-                return Err(error_msg);
             }
         }
     }
@@ -1492,34 +1438,7 @@ impl miner::MinerService for Miner {
             // uncle rate.
             // If the io_channel is available attempt to offload culling to a separate task
             // to avoid blocking chain_new_blocks
-            if let Some(ref channel) = *self.io_channel.read() {
-                let queue = self.transaction_queue.clone();
-                let nonce_cache = self.nonce_cache.clone();
-                let balance_cache = self.balance_cache.clone();
-                let engine = self.engine.clone();
-                let accounts = self.accounts.clone();
-
-                let cull = move |chain: &::client::Client| {
-                    let client = PoolClient::new(
-                        chain,
-                        &nonce_cache,
-                        &balance_cache,
-                        &*engine,
-                        &*accounts,
-                    );
-                    // t_nb 10.5 do culling
-                    queue.cull(client);
-                    // reseal is only used by InstaSeal engine
-                    if engine.should_reseal_on_update() {
-                        // force update_sealing here to skip `reseal_required` checks
-                        chain.update_sealing(ForceUpdateSealing::Yes);
-                    }
-                };
-
-                if let Err(e) = channel.send(ClientIoMessage::execute(cull)) {
-                    warn!(target: "miner", "Error queueing cull: {:?}", e);
-                }
-            } else {
+            {
                 // t_nb 10.5 do culling
                 self.transaction_queue.cull(client);
                 // reseal is only used by InstaSeal engine
@@ -2043,25 +1962,6 @@ mod tests {
         miner.update_sealing(&*client, ForceUpdateSealing::No);
 
         assert!(!miner.is_currently_sealing());
-    }
-
-    #[cfg(feature = "work-notify")]
-    #[test]
-    fn should_mine_if_fetch_work_request() {
-        struct DummyNotifyWork;
-
-        impl NotifyWork for DummyNotifyWork {
-            fn notify(&self, _pow_hash: H256, _difficulty: U256, _number: u64) {}
-        }
-
-        let spec = Spec::new_test();
-        let miner = Miner::new_for_tests(&spec, None);
-        miner.add_work_listener(Box::new(DummyNotifyWork));
-
-        let client = generate_dummy_client(2);
-        miner.update_sealing(&*client, ForceUpdateSealing::No);
-
-        assert!(miner.is_currently_sealing());
     }
 
     #[test]

@@ -95,12 +95,8 @@ tempdir = "0.3"
 trie-standardmap = "0.15.2"
 
 [features]
-parity = ["work-notify", "stratum"]
-# Large optional features that are enabled by default for Parity,
-# but might be omitted for other dependent crates.
-work-notify = ["ethcore-miner/work-notify"]
+parity = ["stratum"]
 stratum = [ "ethcore-stratum" ]
-
 
 # Disables seal verification for mined blocks.
 # This allows you to submit any seal via RPC to test and benchmark
