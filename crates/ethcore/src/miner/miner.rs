@@ -23,7 +23,6 @@ use std::{
 
 use ansi_term::Colour;
 use bytes::Bytes;
-use call_contract::CallContract;
 use ethcore_miner::{
     gas_pricer::GasPricer,
     local_accounts::LocalAccounts,
@@ -395,7 +394,7 @@ impl Miner {
 
     fn pool_client<'a, C: 'a>(&'a self, chain: &'a C) -> PoolClient<'a, C>
     where
-        C: BlockChain + CallContract,
+        C: BlockChain ,
     {
         PoolClient::new(
             chain,
@@ -409,7 +408,7 @@ impl Miner {
     /// Prepares new block for sealing including top transactions from queue.
     fn prepare_block<C>(&self, chain: &C) -> Option<(ClosedBlock, Option<H256>)>
     where
-        C: BlockChain + CallContract + BlockProducer + Nonce + Sync,
+        C: BlockChain + BlockProducer + Nonce + Sync,
     {
         trace_time!("prepare_block");
         let chain_info = chain.chain_info();
@@ -812,7 +811,7 @@ impl Miner {
     /// Prepare a pending block. Returns the preparation status.
     fn prepare_pending_block<C>(&self, client: &C) -> BlockPreparationStatus
     where
-        C: BlockChain + CallContract + BlockProducer + SealedBlockImporter + Nonce + Sync,
+        C: BlockChain + BlockProducer + SealedBlockImporter + Nonce + Sync,
     {
         trace!(target: "miner", "prepare_pending_block: entering");
         let prepare_new = {
@@ -1236,7 +1235,7 @@ impl miner::MinerService for Miner {
     /// Prepare the block and work if the Engine does not seal internally.
     fn update_sealing<C>(&self, chain: &C, force: ForceUpdateSealing)
     where
-        C: BlockChain + CallContract + BlockProducer + SealedBlockImporter + Nonce + Sync,
+        C: BlockChain + BlockProducer + SealedBlockImporter + Nonce + Sync,
     {
         trace!(target: "miner", "update_sealing");
 
@@ -1302,7 +1301,7 @@ impl miner::MinerService for Miner {
 
     fn work_package<C>(&self, chain: &C) -> Option<(H256, BlockNumber, u64, U256)>
     where
-        C: BlockChain + CallContract + BlockProducer + SealedBlockImporter + Nonce + Sync,
+        C: BlockChain + BlockProducer + SealedBlockImporter + Nonce + Sync,
     {
         if self.engine.sealing_state() != SealingState::External {
             return None;
@@ -1483,9 +1482,7 @@ mod tests {
     use std::iter::FromIterator;
 
     use super::*;
-    use accounts::AccountProvider;
     use crypto::publickey::{Generator, Random};
-    use hash::keccak;
     use rustc_hex::FromHex;
     use types::BlockNumber;
 

@@ -32,7 +32,6 @@ use blockchain::{
     ImportRoute, TransactionAddress, TreeRoute,
 };
 use bytes::{Bytes, ToPretty};
-use call_contract::CallContract;
 use db::{DBTransaction, DBValue, KeyValueDB};
 use ethcore_miner::pool::VerifiedTransaction;
 use ethereum_types::{Address, H256, H264, U256};
@@ -61,7 +60,6 @@ use vm::{EnvInfo, LastHashes};
 
 use ansi_term::Colour;
 use block::{enact_verified, ClosedBlock, Drain, LockedBlock, OpenBlock, SealedBlock};
-use call_contract::RegistryInfo;
 use client::{
     ancient_import::AncientVerifier,
     traits::{ForceUpdateSealing, TransactionRequest},
@@ -1661,45 +1659,6 @@ impl TransactionInfo for Client {
 }
 
 impl BlockChainTrait for Client {}
-
-impl RegistryInfo for Client {
-    fn registry_address(&self, name: String, block: BlockId) -> Option<Address> {
-        use ethabi::FunctionOutputDecoder;
-
-        let address = self.registrar_address?;
-
-        let (data, decoder) = registry::functions::get_address::call(keccak(name.as_bytes()), "A");
-        let value = decoder
-            .decode(&self.call_contract(block, address, data).ok()?)
-            .ok()?;
-        if value.is_zero() {
-            None
-        } else {
-            Some(value)
-        }
-    }
-}
-
-impl CallContract for Client {
-    fn call_contract(
-        &self,
-        block_id: BlockId,
-        address: Address,
-        data: Bytes,
-    ) -> Result<Bytes, String> {
-        let state_pruned = || CallError::StatePruned.to_string();
-        let state = &mut self.state_at(block_id).ok_or_else(&state_pruned)?;
-        let header = self
-            .block_header_decoded(block_id)
-            .ok_or_else(&state_pruned)?;
-
-        let transaction = self.contract_call_tx(block_id, address, data);
-
-        self.call(&transaction, Default::default(), state, &header)
-            .map_err(|e| format!("{:?}", e))
-            .map(|executed| executed.output)
-    }
-}
 
 impl ImportBlock for Client {
     // t_nb 2.0 import block to client

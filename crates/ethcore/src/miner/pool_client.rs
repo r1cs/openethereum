@@ -27,7 +27,6 @@ use types::{
     transaction::{self, SignedTransaction, UnverifiedTransaction},
 };
 
-use call_contract::CallContract;
 use client::{Balance, BlockId, BlockInfo, Nonce, TransactionId};
 use engines::EthEngine;
 use ethcore_miner::pool::client::BalanceClient;
@@ -140,7 +139,7 @@ impl<'a, C: 'a> Clone for PoolClient<'a, C> {
 
 impl<'a, C: 'a> PoolClient<'a, C>
 where
-    C: BlockInfo + CallContract,
+    C: BlockInfo,
 {
     /// Creates new client given chain, nonce cache, accounts and service transaction verifier.
     pub fn new(

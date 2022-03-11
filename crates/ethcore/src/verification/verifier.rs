@@ -17,7 +17,6 @@
 //! A generic verifier trait.
 
 use super::verification;
-use call_contract::CallContract;
 use client::BlockInfo;
 use engines::EthEngine;
 use error::Error;
@@ -26,7 +25,7 @@ use types::header::Header;
 /// Should be used to verify blocks.
 pub trait Verifier<C>: Send + Sync
 where
-    C: BlockInfo + CallContract,
+    C: BlockInfo,
 {
     /// Verify a block relative to its parent and uncles.
     fn verify_block_family(

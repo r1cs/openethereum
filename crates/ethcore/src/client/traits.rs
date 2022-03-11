@@ -20,7 +20,6 @@ use std::{collections::BTreeMap, sync::Arc};
 
 use blockchain::{BlockReceipts, TreeRoute};
 use bytes::Bytes;
-use call_contract::{CallContract, RegistryInfo};
 use ethcore_miner::pool::VerifiedTransaction;
 use ethereum_types::{Address, H256, U256};
 use evm::Schedule;
@@ -233,8 +232,6 @@ pub trait BlockChainClient:
     + Send
     + AccountData
     + BlockChain
-    + CallContract
-    + RegistryInfo
     + ImportBlock
     + IoClient
 {

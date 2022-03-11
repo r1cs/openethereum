@@ -57,7 +57,6 @@ use types::{
 use vm::Schedule;
 
 use block::{ClosedBlock, OpenBlock, SealedBlock};
-use call_contract::{CallContract, RegistryInfo};
 use client::{
     traits::{ForceUpdateSealing, TransactionRequest},
     AccountData, Balance, BlockChain, BlockChainClient, BlockChainInfo, BlockId,
@@ -585,17 +584,6 @@ impl BlockInfo for TestBlockChainClient {
     }
 }
 
-impl CallContract for TestBlockChainClient {
-    fn call_contract(
-        &self,
-        _id: BlockId,
-        _address: Address,
-        _data: Bytes,
-    ) -> Result<Bytes, String> {
-        Ok(vec![])
-    }
-}
-
 impl TransactionInfo for TestBlockChainClient {
     fn transaction_block(&self, _id: TransactionId) -> Option<H256> {
         None // Simple default.
@@ -603,12 +591,6 @@ impl TransactionInfo for TestBlockChainClient {
 }
 
 impl BlockChain for TestBlockChainClient {}
-
-impl RegistryInfo for TestBlockChainClient {
-    fn registry_address(&self, _name: String, _block: BlockId) -> Option<Address> {
-        None
-    }
-}
 
 impl ImportBlock for TestBlockChainClient {
     fn import_block(&self, unverified: Unverified) -> EthcoreResult<H256> {

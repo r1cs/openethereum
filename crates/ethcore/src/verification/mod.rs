@@ -30,7 +30,6 @@ pub use self::{
     verifier::Verifier,
 };
 
-use call_contract::CallContract;
 use client::BlockInfo;
 
 /// Verifier type.
@@ -46,7 +45,7 @@ pub enum VerifierType {
 }
 
 /// Create a new verifier based on type.
-pub fn new<C: BlockInfo + CallContract>(v: VerifierType) -> Box<dyn Verifier<C>> {
+pub fn new<C: BlockInfo>(v: VerifierType) -> Box<dyn Verifier<C>> {
     match v {
         VerifierType::Canon | VerifierType::CanonNoSeal => Box::new(CanonVerifier),
         VerifierType::Noop => Box::new(NoopVerifier),

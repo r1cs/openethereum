@@ -47,7 +47,6 @@ use types::{
 };
 
 use block::SealedBlock;
-use call_contract::{CallContract, RegistryInfo};
 use client::{
     traits::ForceUpdateSealing, AccountData, BlockChain, BlockProducer, ChainInfo, Nonce,
     ScheduleInfo, SealedBlockImporter,
@@ -57,8 +56,6 @@ use state::StateInfo;
 
 /// Provides methods to verify incoming external transactions
 pub trait TransactionVerifierClient: Send + Sync
-	// Required for ServiceTransactionChecker
-	+ CallContract + RegistryInfo
 	// Required for verifiying transactions
 	+ BlockChain + ScheduleInfo + AccountData
 {}
@@ -88,12 +85,12 @@ pub trait MinerService: Send + Sync {
     /// Returns `None` if engine seals internally.
     fn work_package<C>(&self, chain: &C) -> Option<(H256, BlockNumber, u64, U256)>
     where
-        C: BlockChain + CallContract + BlockProducer + SealedBlockImporter + Nonce + Sync;
+        C: BlockChain + BlockProducer + SealedBlockImporter + Nonce + Sync;
 
     /// Update current pending block
     fn update_sealing<C>(&self, chain: &C, force: ForceUpdateSealing)
     where
-        C: BlockChain + CallContract + BlockProducer + SealedBlockImporter + Nonce + Sync;
+        C: BlockChain + BlockProducer + SealedBlockImporter + Nonce + Sync;
 
     // Notifications
 

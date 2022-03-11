@@ -34,7 +34,6 @@ use triehash::ordered_trie_root;
 use unexpected::{Mismatch, OutOfBounds};
 
 use blockchain::*;
-use call_contract::CallContract;
 use client::BlockInfo;
 use engines::{EthEngine, MAX_UNCLE_AGE};
 use error::{BlockError, Error};
@@ -152,7 +151,7 @@ pub fn verify_block_unordered(
 }
 
 /// Parameters for full verification of block family
-pub struct FullFamilyParams<'a, C: BlockInfo + CallContract + 'a> {
+pub struct FullFamilyParams<'a, C: BlockInfo + 'a> {
     /// Preverified block
     pub block: &'a PreverifiedBlock,
 
@@ -164,7 +163,7 @@ pub struct FullFamilyParams<'a, C: BlockInfo + CallContract + 'a> {
 }
 
 /// t_nb 6.3 Phase 3 verification. Check block information against parent and uncles.
-pub fn verify_block_family<C: BlockInfo + CallContract>(
+pub fn verify_block_family<C: BlockInfo>(
     header: &Header,
     parent: &Header,
     engine: &dyn EthEngine,

@@ -22,7 +22,6 @@ ethash = { path = "../concensus/ethash" }
 ethcore-blockchain = { path = "./blockchain" }
 ethcore-bloom-journal = { path = "../db/bloom" }
 ethcore-builtin = { path = "../vm/builtin" }
-ethcore-call-contract = { path = "../vm/call-contract" }
 ethcore-db = { path = "../db/db" }
 ethcore-io = { path = "../runtime/io" }
 ethcore-miner = { path = "../concensus/miner" }
