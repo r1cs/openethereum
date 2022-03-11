@@ -202,9 +202,6 @@ pub struct Client {
     /// Client configuration
     config: ClientConfig,
 
-    /// Database pruning strategy to use for StateDB
-    pruning: journaldb::Algorithm,
-
     /// Don't prune the state we're currently snapshotting
     snapshotting_at: AtomicU64,
 
@@ -954,7 +951,6 @@ impl Client {
             chain: RwLock::new(chain),
             tracedb,
             engine,
-            pruning: config.pruning.clone(),
             snapshotting_at: AtomicU64::new(0),
             db: RwLock::new(db.clone()),
             state_db: RwLock::new(state_db),

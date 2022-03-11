@@ -35,8 +35,7 @@ use types::{header::Header, BlockNumber};
 use vm::{AccessList, ActionParams, ActionValue, CallType, EnvInfo, ParamsType};
 
 use builtin::Builtin;
-use engines::{
-    BasicAuthority, Clique, EthEngine, InstantSeal, InstantSealParams, NullEngine,
+use engines::{Clique, EthEngine, InstantSeal, InstantSealParams, NullEngine,
     DEFAULT_BLOCKHASH_CONTRACT,
 };
 use error::Error;
@@ -788,9 +787,6 @@ impl Spec {
             }
             ethjson::spec::Engine::InstantSeal(None) => {
                 Arc::new(InstantSeal::new(InstantSealParams::default(), machine))
-            }
-            ethjson::spec::Engine::BasicAuthority(basic_authority) => {
-                Arc::new(BasicAuthority::new(basic_authority.params.into(), machine))
             }
             ethjson::spec::Engine::Clique(clique) => Clique::new(clique.params.into(), machine)
                 .expect("Failed to start Clique consensus engine."),
