@@ -16,7 +16,6 @@
 
 use std::{
     str::{FromStr},
-    sync::Arc,
 };
 
 use client::{
@@ -28,7 +27,6 @@ use client::{
 use ethereum;
 use ethereum_types::{Address, U256};
 use executive::{Executive, TransactOptions};
-use miner::Miner;
 use spec::Spec;
 use state::{self, CleanupMode, State, StateInfo};
 use tempdir::TempDir;

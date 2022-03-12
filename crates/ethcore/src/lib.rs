@@ -43,6 +43,7 @@ extern crate parity_snappy as snappy;
 extern crate parity_util_mem;
 extern crate parking_lot;
 extern crate patricia_trie_ethereum as ethtrie;
+#[cfg(feature = "json-tests")]
 extern crate rayon;
 extern crate reth_util;
 extern crate rlp;

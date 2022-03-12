@@ -16,11 +16,10 @@
 
 //! Traits implemented by client.
 
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap};
 
 use blockchain::{BlockReceipts, TreeRoute};
 use bytes::Bytes;
-use ethcore_miner::pool::VerifiedTransaction;
 use ethereum_types::{Address, H256, U256};
 use evm::Schedule;
 use itertools::Itertools;
@@ -30,7 +29,6 @@ use types::{
     block_status::BlockStatus,
     blockchain_info::BlockChainInfo,
     call_analytics::CallAnalytics,
-    data_format::DataFormat,
     encoded,
     filter::Filter,
     header::Header,

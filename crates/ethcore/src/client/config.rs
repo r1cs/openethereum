@@ -15,7 +15,6 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::{
-    fmt::{Display, Error as FmtError, Formatter},
     str::FromStr,
 };
 

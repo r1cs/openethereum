@@ -19,29 +19,17 @@
 //! Miner module
 //! Keeps track of transactions and currently sealed pending block.
 
-mod cache;
 mod miner;
 
-pub mod pool_client;
-
-pub use self::miner::{AuthoringParams, Miner, MinerOptions, Penalization, PendingSet};
-pub use ethcore_miner::{
-    pool::{PendingOrdering},
-};
-
-use std::sync::Arc;
+pub use self::miner::{Miner, MinerOptions};
 
 use bytes::Bytes;
-use ethcore_miner::pool::{VerifiedTransaction};
-use ethereum_types::{Address, H256, U256};
-use types::{
-    transaction::{self, PendingTransaction, UnverifiedTransaction},
-    BlockNumber,
-};
+use ethereum_types::{H256, U256};
+use types::BlockNumber;
 
 use block::SealedBlock;
 use client::{
-    traits::ForceUpdateSealing, AccountData, BlockChain, BlockProducer, Nonce,
+    AccountData, BlockChain, BlockProducer, Nonce,
     ScheduleInfo, SealedBlockImporter,
 };
 use error::Error;
@@ -76,31 +64,4 @@ pub trait MinerService: Send + Sync {
     fn work_package<C>(&self, chain: &C) -> Option<(H256, BlockNumber, u64, U256)>
     where
         C: BlockChain + BlockProducer + SealedBlockImporter + Nonce + Sync;
-
-    /// Update current pending block
-    fn update_sealing<C>(&self, chain: &C, force: ForceUpdateSealing)
-    where
-        C: BlockChain + BlockProducer + SealedBlockImporter + Nonce + Sync;
-
-    /// Get current authoring parameters.
-    fn authoring_params(&self) -> AuthoringParams;
-
-    /// Imports transactions to transaction queue.
-    fn import_external_transactions<C>(
-        &self,
-        client: &C,
-        transactions: Vec<UnverifiedTransaction>,
-    ) -> Vec<Result<(), transaction::Error>>
-    where
-        C: BlockChainClient;
-
-    /// Get an unfiltered list of all ready transactions.
-    fn ready_transactions<C>(
-        &self,
-        chain: &C,
-        max_len: usize,
-        ordering: PendingOrdering,
-    ) -> Vec<Arc<VerifiedTransaction>>
-    where
-        C: BlockChain + Nonce + Sync;
 }

@@ -21,7 +21,6 @@ use client::{BlockChainClient, Client, ClientConfig, *};
 use crypto::publickey::KeyPair;
 use ethereum_types::{Address, U256};
 use hash::keccak;
-use miner::Miner;
 use spec::*;
 use std::{str::FromStr, sync::Arc};
 use test_helpers::{self, get_temp_state_db};

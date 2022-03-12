@@ -26,19 +26,15 @@ use blockchain::{
     BlockChain, BlockChainDB, BlockNumberKey, BlockProvider, BlockReceipts, ExtrasInsert,
     ImportRoute, TransactionAddress, TreeRoute,
 };
-use bytes::{Bytes, ToPretty};
+use bytes::Bytes;
 use db::{DBTransaction, DBValue};
-use ethcore_miner::pool::VerifiedTransaction;
-use ethereum_types::{Address, H256, H264, U256};
+use ethereum_types::{Address, H256, U256};
 use hash::keccak;
 use itertools::Itertools;
 use parking_lot::{Mutex, RwLock};
-use rlp::{PayloadInfo};
-use rustc_hex::FromHex;
 use trie::{Trie, TrieFactory, TrieSpec};
 use types::{
     ancestry_action::AncestryAction,
-    data_format::DataFormat,
     encoded,
     filter::Filter,
     header::{ExtendedHeader, Header},
@@ -51,7 +47,6 @@ use types::{
 };
 use vm::{EnvInfo, LastHashes};
 
-use ansi_term::Colour;
 use block::{enact_verified, ClosedBlock, Drain, LockedBlock, OpenBlock, SealedBlock};
 use client::{
     AccountData, Balance, BlockChain as BlockChainTrait, BlockChainClient,
@@ -62,12 +57,9 @@ use client::{
     ScheduleInfo, SealedBlockImporter, StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
     TransactionId, TransactionInfo,
 };
-use engines::{
-    epoch::PendingTransition, EngineError, EpochTransition, EthEngine, ForkChoice, SealingState,
-    MAX_UNCLE_AGE,
-};
+use engines::{epoch::PendingTransition, EpochTransition, EthEngine, ForkChoice, MAX_UNCLE_AGE};
 use error::{
-    BlockError, CallError, Error, Error as EthcoreError, ErrorKind as EthcoreErrorKind,
+    BlockError, CallError, Error as EthcoreError, ErrorKind as EthcoreErrorKind,
     EthcoreResult, ExecutionError, ImportErrorKind,
 };
 use executive::{contract_address, Executed, Executive, TransactOptions};
@@ -83,7 +75,6 @@ use verification::{self, queue::kind::{blocks::Unverified, BlockLike}, Preverifi
 use vm::Schedule;
 // re-export
 pub use blockchain::CacheSize as BlockChainCacheSize;
-use db::{keys::BlockDetails, Readable, Writable};
 pub use reth_util::queue::ExecutionQueue;
 pub use types::{block_status::BlockStatus, blockchain_info::BlockChainInfo};
 pub use verification::QueueInfo as BlockQueueInfo;

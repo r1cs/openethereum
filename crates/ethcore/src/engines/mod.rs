@@ -470,18 +470,6 @@ pub trait Engine<M: Machine>: Sync + Send {
         Ok(*header.author())
     }
 
-    /// Returns a list of transactions for a new block if we are the author.
-    ///
-    /// This is called when the miner prepares a new block that this node will author and seal. It returns a list of
-    /// transactions that will be added to the block before any other transactions from the queue.
-    /// Added for AuRa needs.
-    fn generate_engine_transactions(
-        &self,
-        _block: &ExecutedBlock,
-    ) -> Result<Vec<SignedTransaction>, Error> {
-        Ok(Vec::new())
-    }
-
     /// Overrides the block gas limit. Whenever this returns `Some` for a header, the next block's gas limit must be
     /// exactly that value. used by AuRa engine.
     fn gas_limit_override(&self, _header: &Header) -> Option<U256> {
