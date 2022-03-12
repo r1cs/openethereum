@@ -57,32 +57,6 @@ impl FromStr for DatabaseCompactionProfile {
     }
 }
 
-/// Operating mode for the client.
-#[derive(Debug, Eq, PartialEq, Clone)]
-pub enum Mode {
-    /// Always on.
-    Active,
-    /// Goes offline after client is inactive for some (given) time, but
-    /// comes back online after a while of inactivity.
-    Passive(Duration, Duration),
-    /// Goes offline after client is inactive for some (given) time and
-    /// stays inactive.
-    Dark(Duration),
-    /// Always off.
-    Off,
-}
-
-impl Display for Mode {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
-        match *self {
-            Mode::Active => write!(f, "active"),
-            Mode::Passive(..) => write!(f, "passive"),
-            Mode::Dark(..) => write!(f, "dark"),
-            Mode::Off => write!(f, "offline"),
-        }
-    }
-}
-
 /// Client configuration. Includes configs for all sub-systems.
 #[derive(Debug, PartialEq, Clone)]
 pub struct ClientConfig {
@@ -102,8 +76,6 @@ pub struct ClientConfig {
     pub db_cache_size: Option<usize>,
     /// State db compaction profile
     pub db_compaction: DatabaseCompactionProfile,
-    /// Operating mode
-    pub mode: Mode,
     /// The chain spec name
     pub spec_name: String,
     /// Type of block verifier used by client.
@@ -136,7 +108,6 @@ impl Default for ClientConfig {
             name: "default".into(),
             db_cache_size: None,
             db_compaction: Default::default(),
-            mode: Mode::Active,
             spec_name: "".into(),
             verifier_type: VerifierType::Canon,
             state_cache_size: 1 * mb,

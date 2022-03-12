@@ -840,23 +840,6 @@ impl miner::MinerService for Miner {
         self.params.read().clone()
     }
 
-    fn sensible_gas_price(&self) -> U256 {
-        // 10% above our minimum.
-        self.transaction_queue.current_worst_gas_price() * 110u32 / 100
-    }
-
-    fn sensible_max_priority_fee(&self) -> U256 {
-        // 10% above our minimum.
-        self.transaction_queue
-            .current_worst_effective_priority_fee()
-            * 110u32
-            / 100
-    }
-
-    fn sensible_gas_limit(&self) -> U256 {
-        self.params.read().gas_range_target.0 / 5
-    }
-
     fn import_external_transactions<C: miner::BlockChainClient>(
         &self,
         chain: &C,
@@ -884,34 +867,6 @@ impl miner::MinerService for Miner {
         }
 
         results
-    }
-
-    fn import_own_transaction<C: miner::BlockChainClient>(
-        &self,
-        chain: &C,
-        pending: PendingTransaction,
-    ) -> Result<(), transaction::Error> {
-        // note: you may want to use `import_claimed_local_transaction` instead of this one.
-
-        trace!(target: "own_tx", "Importing transaction: {:?}", pending);
-
-        let client = self.pool_client(chain);
-        let imported = self
-            .transaction_queue
-            .import(client, vec![pool::verifier::Transaction::Local(pending)])
-            .pop()
-            .expect("one result returned per added transaction; one added => one result; qed");
-
-        // --------------------------------------------------------------------------
-        // | NOTE Code below requires sealing locks.                                |
-        // | Make sure to release the locks before calling that method.             |
-        // --------------------------------------------------------------------------
-        if imported.is_ok() && self.options.reseal_on_own_tx && self.sealing.lock().reseal_allowed()
-        {
-            self.prepare_and_update_sealing(chain);
-        }
-
-        imported
     }
 
     fn ready_transactions<C>(
@@ -972,10 +927,6 @@ impl miner::MinerService for Miner {
             PendingSet::AlwaysSealing => from_pending().unwrap_or_default(),
             PendingSet::SealingOrElseQueue => from_pending().unwrap_or_else(from_queue),
         }
-    }
-
-    fn transaction(&self, hash: &H256) -> Option<Arc<VerifiedTransaction>> {
-        self.transaction_queue.find(hash)
     }
 
     // t_nb 10.4 Update sealing if required.
@@ -1090,111 +1041,10 @@ impl miner::MinerService for Miner {
             Ok(sealed)
         })
     }
-
-    // t_nb 10 notify miner about new include blocks
-    fn chain_new_blocks<C>(
-        &self,
-        chain: &C,
-        imported: &[H256],
-        _invalid: &[H256],
-        enacted: &[H256],
-        retracted: &[H256],
-        is_internal_import: bool,
-    ) where
-        C: miner::BlockChainClient,
-    {
-        trace!(target: "miner", "chain_new_blocks");
-
-        // 1. We ignore blocks that were `imported` unless resealing on new uncles is enabled.
-        // 2. We ignore blocks that are `invalid` because it doesn't have any meaning in terms of the transactions that
-        //    are in those blocks
-
-        let has_new_best_block = enacted.len() > 0;
-
-        if has_new_best_block {
-            // Clear nonce cache
-            self.nonce_cache.clear();
-            self.balance_cache.clear();
-        }
-
-        // t_nb 10.1 First update gas limit in transaction queue and minimal gas price.
-        let base_fee = self.engine.calculate_base_fee(&chain.best_block_header());
-        let gas_limit = chain.best_block_header().gas_limit()
-            // multiplication neccesary only if OE nodes are the only miners in network, not really essential but wont hurt
-            *  if self.engine.gas_limit_override(&chain.best_block_header()).is_none() {
-            self
-                .engine
-                .schedule(chain.best_block_header().number() + 1)
-                .eip1559_gas_limit_bump
-        } else {
-            1
-        };
-        let allow_non_eoa_sender = self
-            .engine
-            .allow_non_eoa_sender(chain.best_block_header().number() + 1);
-        self.update_transaction_queue_limits(gas_limit, base_fee, allow_non_eoa_sender);
-
-        // t_nb 10.2 Then import all transactions from retracted blocks (retracted means from side chain).
-        let client = self.pool_client(chain);
-        {
-            retracted
-                .par_iter()
-                .for_each(|hash| {
-                    let block = chain.block(BlockId::Hash(*hash))
-                        .expect("Client is sending message after commit to db and inserting to chain; the block is available; qed");
-                    let txs = block.transactions()
-                        .into_iter()
-                        .map(pool::verifier::Transaction::Retracted)
-                        .collect();
-                    // t_nb 10.2
-                    let _ = self.transaction_queue.import(
-                        client.clone(),
-                        txs,
-                    );
-                });
-        }
-
-        if has_new_best_block || (imported.len() > 0 && self.options.reseal_on_uncle) {
-            // t_nb 10.3 Reset `next_allowed_reseal` in case a block is imported.
-            // Even if min_period is high, we will always attempt to create
-            // new pending block.
-            self.sealing.lock().next_allowed_reseal = Instant::now();
-
-            if !is_internal_import {
-                // t_nb 10.4 if it is internal import update sealing
-                // --------------------------------------------------------------------------
-                // | NOTE Code below requires sealing locks.                                |
-                // | Make sure to release the locks before calling that method.             |
-                // --------------------------------------------------------------------------
-                self.update_sealing(chain, ForceUpdateSealing::No);
-            }
-        }
-
-        if has_new_best_block {
-            // t_nb 10.5 Make sure to cull transactions after we update sealing.
-            // Not culling won't lead to old transactions being added to the block
-            // (thanks to Ready), but culling can take significant amount of time,
-            // so best to leave it after we create some work for miners to prevent increased
-            // uncle rate.
-            // If the io_channel is available attempt to offload culling to a separate task
-            // to avoid blocking chain_new_blocks
-            {
-                // t_nb 10.5 do culling
-                self.transaction_queue.cull(client);
-                // reseal is only used by InstaSeal engine
-                if self.engine.should_reseal_on_update() {
-                    // force update_sealing here to skip `reseal_required` checks
-                    self.update_sealing(chain, ForceUpdateSealing::Yes);
-                }
-            }
-        }
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::iter::FromIterator;
-
     use super::*;
 	use types::transaction::{Action, SignedTransaction};
     use crypto::publickey::{Generator, Random};
@@ -1203,7 +1053,7 @@ mod tests {
 
     use client::{ChainInfo, EngineClient, EachBlockWith, ImportSealedBlock, TestBlockChainClient};
     use miner::{MinerService, PendingOrdering};
-    use test_helpers::{dummy_engine_signer_with_address, generate_dummy_client};
+    use test_helpers::generate_dummy_client;
     use types::transaction::{Transaction, TypedTransaction};
 
     #[test]
@@ -1290,79 +1140,6 @@ mod tests {
     }
 
     #[test]
-    fn should_make_pending_block_when_importing_own_transaction() {
-        // given
-        let client = TestBlockChainClient::default();
-        let miner = miner();
-        let transaction = transaction();
-        // when
-        let res = miner.import_own_transaction(&client, PendingTransaction::new(transaction, None));
-
-        // then
-        assert_eq!(res.unwrap(), ());
-        assert_eq!(
-            miner
-                .ready_transactions(&client, 10, PendingOrdering::Priority)
-                .len(),
-            1
-        );
-        // This method will let us know if pending block was created (before calling that method)
-        assert_eq!(
-            miner.prepare_pending_block(&client),
-            BlockPreparationStatus::NotPrepared
-        );
-    }
-
-    #[test]
-    fn should_not_return_stale_work_packages() {
-        // given
-        let client = TestBlockChainClient::default();
-        let miner = miner();
-
-        // initial work package should create the pending block
-        let res = miner.work_package(&client);
-        assert_eq!(res.unwrap().1, 1);
-        // This should be true, since there were some requests.
-        assert_eq!(miner.requires_reseal(0), true);
-
-        // when new block is imported
-        let client = generate_dummy_client(2);
-        let imported = [H256::zero()];
-        let empty = &[];
-        miner.chain_new_blocks(&*client, &imported, empty, &imported, empty, false);
-
-        // then
-        // This should be false, because it's too early.
-        assert_eq!(miner.requires_reseal(2), false);
-        // but still work package should be ready
-        let res = miner.work_package(&*client);
-        assert_eq!(res.unwrap().1, 3);
-        assert_eq!(
-            miner.prepare_pending_block(&*client),
-            BlockPreparationStatus::NotPrepared
-        );
-    }
-
-    #[test]
-    fn should_not_use_pending_block_if_best_block_is_higher() {
-        // given
-        let client = TestBlockChainClient::default();
-        let miner = miner();
-        let transaction = transaction();
-        // when
-        let res = miner.import_own_transaction(&client, PendingTransaction::new(transaction, None));
-
-        // then
-        assert_eq!(res.unwrap(), ());
-        assert_eq!(
-            miner
-                .ready_transactions(&client, 10, PendingOrdering::Priority)
-                .len(),
-            1
-        );
-    }
-
-    #[test]
     fn should_import_external_transaction() {
         // given
         let client = TestBlockChainClient::default();
@@ -1417,35 +1194,5 @@ mod tests {
         );
         // Unless asked to prepare work.
         assert!(miner.requires_reseal(1u8.into()));
-    }
-
-    #[test]
-    fn internal_seals_without_work() {
-        let spec = Spec::new_instant();
-        let miner = Miner::new_for_tests(&spec, None);
-
-        let client = generate_dummy_client(2);
-
-        let import = miner
-            .import_external_transactions(
-                &*client,
-                vec![transaction_with_chain_id(spec.chain_id()).into()],
-            )
-            .pop()
-            .unwrap();
-        assert_eq!(import.unwrap(), ());
-
-        miner.update_sealing(&*client, ForceUpdateSealing::No);
-        assert_eq!(client.chain_info().best_block_number, 3 as BlockNumber);
-
-        assert!(miner
-            .import_own_transaction(
-                &*client,
-                PendingTransaction::new(transaction_with_chain_id(spec.chain_id()).into(), None)
-            )
-            .is_ok());
-
-        miner.update_sealing(&*client, ForceUpdateSealing::No);
-        assert_eq!(client.chain_info().best_block_number, 4 as BlockNumber);
     }
 }

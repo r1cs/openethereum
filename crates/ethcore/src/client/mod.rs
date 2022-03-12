@@ -29,13 +29,12 @@ pub use self::evm_test_client::{EvmTestClient, EvmTestError, TransactErr, Transa
 #[cfg(any(test, feature = "test-helpers"))]
 pub use self::test_client::{EachBlockWith, TestBlockChainClient};
 pub use self::{
-    chain_notify::{ChainMessageType, ChainRoute, ChainRouteType},
     client::*,
-    config::{BlockChainConfig, ClientConfig, DatabaseCompactionProfile, Mode, VMType},
+    config::{BlockChainConfig, ClientConfig, DatabaseCompactionProfile, VMType},
     traits::{
         AccountData, Balance, BlockChain, BlockChainClient, BlockChainReset, BlockInfo,
         BlockProducer, Call, ChainInfo, EngineClient, EngineInfo,
-        ImportBlock, ImportExportBlocks, ImportSealedBlock, IoClient, Nonce, PrepareOpenBlock,
+        ImportBlock, ImportSealedBlock, IoClient, Nonce, PrepareOpenBlock,
         ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter, StateClient,
         StateOrBlock, TransactionInfo,
     },
@@ -54,5 +53,3 @@ pub use error::TransactionImportError;
 pub use verification::VerifierType;
 
 pub mod traits;
-
-mod chain_notify;

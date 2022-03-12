@@ -191,7 +191,6 @@ pub fn json_chain_test<H: FnMut(&str, HookType)>(
                     config.check_seal = false;
                 }
                 config.history = 8;
-                config.queue.verifier_settings.num_verifiers = 1;
                 let client = Client::new(
                     config,
                     &spec,

@@ -18,14 +18,13 @@
 //! Sorts them ready for blockchain insertion.
 
 use engines::EthEngine;
-use error::{BlockError, Error, ErrorKind, ImportErrorKind};
+use error::Error;
 use std::{
-    iter::FromIterator,
     sync::Arc,
 };
 use std::marker::PhantomData;
 
-use self::kind::{BlockLike, Kind};
+use self::kind::{Kind};
 pub use types::verification_queue_info::VerificationQueueInfo as QueueInfo;
 
 pub mod kind;

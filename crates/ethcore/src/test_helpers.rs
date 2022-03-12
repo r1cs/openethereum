@@ -43,7 +43,7 @@ use types::{
 
 use block::{Drain, OpenBlock};
 use client::{
-    ChainInfo, ChainMessageType, Client, ClientConfig, ImportBlock, PrepareOpenBlock,
+    ChainInfo, Client, ClientConfig, ImportBlock, PrepareOpenBlock,
 };
 use engines::EngineSigner;
 use ethjson::crypto::publickey::{Public, Signature};

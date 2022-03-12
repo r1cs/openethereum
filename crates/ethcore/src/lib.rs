@@ -33,7 +33,6 @@ extern crate journaldb;
 extern crate keccak_hash as hash;
 extern crate keccak_hasher;
 extern crate kvdb;
-extern crate len_caching_lock;
 extern crate lru_cache;
 extern crate maplit;
 extern crate memory_cache;

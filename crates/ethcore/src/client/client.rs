@@ -57,9 +57,9 @@ use client::{
     traits::ForceUpdateSealing,
     AccountData, Balance, BlockChain as BlockChainTrait, BlockChainClient,
     BlockChainReset, BlockId, BlockInfo, BlockProducer, Call,
-    CallAnalytics, ChainInfo, ChainRoute, ClientConfig,
-    EngineInfo, ImportBlock, ImportExportBlocks, ImportSealedBlock,
-    Mode, Nonce, PrepareOpenBlock, ProvingBlockChainClient, PruningInfo, ReopenBlock,
+    CallAnalytics, ChainInfo, ClientConfig,
+    EngineInfo, ImportBlock, ImportSealedBlock,
+    Nonce, PrepareOpenBlock, ProvingBlockChainClient, PruningInfo, ReopenBlock,
     ScheduleInfo, SealedBlockImporter, StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
     TransactionId, TransactionInfo,
 };
@@ -90,8 +90,6 @@ pub use reth_util::queue::ExecutionQueue;
 pub use types::{block_status::BlockStatus, blockchain_info::BlockChainInfo};
 pub use verification::QueueInfo as BlockQueueInfo;
 
-const MIN_HISTORY_SIZE: u64 = 8;
-
 struct Importer {
     /// Lock used during block import
     pub import_lock: Mutex<()>, // FIXME Maybe wrap the whole `Importer` instead?
@@ -112,31 +110,16 @@ struct Importer {
 /// Blockchain database client backed by a persistent database. Owns and manages a blockchain and a block queue.
 /// Call `import_block()` to import a block asynchronously; `flush_queue()` flushes the queue.
 pub struct Client {
-    /// Operating mode for the client
-    mode: Mutex<Mode>,
-
     chain: RwLock<Arc<BlockChain>>,
     tracedb: RwLock<TraceDB<BlockChain>>,
     engine: Arc<dyn EthEngine>,
-
-    /// Client configuration
-    config: ClientConfig,
-
-    /// Don't prune the state we're currently snapshotting
-    snapshotting_at: AtomicU64,
 
     /// Client uses this to store blocks, traces, etc.
     db: RwLock<Arc<dyn BlockChainDB>>,
 
     state_db: RwLock<StateDB>,
-    /// Flag changed by `sleep` and `wake_up` methods. Not to be confused with `enabled`.
-    liveness: AtomicBool,
-
     last_hashes: RwLock<VecDeque<H256>>,
     factories: Factories,
-
-    /// An action to be done if a mode/spec_name change happens
-    on_user_defaults_change: Mutex<Option<Box<dyn FnMut(Option<Mode>) + 'static + Send>>>,
     importer: Importer,
 }
 
@@ -158,7 +141,6 @@ impl Importer {
     // t_nb 6.0.1 check and lock block,
     fn check_and_lock_block(
         &self,
-        bytes: &[u8],
         block: PreverifiedBlock,
         client: &Client,
     ) -> EthcoreResult<(LockedBlock, Option<PendingTransition>)> {
@@ -473,27 +455,16 @@ impl Client {
         }
 
         let engine = spec.engine.clone();
-
-        let awake = match config.mode {
-            Mode::Dark(..) | Mode::Off => false,
-            _ => true,
-        };
-
         let importer = Importer::new(&config, engine.clone(), miner)?;
         let client = Arc::new(Client {
-            liveness: AtomicBool::new(awake),
-            mode: Mutex::new(config.mode.clone()),
             chain: RwLock::new(chain),
             tracedb,
             engine,
-            snapshotting_at: AtomicU64::new(0),
             db: RwLock::new(db.clone()),
             state_db: RwLock::new(state_db),
             last_hashes: RwLock::new(VecDeque::new()),
             factories,
-            on_user_defaults_change: Mutex::new(None),
             importer,
-            config,
         });
 
         // ensure genesis epoch proof in the DB.
@@ -539,28 +510,9 @@ impl Client {
     /// signals shutdown of application. We do cleanup here.
     pub fn shutdown(&self) { }
 
-    /// Wakes up client if it's a sleep.
-    pub fn keep_alive(&self) {
-        let should_wake = match *self.mode.lock() {
-            Mode::Dark(..) | Mode::Passive(..) => true,
-            _ => false,
-        };
-        if should_wake {
-            self.wake_up();
-        }
-    }
-
     /// Returns engine reference.
     pub fn engine(&self) -> &dyn EthEngine {
         &*self.engine
-    }
-
-    /// Register an action to be done if a mode/spec_name change happens.
-    pub fn on_user_defaults_change<F>(&self, f: F)
-    where
-        F: 'static + FnMut(Option<Mode>) + Send,
-    {
-        *self.on_user_defaults_change.lock() = Some(Box::new(f));
     }
 
     /// The env info as of the best block.
@@ -758,13 +710,6 @@ impl Client {
                     index: index,
                 })
             }
-        }
-    }
-
-    fn wake_up(&self) {
-        if !self.liveness.load(AtomicOrdering::SeqCst) {
-            self.liveness.store(true, AtomicOrdering::SeqCst);
-            info!(target: "mode", "wake_up: Waking.");
         }
     }
 
@@ -1041,7 +986,7 @@ impl ImportBlock for Client {
 		let bytes = block.bytes.clone();
 		let hash = header.hash();
 		// t_nb 7.0 check and lock block
-		let (closed_block, pending) =  self.importer.check_and_lock_block(&bytes, block, self)?;
+		let (closed_block, pending) =  self.importer.check_and_lock_block(block, self)?;
 		trace!(target:"block_import","Block #{}({}) check pass",header.number(),header.hash());
 		// t_nb 8.0 commit block to db
 		self.importer.commit_block(closed_block, &header, encoded::Block::new(bytes), pending, self);
@@ -1643,10 +1588,6 @@ impl BlockChainClient for Client {
         (*self.build_last_hashes(&self.chain.read().best_block_hash())).clone()
     }
 
-    fn transaction(&self, tx_hash: &H256) -> Option<Arc<VerifiedTransaction>> {
-        self.importer.miner.transaction(tx_hash)
-    }
-
     fn pruning_info(&self) -> PruningInfo {
         PruningInfo {
             earliest_chain: self.chain.read().first_block_number().unwrap_or(1),
@@ -1765,39 +1706,27 @@ impl ImportSealedBlock for Client {
     fn import_sealed_block(&self, block: SealedBlock) -> EthcoreResult<H256> {
         let header = block.header.clone();
         let hash = header.hash();
-        let route = {
-            // Do a super duper basic verification to detect potential bugs
-            if let Err(e) = self.engine.verify_block_basic(&header) {
-                return Err(e.into());
-            }
+		// Do a super duper basic verification to detect potential bugs
+		if let Err(e) = self.engine.verify_block_basic(&header) {
+			return Err(e.into());
+		}
 
-            // scope for self.import_lock
-            let _import_lock = self.importer.import_lock.lock();
-            trace_time!("import_sealed_block");
+		// scope for self.import_lock
+		let _import_lock = self.importer.import_lock.lock();
+		trace_time!("import_sealed_block");
 
-            let block_data = block.rlp_bytes();
-            let route = self.importer.commit_block(
-                block,
-                &header,
-                encoded::Block::new(block_data),
-                None,
-                self,
-            );
-            trace!(target: "client", "Imported sealed block #{} ({})", header.number(), hash);
-            self.state_db
-                .write()
-                .sync_cache(&route.enacted, &route.retracted, false);
-            route
-        };
-        let route = ChainRoute::from([route].as_ref());
-        self.importer.miner.chain_new_blocks(
-            self,
-            &[hash],
-            &[],
-            route.enacted(),
-            route.retracted(),
-            self.engine.sealing_state() != SealingState::External,
-        );
+		let block_data = block.rlp_bytes();
+		let route = self.importer.commit_block(
+			block,
+			&header,
+			encoded::Block::new(block_data),
+			None,
+			self,
+		);
+		trace!(target: "client", "Imported sealed block #{} ({})", header.number(), hash);
+		self.state_db
+			.write()
+			.sync_cache(&route.enacted, &route.retracted, false);
         self.db
             .read()
             .key_value()
@@ -1890,131 +1819,6 @@ impl ProvingBlockChainClient for Client {
             .read()
             .get_pending_transition(hash)
             .map(|pending| pending.proof)
-    }
-}
-
-impl ImportExportBlocks for Client {
-    fn export_blocks<'a>(
-        &self,
-        mut out: Box<dyn std::io::Write + 'a>,
-        from: BlockId,
-        to: BlockId,
-        format: Option<DataFormat>,
-    ) -> Result<(), String> {
-        let from = self
-            .block_number(from)
-            .ok_or("Starting block could not be found")?;
-        let to = self
-            .block_number(to)
-            .ok_or("End block could not be found")?;
-        let format = format.unwrap_or_default();
-
-        for i in from..=to {
-            if i % 10000 == 0 {
-                info!("#{}", i);
-            }
-            let b = self
-                .block(BlockId::Number(i))
-                .ok_or("Error exporting incomplete chain")?
-                .into_inner();
-            match format {
-                DataFormat::Binary => {
-                    out.write(&b)
-                        .map_err(|e| format!("Couldn't write to stream. Cause: {}", e))?;
-                }
-                DataFormat::Hex => {
-                    out.write_fmt(format_args!("{}\n", b.pretty()))
-                        .map_err(|e| format!("Couldn't write to stream. Cause: {}", e))?;
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn import_blocks<'a>(
-        &self,
-        mut source: Box<dyn std::io::Read + 'a>,
-        format: Option<DataFormat>,
-    ) -> Result<(), String> {
-        const READAHEAD_BYTES: usize = 8;
-
-        let mut first_bytes: Vec<u8> = vec![0; READAHEAD_BYTES];
-        let mut first_read = 0;
-
-        let format = match format {
-            Some(format) => format,
-            None => {
-                first_read = source
-                    .read(&mut first_bytes)
-                    .map_err(|_| "Error reading from the file/stream.")?;
-                match first_bytes[0] {
-                    0xf9 => DataFormat::Binary,
-                    _ => DataFormat::Hex,
-                }
-            }
-        };
-
-        let do_import = |bytes: Vec<u8>| {
-            let block = Unverified::from_rlp(bytes, self.engine.params().eip1559_transition)
-                .map_err(|_| "Invalid block rlp")?;
-            let number = block.header.number();
-            match self.import_block(block) {
-                Err(Error(EthcoreErrorKind::Import(ImportErrorKind::AlreadyInChain), _)) => {
-                    trace!("Skipping block #{}: already in chain.", number);
-                }
-                Err(e) => {
-                    return Err(format!("Cannot import block #{}: {:?}", number, e));
-                }
-                Ok(_) => {}
-            }
-            Ok(())
-        };
-
-        match format {
-            DataFormat::Binary => loop {
-                let (mut bytes, n) = if first_read > 0 {
-                    (first_bytes.clone(), first_read)
-                } else {
-                    let mut bytes = vec![0; READAHEAD_BYTES];
-                    let n = source
-                        .read(&mut bytes)
-                        .map_err(|err| format!("Error reading from the file/stream: {:?}", err))?;
-                    (bytes, n)
-                };
-                if n == 0 {
-                    break;
-                }
-                first_read = 0;
-                let s = PayloadInfo::from(&bytes)
-                    .map_err(|e| format!("Invalid RLP in the file/stream: {:?}", e))?
-                    .total();
-                bytes.resize(s, 0);
-                source
-                    .read_exact(&mut bytes[n..])
-                    .map_err(|err| format!("Error reading from the file/stream: {:?}", err))?;
-                do_import(bytes)?;
-            },
-            DataFormat::Hex => {
-                for line in BufReader::new(source).lines() {
-                    let s = line
-                        .map_err(|err| format!("Error reading from the file/stream: {:?}", err))?;
-                    let s = if first_read > 0 {
-                        from_utf8(&first_bytes)
-                            .map_err(|err| format!("Invalid UTF-8: {:?}", err))?
-                            .to_owned()
-                            + &(s[..])
-                    } else {
-                        s
-                    };
-                    first_read = 0;
-                    let bytes = s
-                        .from_hex()
-                        .map_err(|err| format!("Invalid hex in file/stream: {:?}", err))?;
-                    do_import(bytes)?;
-                }
-            }
-        };
-        Ok(())
     }
 }
 

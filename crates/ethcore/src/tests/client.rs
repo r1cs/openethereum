@@ -21,7 +21,7 @@ use std::{
 
 use client::{
     traits::{
-        BlockChainClient, BlockChainReset, BlockInfo, ChainInfo, ImportBlock, ImportExportBlocks,
+        BlockChainClient, BlockChainReset, BlockInfo, ChainInfo, ImportBlock,
     },
     Client, ClientConfig, ImportSealedBlock, PrepareOpenBlock,
 };
@@ -401,88 +401,6 @@ fn transaction_proof() {
 
     assert_eq!(state.balance(&Address::default()).unwrap(), 5.into());
     assert_eq!(state.balance(&address).unwrap(), 95.into());
-}
-
-#[test]
-fn import_export_hex() {
-    let client = get_test_client_with_blocks(get_good_dummy_block_seq(19));
-    let block_rlps = (15..20)
-        .filter_map(|num| client.block(BlockId::Number(num)))
-        .map(|header| header.raw().to_hex())
-        .collect::<Vec<_>>();
-
-    let mut out = Vec::new();
-
-    client
-        .export_blocks(
-            Box::new(&mut out),
-            BlockId::Number(15),
-            BlockId::Number(20),
-            Some(DataFormat::Hex),
-        )
-        .unwrap();
-
-    let written = from_utf8(&out)
-        .unwrap()
-        .split("\n")
-        // last line is empty, ignore it.
-        .take(5)
-        .collect::<Vec<_>>();
-    assert_eq!(block_rlps, written);
-
-    assert!(client.reset(5).is_ok());
-    client.chain().clear_cache();
-
-    assert!(client.block_header(BlockId::Number(20)).is_none());
-    assert!(client.block_header(BlockId::Number(19)).is_none());
-    assert!(client.block_header(BlockId::Number(18)).is_none());
-    assert!(client.block_header(BlockId::Number(17)).is_none());
-    assert!(client.block_header(BlockId::Number(16)).is_none());
-
-    client
-        .import_blocks(Box::new(&*out), Some(DataFormat::Hex))
-        .unwrap();
-
-    assert!(client.block_header(BlockId::Number(20)).is_some());
-    assert!(client.block_header(BlockId::Number(19)).is_some());
-    assert!(client.block_header(BlockId::Number(18)).is_some());
-    assert!(client.block_header(BlockId::Number(17)).is_some());
-    assert!(client.block_header(BlockId::Number(16)).is_some());
-}
-
-#[test]
-fn import_export_binary() {
-    let client = get_test_client_with_blocks(get_good_dummy_block_seq(19));
-
-    let mut out = Vec::new();
-
-    client
-        .export_blocks(
-            Box::new(&mut out),
-            BlockId::Number(15),
-            BlockId::Number(20),
-            Some(DataFormat::Binary),
-        )
-        .unwrap();
-
-    assert!(client.reset(5).is_ok());
-    client.chain().clear_cache();
-
-    assert!(client.block_header(BlockId::Number(20)).is_none());
-    assert!(client.block_header(BlockId::Number(19)).is_none());
-    assert!(client.block_header(BlockId::Number(18)).is_none());
-    assert!(client.block_header(BlockId::Number(17)).is_none());
-    assert!(client.block_header(BlockId::Number(16)).is_none());
-
-    client
-        .import_blocks(Box::new(&*out), Some(DataFormat::Binary))
-        .unwrap();
-
-    assert!(client.block_header(BlockId::Number(19)).is_some());
-    assert!(client.block_header(BlockId::Number(18)).is_some());
-    assert!(client.block_header(BlockId::Number(20)).is_some());
-    assert!(client.block_header(BlockId::Number(17)).is_some());
-    assert!(client.block_header(BlockId::Number(16)).is_some());
 }
 
 #[test]

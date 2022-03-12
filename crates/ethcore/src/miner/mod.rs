@@ -32,7 +32,7 @@ pub use ethcore_miner::{
 use std::sync::Arc;
 
 use bytes::Bytes;
-use ethcore_miner::pool::{local_transactions, QueueStatus, VerifiedTransaction};
+use ethcore_miner::pool::{VerifiedTransaction};
 use ethereum_types::{Address, H256, U256};
 use types::{
     transaction::{self, PendingTransaction, UnverifiedTransaction},
@@ -82,22 +82,6 @@ pub trait MinerService: Send + Sync {
     where
         C: BlockChain + BlockProducer + SealedBlockImporter + Nonce + Sync;
 
-    // Notifications
-
-    /// Called when blocks are imported to chain, updates transactions queue.
-    /// `is_internal_import` indicates that the block has just been created in miner and internally sealed by the engine,
-    /// so we shouldn't attempt creating new block again.
-    fn chain_new_blocks<C>(
-        &self,
-        chain: &C,
-        imported: &[H256],
-        invalid: &[H256],
-        enacted: &[H256],
-        retracted: &[H256],
-        is_internal_import: bool,
-    ) where
-        C: BlockChainClient;
-
     /// Get current authoring parameters.
     fn authoring_params(&self) -> AuthoringParams;
 
@@ -110,18 +94,6 @@ pub trait MinerService: Send + Sync {
     where
         C: BlockChainClient;
 
-    /// Imports own (node owner) transaction to queue.
-    fn import_own_transaction<C>(
-        &self,
-        chain: &C,
-        transaction: PendingTransaction,
-    ) -> Result<(), transaction::Error>
-    where
-        C: BlockChainClient;
-
-    /// Query transaction from the pool given it's hash.
-    fn transaction(&self, hash: &H256) -> Option<Arc<VerifiedTransaction>>;
-
     /// Get an unfiltered list of all ready transactions.
     fn ready_transactions<C>(
         &self,
@@ -131,15 +103,4 @@ pub trait MinerService: Send + Sync {
     ) -> Vec<Arc<VerifiedTransaction>>
     where
         C: BlockChain + Nonce + Sync;
-
-    // Misc
-
-    /// Suggested gas price.
-    fn sensible_gas_price(&self) -> U256;
-
-    /// Suggested max priority fee gas price
-    fn sensible_max_priority_fee(&self) -> U256;
-
-    /// Suggested gas limit.
-    fn sensible_gas_limit(&self) -> U256;
 }

@@ -47,7 +47,7 @@ use types::{
     pruning_info::PruningInfo,
     receipt::{LegacyReceipt, LocalizedReceipt, TransactionOutcome, TypedReceipt},
     transaction::{
-        self, Action, LocalizedTransaction, SignedTransaction, Transaction, TypedTransaction,
+        Action, SignedTransaction, Transaction, TypedTransaction,
         TypedTxId,
     },
     view,
@@ -58,24 +58,24 @@ use vm::Schedule;
 
 use block::{ClosedBlock, OpenBlock, SealedBlock};
 use client::{
-    traits::{ForceUpdateSealing, TransactionRequest},
+    traits::{ForceUpdateSealing},
     AccountData, Balance, BlockChain, BlockChainClient, BlockChainInfo, BlockId,
     BlockInfo, BlockProducer, BlockStatus, Call, CallAnalytics, ChainInfo,
-    EngineInfo, ImportBlock, ImportSealedBlock, IoClient, LastHashes, Mode, Nonce,
+    EngineInfo, ImportBlock, ImportSealedBlock, LastHashes, Nonce,
     PrepareOpenBlock, ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter,
-    StateClient, StateOrBlock, TraceFilter, TraceId, TransactionId, TransactionInfo, UncleId,
+    StateClient, StateOrBlock, TraceFilter, TraceId, TransactionId, TransactionInfo,
 };
 use engines::EthEngine;
 use error::{Error, EthcoreResult};
 use executed::CallError;
 use executive::Executed;
 use journaldb;
-use miner::{self, Miner, MinerService};
+use miner::{Miner, MinerService};
 use spec::Spec;
 use state::StateInfo;
 use state_db::StateDB;
 use trace::LocalizedTrace;
-use verification::queue::{kind::blocks::Unverified, QueueInfo};
+use verification::queue::kind::blocks::Unverified;
 
 /// Test client.
 pub struct TestBlockChainClient {
@@ -942,10 +942,6 @@ impl BlockChainClient for TestBlockChainClient {
             return Some(vec![0xcc]);
         }
         None
-    }
-
-    fn transaction(&self, tx_hash: &H256) -> Option<Arc<VerifiedTransaction>> {
-        self.miner.transaction(tx_hash)
     }
 }
 
