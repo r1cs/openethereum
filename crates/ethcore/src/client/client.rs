@@ -92,55 +92,6 @@ pub use verification::QueueInfo as BlockQueueInfo;
 
 const MIN_HISTORY_SIZE: u64 = 8;
 
-/// Report on the status of a client.
-#[derive(Default, Clone, Debug, Eq, PartialEq)]
-pub struct ClientReport {
-    /// How many blocks have been imported so far.
-    pub blocks_imported: usize,
-    /// How many transactions have been applied so far.
-    pub transactions_applied: usize,
-    /// How much gas has been processed so far.
-    pub gas_processed: U256,
-    /// Internal structure item sizes
-    pub item_sizes: BTreeMap<String, usize>,
-}
-
-impl ClientReport {
-    /// Alter internal reporting to reflect the additional `block` has been processed.
-    pub fn accrue_block(&mut self, header: &Header, transactions: usize) {
-        self.blocks_imported += 1;
-        self.transactions_applied += transactions;
-        self.gas_processed = self.gas_processed + *header.gas_used();
-    }
-}
-
-impl<'a> ::std::ops::Sub<&'a ClientReport> for ClientReport {
-    type Output = Self;
-
-    fn sub(mut self, other: &'a ClientReport) -> Self {
-        self.blocks_imported -= other.blocks_imported;
-        self.transactions_applied -= other.transactions_applied;
-        self.gas_processed = self.gas_processed - other.gas_processed;
-
-        self
-    }
-}
-
-struct SleepState {
-    last_activity: Option<Instant>,
-}
-
-impl SleepState {
-    fn new(awake: bool) -> Self {
-        SleepState {
-            last_activity: match awake {
-                false => None,
-                true => Some(Instant::now()),
-            },
-        }
-    }
-}
-
 struct Importer {
     /// Lock used during block import
     pub import_lock: Mutex<()>, // FIXME Maybe wrap the whole `Importer` instead?
@@ -178,17 +129,11 @@ pub struct Client {
     db: RwLock<Arc<dyn BlockChainDB>>,
 
     state_db: RwLock<StateDB>,
-
-    sleep_state: Mutex<SleepState>,
-
     /// Flag changed by `sleep` and `wake_up` methods. Not to be confused with `enabled`.
     liveness: AtomicBool,
 
     last_hashes: RwLock<VecDeque<H256>>,
     factories: Factories,
-
-    /// Number of eras kept in a journal before they are pruned
-    history: u64,
 
     /// An action to be done if a mode/spec_name change happens
     on_user_defaults_change: Mutex<Option<Box<dyn FnMut(Option<Mode>) + 'static + Send>>>,
@@ -314,15 +259,7 @@ impl Importer {
             bail!(e);
         }
 
-        let pending = self.check_epoch_end_signal(
-            &header,
-            bytes,
-            &locked_block.receipts,
-            locked_block.state.db(),
-            client,
-        )?;
-
-        Ok((locked_block, pending))
+        Ok((locked_block, None))
     }
 
     // NOTE: the header of the block passed here is not necessarily sealed, as
@@ -467,156 +404,10 @@ impl Importer {
         // t_nb 9.12 commit changed to become current greatest by applying pending insertion updates (Sync point)
         chain.commit();
 
-        // t_nb 9.13 check epoch end. Related only to AuRa and it seems light engine
-        self.check_epoch_end(&header, &finalized, &chain, client);
-
         // t_nb 9.14 update last hashes. They are build in step 7.5
         client.update_last_hashes(&parent, hash);
 
-        // t_nb 9.15 prune ancient states
-        if let Err(e) = client.prune_ancient(state, &chain) {
-            warn!("Failed to prune ancient state data: {}", e);
-        }
-
         route
-    }
-
-    // check for epoch end signal and write pending transition if it occurs.
-    // state for the given block must be available.
-    fn check_epoch_end_signal(
-        &self,
-        header: &Header,
-        block_bytes: &[u8],
-        receipts: &[TypedReceipt],
-        state_db: &StateDB,
-        client: &Client,
-    ) -> EthcoreResult<Option<PendingTransition>> {
-        use engines::EpochChange;
-
-        let hash = header.hash();
-        let auxiliary = ::machine::AuxiliaryData {
-            bytes: Some(block_bytes),
-            receipts: Some(&receipts),
-        };
-
-        match self.engine.signals_epoch_end(header, auxiliary) {
-            EpochChange::Yes(proof) => {
-                use engines::Proof;
-
-                let proof = match proof {
-                    Proof::Known(proof) => proof,
-                    Proof::WithState(with_state) => {
-                        let env_info = EnvInfo {
-                            number: header.number(),
-                            author: header.author().clone(),
-                            timestamp: header.timestamp(),
-                            difficulty: header.difficulty().clone(),
-                            last_hashes: client.build_last_hashes(header.parent_hash()),
-                            gas_used: U256::default(),
-                            gas_limit: u64::max_value().into(),
-                            base_fee: header.base_fee(),
-                        };
-
-                        let call = move |addr, data| {
-                            let mut state_db = state_db.boxed_clone();
-                            let backend = ::state::backend::Proving::new(state_db.as_hash_db_mut());
-
-                            let transaction = client.contract_call_tx(
-                                BlockId::Hash(*header.parent_hash()),
-                                addr,
-                                data,
-                            );
-
-                            let mut state = State::from_existing(
-                                backend,
-                                header.state_root().clone(),
-                                self.engine.account_start_nonce(header.number()),
-                                client.factories.clone(),
-                            )
-                            .expect("state known to be available for just-imported block; qed");
-
-                            let options = TransactOptions::with_no_tracing().dont_check_nonce();
-                            let machine = self.engine.machine();
-                            let schedule = machine.schedule(env_info.number);
-                            let res = Executive::new(&mut state, &env_info, &machine, &schedule)
-                                .transact(&transaction, options);
-
-                            let res = match res {
-                                Err(e) => {
-                                    trace!(target: "client", "Proved call failed: {}", e);
-                                    Err(e.to_string())
-                                }
-                                Ok(res) => Ok((res.output, state.drop().1.extract_proof())),
-                            };
-
-                            res.map(|(output, proof)| {
-                                (output, proof.into_iter().map(|x| x.into_vec()).collect())
-                            })
-                        };
-
-                        match with_state.generate_proof(&call) {
-                            Ok(proof) => proof,
-                            Err(e) => {
-                                warn!(target: "client", "Failed to generate transition proof for block {}: {}", hash, e);
-                                warn!(target: "client", "Snapshots produced by this client may be incomplete");
-                                return Err(EngineError::FailedSystemCall(e).into());
-                            }
-                        }
-                    }
-                };
-
-                debug!(target: "client", "Block {} signals epoch end.", hash);
-
-                Ok(Some(PendingTransition { proof: proof }))
-            }
-            EpochChange::No => Ok(None),
-            EpochChange::Unsure(_) => {
-                warn!(target: "client", "Detected invalid engine implementation.");
-                warn!(target: "client", "Engine claims to require more block data, but everything provided.");
-                Err(EngineError::InvalidEngine.into())
-            }
-        }
-    }
-
-    // check for ending of epoch and write transition if it occurs.
-    fn check_epoch_end<'a>(
-        &self,
-        header: &'a Header,
-        finalized: &'a [H256],
-        chain: &BlockChain,
-        client: &Client,
-    ) {
-        let is_epoch_end = self.engine.is_epoch_end(
-            header,
-            finalized,
-            &(|hash| client.block_header_decoded(BlockId::Hash(hash))),
-            &(|hash| chain.get_pending_transition(hash)), // TODO: limit to current epoch.
-        );
-
-        if let Some(proof) = is_epoch_end {
-            debug!(target: "client", "Epoch transition at block {}", header.hash());
-
-            let mut batch = DBTransaction::new();
-            chain.insert_epoch_transition(
-                &mut batch,
-                header.number(),
-                EpochTransition {
-                    block_hash: header.hash(),
-                    block_number: header.number(),
-                    proof: proof,
-                },
-            );
-
-            // always write the batch directly since epoch transition proofs are
-            // fetched from a DB iterator and DB iterators are only available on
-            // flushed data.
-            client
-                .db
-                .read()
-                .key_value()
-                .write(batch)
-                .expect("DB flush failed");
-        }
     }
 }
 
@@ -670,15 +461,6 @@ impl Client {
             state_db.journal_db().latest_era()
         );
 
-        let history = if config.history < MIN_HISTORY_SIZE {
-            info!(target: "client", "Ignoring pruning history parameter of {}\
-				, falling back to minimum of {}",
-				config.history, MIN_HISTORY_SIZE);
-            MIN_HISTORY_SIZE
-        } else {
-            config.history
-        };
-
         if !chain
             .block_header_data(&chain.best_block_hash())
             .map_or(true, |h| state_db.journal_db().contains(&h.state_root()))
@@ -699,7 +481,6 @@ impl Client {
 
         let importer = Importer::new(&config, engine.clone(), miner)?;
         let client = Arc::new(Client {
-            sleep_state: Mutex::new(SleepState::new(awake)),
             liveness: AtomicBool::new(awake),
             mode: Mutex::new(config.mode.clone()),
             chain: RwLock::new(chain),
@@ -710,18 +491,10 @@ impl Client {
             state_db: RwLock::new(state_db),
             last_hashes: RwLock::new(VecDeque::new()),
             factories,
-            history,
             on_user_defaults_change: Mutex::new(None),
             importer,
             config,
         });
-
-        // prune old states.
-        {
-            let state_db = client.state_db.read().boxed_clone();
-            let chain = client.chain.read();
-            client.prune_ancient(state_db, &chain)?;
-        }
 
         // ensure genesis epoch proof in the DB.
         {
@@ -774,7 +547,6 @@ impl Client {
         };
         if should_wake {
             self.wake_up();
-            (*self.sleep_state.lock()).last_activity = Some(Instant::now());
         }
     }
 
@@ -863,57 +635,6 @@ impl Client {
         };
 
         with_call(&call)
-    }
-
-    // t_nb 9.15 prune ancient states until below the memory limit or only the minimum amount remain.
-    fn prune_ancient(
-        &self,
-        mut state_db: StateDB,
-        chain: &BlockChain,
-    ) -> Result<(), ::error::Error> {
-        let latest_era = match state_db.journal_db().latest_era() {
-            Some(n) => n,
-            None => return Ok(()),
-        };
-
-        // prune all ancient eras until we're below the memory target,
-        // but have at least the minimum number of states.
-        loop {
-            let needs_pruning = state_db.journal_db().is_pruned()
-                && state_db.journal_db().journal_size() >= self.config.history_mem;
-
-            if !needs_pruning {
-                break;
-            }
-            match state_db.journal_db().earliest_era() {
-                Some(earliest_era) if earliest_era + self.history <= latest_era => {
-                    let freeze_at = self.snapshotting_at.load(AtomicOrdering::SeqCst);
-                    if freeze_at > 0 && freeze_at == earliest_era {
-                        // Note: journal_db().mem_used() can be used for a more accurate memory
-                        // consumption measurement but it can be expensive so sticking with the
-                        // faster `journal_size()` instead.
-                        trace!(target: "pruning", "Pruning is paused at era {} (snapshot under way); earliest era={}, latest era={}, journal_size={} – Not pruning.",
-						       freeze_at, earliest_era, latest_era, state_db.journal_db().journal_size());
-                        break;
-                    }
-                    trace!(target: "client", "Pruning state for ancient era {}", earliest_era);
-                    match chain.block_hash(earliest_era) {
-                        Some(ancient_hash) => {
-                            let mut batch = DBTransaction::new();
-                            state_db.mark_canonical(&mut batch, earliest_era, &ancient_hash)?;
-                            self.db.read().key_value().write_buffered(batch);
-                            state_db.journal_db().flush();
-                        }
-                        None => {
-                            debug!(target: "client", "Missing expected hash for block {}", earliest_era)
-                        }
-                    }
-                }
-                _ => break, // means that every era is kept, no pruning necessary.
-            }
-        }
-
-        Ok(())
     }
 
     // t_nb 9.14 update last hashes. They are build in step 7.5
@@ -1017,16 +738,6 @@ impl Client {
     pub fn state(&self) -> impl StateInfo {
         let (state, _) = self.latest_state_and_header();
         state
-    }
-
-    /// Get info on the cache.
-    pub fn blockchain_cache_info(&self) -> BlockChainCacheSize {
-        self.chain.read().cache_size()
-    }
-
-    /// Ask the client what the history parameter is.
-    pub fn pruning_history(&self) -> u64 {
-        self.history
     }
 
     fn block_hash(chain: &BlockChain, id: BlockId) -> Option<H256> {
@@ -1184,9 +895,7 @@ impl Client {
 
 impl BlockChainReset for Client {
     fn reset(&self, num: u32) -> Result<(), String> {
-        if num as u64 > self.pruning_history() {
-            return Err("Attempting to reset to block with pruned state".into());
-        } else if num == 0 {
+        if num == 0 {
             return Err("invalid number of blocks to reset".into());
         }
 
@@ -1532,49 +1241,6 @@ impl EngineInfo for Client {
 }
 
 impl BlockChainClient for Client {
-    fn replay(&self, id: TransactionId, analytics: CallAnalytics) -> Result<Executed, CallError> {
-        let address = self
-            .transaction_address(id)
-            .ok_or(CallError::TransactionNotFound)?;
-        let block = BlockId::Hash(address.block_hash);
-
-        const PROOF: &'static str =
-            "The transaction address contains a valid index within block; qed";
-        Ok(self
-            .replay_block_transactions(block, analytics)?
-            .nth(address.index)
-            .expect(PROOF)
-            .1)
-    }
-
-    fn replay_block_transactions(
-        &self,
-        block: BlockId,
-        analytics: CallAnalytics,
-    ) -> Result<Box<dyn Iterator<Item = (H256, Executed)>>, CallError> {
-        let mut env_info = self.env_info(block).ok_or(CallError::StatePruned)?;
-        let body = self.block_body(block).ok_or(CallError::StatePruned)?;
-        let mut state = self
-            .state_at_beginning(block)
-            .ok_or(CallError::StatePruned)?;
-        let txs = body.transactions();
-        let engine = self.engine.clone();
-
-        const PROOF: &'static str =
-            "Transactions fetched from blockchain; blockchain transactions are valid; qed";
-        const EXECUTE_PROOF: &'static str = "Transaction replayed; qed";
-
-        Ok(Box::new(txs.into_iter().map(move |t| {
-            let transaction_hash = t.hash();
-            let t = SignedTransaction::new(t).expect(PROOF);
-            let machine = engine.machine();
-            let x = Self::do_virtual_call(machine, &env_info, &mut state, &t, analytics)
-                .expect(EXECUTE_PROOF);
-            env_info.gas_used = env_info.gas_used + x.gas_used;
-            (transaction_hash, x)
-        })))
-    }
-
     fn block_number(&self, id: BlockId) -> Option<BlockNumber> {
         self.block_number_ref(&id)
     }
@@ -2110,19 +1776,11 @@ impl ImportSealedBlock for Client {
             trace_time!("import_sealed_block");
 
             let block_data = block.rlp_bytes();
-
-            let pending = self.importer.check_epoch_end_signal(
-                &header,
-                &block_data,
-                &block.receipts,
-                block.state.db(),
-                self,
-            )?;
             let route = self.importer.commit_block(
                 block,
                 &header,
                 encoded::Block::new(block_data),
-                pending,
+                None,
                 self,
             );
             trace!(target: "client", "Imported sealed block #{} ({})", header.number(), hash);

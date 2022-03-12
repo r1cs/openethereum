@@ -315,16 +315,6 @@ pub trait BlockChainClient:
     /// Returns logs matching given filter. If one of the filtering block cannot be found, returns the block id that caused the error.
     fn logs(&self, filter: Filter) -> Result<Vec<LocalizedLogEntry>, BlockId>;
 
-    /// Replays a given transaction for inspection.
-    fn replay(&self, t: TransactionId, analytics: CallAnalytics) -> Result<Executed, CallError>;
-
-    /// Replays all the transactions in a given block for inspection.
-    fn replay_block_transactions(
-        &self,
-        block: BlockId,
-        analytics: CallAnalytics,
-    ) -> Result<Box<dyn Iterator<Item = (H256, Executed)>>, CallError>;
-
     /// Returns traces matching given filter.
     fn filter_traces(&self, filter: TraceFilter) -> Option<Vec<LocalizedTrace>>;
 

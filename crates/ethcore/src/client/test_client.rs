@@ -720,26 +720,6 @@ impl EngineInfo for TestBlockChainClient {
 }
 
 impl BlockChainClient for TestBlockChainClient {
-    fn replay(&self, _id: TransactionId, _analytics: CallAnalytics) -> Result<Executed, CallError> {
-        self.execution_result.read().clone().unwrap()
-    }
-
-    fn replay_block_transactions(
-        &self,
-        _block: BlockId,
-        _analytics: CallAnalytics,
-    ) -> Result<Box<dyn Iterator<Item = (H256, Executed)>>, CallError> {
-        Ok(Box::new(
-            self.traces
-                .read()
-                .clone()
-                .unwrap()
-                .into_iter()
-                .map(|t| t.transaction_hash.unwrap_or(H256::default()))
-                .zip(self.execution_result.read().clone().unwrap().into_iter()),
-        ))
-    }
-
     fn block_hash(&self, id: BlockId) -> Option<H256> {
         Self::block_hash(self, id)
     }

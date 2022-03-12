@@ -379,15 +379,6 @@ impl Engine<EthereumMachine> for Clique {
         0
     }
 
-    fn on_new_block(
-        &self,
-        _block: &mut ExecutedBlock,
-        _epoch_begin: bool,
-        _ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
-    ) -> Result<(), Error> {
-        Ok(())
-    }
-
     // Clique has no block reward.
     fn on_close_block(&self, _block: &mut ExecutedBlock) -> Result<(), Error> {
         Ok(())

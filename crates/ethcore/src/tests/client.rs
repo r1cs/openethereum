@@ -404,29 +404,6 @@ fn transaction_proof() {
 }
 
 #[test]
-fn reset_blockchain() {
-    let client = get_test_client_with_blocks(get_good_dummy_block_seq(19));
-    // 19 + genesis block
-    assert!(client.block_header(BlockId::Number(20)).is_some());
-    assert_eq!(
-        client.block_header(BlockId::Number(20)).unwrap().hash(),
-        client.best_block_header().hash()
-    );
-
-    assert!(client.reset(5).is_ok());
-
-    client.chain().clear_cache();
-
-    assert!(client.block_header(BlockId::Number(20)).is_none());
-    assert!(client.block_header(BlockId::Number(19)).is_none());
-    assert!(client.block_header(BlockId::Number(18)).is_none());
-    assert!(client.block_header(BlockId::Number(17)).is_none());
-    assert!(client.block_header(BlockId::Number(16)).is_none());
-
-    assert!(client.block_header(BlockId::Number(15)).is_some());
-}
-
-#[test]
 fn import_export_hex() {
     let client = get_test_client_with_blocks(get_good_dummy_block_seq(19));
     let block_rlps = (15..20)

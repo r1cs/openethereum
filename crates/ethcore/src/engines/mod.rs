@@ -283,16 +283,6 @@ impl<'a, M: Machine> ConstructedVerifier<'a, M> {
     }
 }
 
-/// Results of a query of whether an epoch change occurred at the given block.
-pub enum EpochChange<M: Machine> {
-    /// Cannot determine until more data is passed.
-    Unsure(AuxiliaryRequest),
-    /// No epoch change.
-    No,
-    /// The epoch will change, with proof.
-    Yes(Proof<M>),
-}
-
 /// A consensus mechanism for the chain. Generally either proof-of-work or proof-of-stake-based.
 /// Provides hooks into each of the major parts of block import.
 pub trait Engine<M: Machine>: Sync + Send {
@@ -412,37 +402,6 @@ pub trait Engine<M: Machine>: Sync + Send {
         _state: &machine::Call,
     ) -> Result<Vec<u8>, String> {
         Ok(Vec::new())
-    }
-
-    /// Whether an epoch change is signalled at the given header but will require finality.
-    /// If a change can be enacted immediately then return `No` from this function but
-    /// `Yes` from `is_epoch_end`.
-    ///
-    /// If auxiliary data of the block is required, return an auxiliary request and the function will be
-    /// called again with them.
-    /// Return `Yes` or `No` when the answer is definitively known.
-    ///
-    /// Should not interact with state.
-    fn signals_epoch_end<'a>(&self, _header: &Header, _aux: AuxiliaryData<'a>) -> EpochChange<M> {
-        EpochChange::No
-    }
-
-    /// Whether a block is the end of an epoch.
-    ///
-    /// This either means that an immediate transition occurs or a block signalling transition
-    /// has reached finality. The `Headers` given are not guaranteed to return any blocks
-    /// from any epoch other than the current. The client must keep track of finality and provide
-    /// the latest finalized headers to check against the transition store.
-    ///
-    /// Return optional transition proof.
-    fn is_epoch_end(
-        &self,
-        _chain_head: &Header,
-        _finalized: &[H256],
-        _chain: &Headers<Header>,
-        _transition_store: &PendingTransitionStore,
-    ) -> Option<Vec<u8>> {
-        None
     }
 
     /// Create an epoch verifier from validation proof and a flag indicating
