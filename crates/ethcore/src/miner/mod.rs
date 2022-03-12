@@ -29,10 +29,7 @@ pub use ethcore_miner::{
     pool::{PendingOrdering},
 };
 
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use bytes::Bytes;
 use ethcore_miner::pool::{local_transactions, QueueStatus, VerifiedTransaction};

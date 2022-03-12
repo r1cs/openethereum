@@ -25,7 +25,7 @@ mod verifier;
 pub use self::{
     canon_verifier::CanonVerifier,
     noop_verifier::NoopVerifier,
-    queue::{BlockQueue, Config as QueueConfig, QueueInfo, VerificationQueue},
+    queue::{BlockVerifier, QueueInfo},
     verification::*,
     verifier::Verifier,
 };

@@ -211,8 +211,6 @@ pub fn json_chain_test<H: FnMut(&str, HookType)>(
                             if let Err(e) = res {
                                 warn!(target: "json-tests", "{} – Error importing block #{}: {:?}", name, num, e);
                             }
-                            client.flush_queue();
-                            client.import_verified_blocks();
                         }
                         Err(decoder_err) => {
                             warn!(target: "json-tests", "Error decoding test block: {:?} ({} bytes)", decoder_err, bytes_len);

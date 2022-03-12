@@ -15,11 +15,11 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::{
-    collections::{BTreeMap, HashSet, VecDeque},
+    collections::{BTreeMap, VecDeque},
     io::{BufRead, BufReader},
-    str::{from_utf8, FromStr},
+    str::{from_utf8},
     sync::{atomic::{AtomicBool, AtomicU64, Ordering as AtomicOrdering}, Arc},
-    time::{Duration, Instant},
+    time::{Instant},
 };
 
 use blockchain::{
@@ -81,11 +81,7 @@ use trace::{
     self, Database as TraceDatabase, ImportRequest as TraceImportRequest, LocalizedTrace, TraceDB,
 };
 use transaction_ext::Transaction;
-use verification::{
-    self,
-    queue::kind::{blocks::Unverified, BlockLike},
-    BlockQueue, PreverifiedBlock, Verifier,
-};
+use verification::{self, queue::kind::{blocks::Unverified, BlockLike}, PreverifiedBlock, Verifier, BlockVerifier};
 use vm::Schedule;
 // re-export
 pub use blockchain::CacheSize as BlockChainCacheSize;
@@ -94,8 +90,6 @@ pub use reth_util::queue::ExecutionQueue;
 pub use types::{block_status::BlockStatus, blockchain_info::BlockChainInfo};
 pub use verification::QueueInfo as BlockQueueInfo;
 
-// Max number of blocks imported at once.
-const MAX_QUEUE_SIZE_TO_SLEEP_ON: usize = 2;
 const MIN_HISTORY_SIZE: u64 = 8;
 
 /// Report on the status of a client.
@@ -134,7 +128,6 @@ impl<'a> ::std::ops::Sub<&'a ClientReport> for ClientReport {
 
 struct SleepState {
     last_activity: Option<Instant>,
-    last_autosleep: Option<Instant>,
 }
 
 impl SleepState {
@@ -143,10 +136,6 @@ impl SleepState {
             last_activity: match awake {
                 false => None,
                 true => Some(Instant::now()),
-            },
-            last_autosleep: match awake {
-                false => Some(Instant::now()),
-                true => None,
             },
         }
     }
@@ -159,10 +148,10 @@ struct Importer {
     /// Used to verify blocks
     pub verifier: Box<dyn Verifier<Client>>,
 
-    /// Queue containing pending blocks
-    pub block_queue: BlockQueue,
+	/// Queue containing pending blocks
+	pub block_verifier: BlockVerifier,
 
-    /// Handles block sealing
+	/// Handles block sealing
     pub miner: Arc<Miner>,
 
     /// Ethereum engine to be used during import
@@ -172,9 +161,6 @@ struct Importer {
 /// Blockchain database client backed by a persistent database. Owns and manages a blockchain and a block queue.
 /// Call `import_block()` to import a block asynchronously; `flush_queue()` flushes the queue.
 pub struct Client {
-    /// Flag used to disable the client forever. Not to be confused with `liveness`.
-    enabled: AtomicBool,
-
     /// Operating mode for the client
     mode: Mutex<Mode>,
 
@@ -215,133 +201,15 @@ impl Importer {
         engine: Arc<dyn EthEngine>,
         miner: Arc<Miner>,
     ) -> Result<Importer, EthcoreError> {
-        let block_queue = BlockQueue::new(
-            config.queue.clone(),
-            engine.clone(),
-            config.verifier_type.verifying_seal(),
-        );
-
+		let block_verifier = BlockVerifier::new(engine.clone(), config.verifier_type.verifying_seal());
         Ok(Importer {
             import_lock: Mutex::new(()),
             verifier: verification::new(config.verifier_type.clone()),
-            block_queue,
+			block_verifier,
             miner,
             engine,
         })
     }
-
-    // t_nb 6.0 This is triggered by a message coming from a block queue when the block is ready for insertion
-    pub fn import_verified_blocks(&self, client: &Client) -> usize {
-        // Shortcut out if we know we're incapable of syncing the chain.
-        trace!(target: "block_import", "fn import_verified_blocks");
-        if !client.enabled.load(AtomicOrdering::SeqCst) {
-            self.block_queue.reset_verification_ready_signal();
-            return 0;
-        }
-
-        let max_blocks_to_import = client.config.max_round_blocks_to_import;
-        let (
-            imported_blocks,
-            import_results,
-            invalid_blocks,
-            imported,
-            has_more_blocks_to_import,
-        ) = {
-            let mut imported_blocks = Vec::with_capacity(max_blocks_to_import);
-            let mut invalid_blocks = HashSet::new();
-            let mut import_results = Vec::with_capacity(max_blocks_to_import);
-
-            let _import_lock = self.import_lock.lock();
-            let blocks = self.block_queue.drain(max_blocks_to_import);
-            if blocks.is_empty() {
-                debug!(target: "block_import", "block_queue is empty");
-                self.block_queue.resignal_verification();
-                return 0;
-            }
-            trace_time!("import_verified_blocks");
-
-            for block in blocks {
-                let header = block.header.clone();
-                let bytes = block.bytes.clone();
-                let hash = header.hash();
-
-                let is_invalid = invalid_blocks.contains(header.parent_hash());
-                if is_invalid {
-                    debug!(
-                        target: "block_import",
-                        "Refusing block #{}({}) with invalid parent {}",
-                        header.number(),
-                        header.hash(),
-                        header.parent_hash()
-                    );
-                    invalid_blocks.insert(hash);
-                    continue;
-                }
-                // t_nb 7.0 check and lock block
-                match self.check_and_lock_block(&bytes, block, client) {
-                    Ok((closed_block, pending)) => {
-                        imported_blocks.push(hash);
-                        trace!(target:"block_import","Block #{}({}) check pass",header.number(),header.hash());
-                        // t_nb 8.0 commit block to db
-                        let route = self.commit_block(
-                            closed_block,
-                            &header,
-                            encoded::Block::new(bytes),
-                            pending,
-                            client,
-                        );
-                        trace!(target:"block_import","Block #{}({}) commited",header.number(),header.hash());
-                        import_results.push(route);
-                    }
-                    Err(_err) => {
-                        invalid_blocks.insert(hash);
-                    }
-                }
-            }
-
-            let imported = imported_blocks.len();
-            let invalid_blocks = invalid_blocks.into_iter().collect::<Vec<H256>>();
-
-            if !invalid_blocks.is_empty() {
-                self.block_queue.mark_as_bad(&invalid_blocks);
-            }
-            let has_more_blocks_to_import = !self.block_queue.mark_as_good(&imported_blocks);
-            (
-                imported_blocks,
-                import_results,
-                invalid_blocks,
-                imported,
-                has_more_blocks_to_import,
-            )
-        };
-
-        {
-            if !imported_blocks.is_empty() {
-                trace!(target:"block_import","Imported block, notify rest of system");
-                let route = ChainRoute::from(import_results.as_ref());
-
-                // t_nb 10 Notify miner about new included block.
-                if !has_more_blocks_to_import {
-                    self.miner.chain_new_blocks(
-                        client,
-                        &imported_blocks,
-                        &invalid_blocks,
-                        route.enacted(),
-                        route.retracted(),
-                        false,
-                    );
-                }
-            }
-        }
-        trace!(target:"block_import","Flush block to db");
-        let db = client.db.read();
-        db.key_value().flush().expect("DB flush failed.");
-
-        self.block_queue.resignal_verification();
-        trace!(target:"block_import","Resignal verifier");
-        imported
-    }
-
     // t_nb 6.0.1 check and lock block,
     fn check_and_lock_block(
         &self,
@@ -831,7 +699,6 @@ impl Client {
 
         let importer = Importer::new(&config, engine.clone(), miner)?;
         let client = Arc::new(Client {
-            enabled: AtomicBool::new(true),
             sleep_state: Mutex::new(SleepState::new(awake)),
             liveness: AtomicBool::new(awake),
             mode: Mutex::new(config.mode.clone()),
@@ -924,14 +791,6 @@ impl Client {
         *self.on_user_defaults_change.lock() = Some(Box::new(f));
     }
 
-    /// Flush the block import queue.
-    pub fn flush_queue(&self) {
-        self.importer.block_queue.flush();
-        while !self.importer.block_queue.is_empty() {
-            self.import_verified_blocks();
-        }
-    }
-
     /// The env info as of the best block.
     pub fn latest_env_info(&self) -> EnvInfo {
         self.env_info(BlockId::Latest)
@@ -985,7 +844,7 @@ impl Client {
 
     /// This is triggered by a message coming from a block queue when the block is ready for insertion
     pub fn import_verified_blocks(&self) -> usize {
-        self.importer.import_verified_blocks(self)
+		return 0;
     }
 
     // use a state-proving closure for the given block.
@@ -1165,55 +1024,6 @@ impl Client {
         self.chain.read().cache_size()
     }
 
-    /// Tick the client.
-    // TODO: manage by real events.
-    pub fn tick(&self, prevent_sleep: bool) {
-        self.check_garbage();
-        if !prevent_sleep {
-            self.check_snooze();
-        }
-    }
-
-    fn check_garbage(&self) {
-        self.chain.read().collect_garbage();
-        self.importer.block_queue.collect_garbage();
-        self.tracedb.read().collect_garbage();
-    }
-
-    fn check_snooze(&self) {
-        let mode = self.mode.lock().clone();
-        match mode {
-            Mode::Dark(timeout) => {
-                let mut ss = self.sleep_state.lock();
-                if let Some(t) = ss.last_activity {
-                    if Instant::now() > t + timeout {
-                        self.sleep(false);
-                        ss.last_activity = None;
-                    }
-                }
-            }
-            Mode::Passive(timeout, wakeup_after) => {
-                let mut ss = self.sleep_state.lock();
-                let now = Instant::now();
-                if let Some(t) = ss.last_activity {
-                    if now > t + timeout {
-                        self.sleep(false);
-                        ss.last_activity = None;
-                        ss.last_autosleep = Some(now);
-                    }
-                }
-                if let Some(t) = ss.last_autosleep {
-                    if now > t + wakeup_after {
-                        self.wake_up();
-                        ss.last_activity = Some(now);
-                        ss.last_autosleep = None;
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-
     /// Ask the client what the history parameter is.
     pub fn pruning_history(&self) -> u64 {
         self.history
@@ -1244,20 +1054,6 @@ impl Client {
         if !self.liveness.load(AtomicOrdering::SeqCst) {
             self.liveness.store(true, AtomicOrdering::SeqCst);
             info!(target: "mode", "wake_up: Waking.");
-        }
-    }
-
-    fn sleep(&self, force: bool) {
-        if self.liveness.load(AtomicOrdering::SeqCst) {
-            // only sleep if the import queue is mostly empty.
-            if force || (self.queue_info().total_queue_size() <= MAX_QUEUE_SIZE_TO_SLEEP_ON) {
-                self.liveness.store(false, AtomicOrdering::SeqCst);
-                info!(target: "mode", "sleep: Sleeping.");
-            } else {
-                info!(target: "mode", "sleep: Cannot sleep - syncing ongoing.");
-                // TODO: Consider uncommenting.
-                //(*self.sleep_state.lock()).last_activity = Some(Instant::now());
-            }
         }
     }
 
@@ -1478,8 +1274,7 @@ impl AccountData for Client {}
 impl ChainInfo for Client {
     fn chain_info(&self) -> BlockChainInfo {
         let mut chain_info = self.chain.read().chain_info();
-        chain_info.pending_total_difficulty =
-            chain_info.total_difficulty + self.importer.block_queue.total_difficulty();
+        chain_info.pending_total_difficulty = chain_info.total_difficulty;
         chain_info
     }
 }
@@ -1532,55 +1327,54 @@ impl ImportBlock for Client {
         }
 
         // t_nb 2.3
-        match self.importer.block_queue.import(unverified) {
-            Ok(hash) => {
-                Ok(hash)
-            }
-            // t_nb 2.5 if block is not okay print error. we only care about block errors (not import errors)
-            Err((Some(block), EthcoreError(EthcoreErrorKind::Block(err), _))) => {
-                bail!(EthcoreErrorKind::Block(err))
-            }
-            Err((None, EthcoreError(EthcoreErrorKind::Block(err), _))) => {
-                error!(target: "client", "BlockError {} detected but it was missing raw_bytes of the block", err);
-                bail!(EthcoreErrorKind::Block(err))
-            }
-            Err((_, e)) => Err(e),
-        }
-    }
+		let block = self.importer.block_verifier.verify(unverified)?;
+		let header = block.header.clone();
+		let bytes = block.bytes.clone();
+		let hash = header.hash();
+		// t_nb 7.0 check and lock block
+		let (closed_block, pending) =  self.importer.check_and_lock_block(&bytes, block, self)?;
+		trace!(target:"block_import","Block #{}({}) check pass",header.number(),header.hash());
+		// t_nb 8.0 commit block to db
+		self.importer.commit_block(closed_block, &header, encoded::Block::new(bytes), pending, self);
+		trace!(target:"block_import","Flush block to db");
+		let db = self.db.read();
+		db.key_value().flush().expect("DB flush failed.");
+		Ok(hash)
+	}
 }
 
 impl StateClient for Client {
-    type State = State<::state_db::StateDB>;
+	type State = State<::state_db::StateDB>;
 
-    fn latest_state_and_header(&self) -> (Self::State, Header) {
-        Client::latest_state_and_header(self)
-    }
+	fn latest_state_and_header(&self) -> (Self::State, Header) {
+		Client::latest_state_and_header(self)
+	}
 
-    fn state_at(&self, id: BlockId) -> Option<Self::State> {
-        Client::state_at(self, id)
-    }
+	fn state_at(&self, id: BlockId) -> Option<Self::State> {
+		Client::state_at(self, id)
+	}
 }
 
 impl Drop for Client {
-    fn drop(&mut self) {
-        self.shutdown()
-    }
+	fn drop(&mut self) {
+		self.shutdown()
+	}
 }
 
 impl Call for Client {
-    type State = State<::state_db::StateDB>;
+	type State = State<::state_db::StateDB>;
 
-    fn call(
-        &self,
-        transaction: &SignedTransaction,
-        analytics: CallAnalytics,
-        state: &mut Self::State,
-        header: &Header,
-    ) -> Result<Executed, CallError> {
-        let env_info = EnvInfo {
-            number: header.number(),
-            author: header.author().clone(),
-            timestamp: header.timestamp(),
+	fn call(
+		&self,
+		transaction: &SignedTransaction,
+		analytics: CallAnalytics,
+		state: &mut Self::State,
+		header: &Header,
+	) -> Result<Executed, CallError> {
+		let env_info = EnvInfo {
+			number: header.number(),
+			author: header.author().clone(),
+			timestamp: header.timestamp(),
             difficulty: header.difficulty().clone(),
             last_hashes: self.build_last_hashes(header.parent_hash()),
             gas_used: U256::default(),
@@ -1795,8 +1589,7 @@ impl BlockChainClient for Client {
         let chain = self.chain.read();
         match Self::block_hash(&chain, id) {
             Some(ref hash) if chain.is_known(hash) => BlockStatus::InChain,
-            Some(hash) => self.importer.block_queue.status(&hash).into(),
-            None => BlockStatus::Unknown,
+            _ => BlockStatus::Unknown,
         }
     }
 
@@ -2023,10 +1816,6 @@ impl BlockChainClient for Client {
 
     fn block_receipts(&self, hash: &H256) -> Option<BlockReceipts> {
         self.chain.read().block_receipts(hash)
-    }
-
-    fn queue_info(&self) -> BlockQueueInfo {
-        self.importer.block_queue.queue_info()
     }
 
     fn additional_params(&self) -> BTreeMap<String, String> {
@@ -2511,9 +2300,6 @@ impl ImportExportBlocks for Client {
             let block = Unverified::from_rlp(bytes, self.engine.params().eip1559_transition)
                 .map_err(|_| "Invalid block rlp")?;
             let number = block.header.number();
-            while self.queue_info().is_full() {
-                std::thread::sleep(Duration::from_secs(1));
-            }
             match self.import_block(block) {
                 Err(Error(EthcoreErrorKind::Import(ImportErrorKind::AlreadyInChain), _)) => {
                     trace!("Skipping block #{}: already in chain.", number);
@@ -2570,7 +2356,6 @@ impl ImportExportBlocks for Client {
                 }
             }
         };
-        self.flush_queue();
         Ok(())
     }
 }

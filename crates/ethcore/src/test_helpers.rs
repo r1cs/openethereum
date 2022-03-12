@@ -236,8 +236,6 @@ where
             view!(BlockView, &b.rlp_bytes()).header(test_engine.params().eip1559_transition);
         db = b.drain().state.drop().1;
     }
-    client.flush_queue();
-    client.import_verified_blocks();
     client
 }
 
@@ -313,9 +311,6 @@ pub fn push_block_with_transactions(client: &Arc<Client>, transactions: &[Signed
             e
         );
     }
-
-    client.flush_queue();
-    client.import_verified_blocks();
 }
 
 /// Creates dummy client (not test client) with corresponding blocks
@@ -338,8 +333,6 @@ pub fn get_test_client_with_blocks(blocks: Vec<Bytes>) -> Arc<Client> {
             panic!("error importing block which is well-formed: {:?}", e);
         }
     }
-    client.flush_queue();
-    client.import_verified_blocks();
     client
 }
 

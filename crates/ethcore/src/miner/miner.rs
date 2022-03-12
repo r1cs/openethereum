@@ -16,7 +16,7 @@
 
 use std::{
     cmp,
-    collections::{BTreeMap, BTreeSet, HashSet},
+    collections::{HashSet},
     sync::Arc,
     time::{Duration, Instant},
 };
@@ -27,7 +27,7 @@ use ethcore_miner::{
     gas_pricer::GasPricer,
     pool::{
         self,
-        PrioritizationStrategy, QueueStatus, TransactionQueue, VerifiedTransaction,
+        PrioritizationStrategy, TransactionQueue, VerifiedTransaction,
     },
 };
 use ethereum_types::{Address, H256, U256};
@@ -1295,7 +1295,6 @@ mod tests {
         let client = TestBlockChainClient::default();
         let miner = miner();
         let transaction = transaction();
-        let best_block = 0;
         // when
         let res = miner.import_own_transaction(&client, PendingTransaction::new(transaction, None));
 
@@ -1350,7 +1349,6 @@ mod tests {
         let client = TestBlockChainClient::default();
         let miner = miner();
         let transaction = transaction();
-        let best_block = 10;
         // when
         let res = miner.import_own_transaction(&client, PendingTransaction::new(transaction, None));
 
@@ -1438,7 +1436,6 @@ mod tests {
         assert_eq!(import.unwrap(), ());
 
         miner.update_sealing(&*client, ForceUpdateSealing::No);
-        client.flush_queue();
         assert_eq!(client.chain_info().best_block_number, 3 as BlockNumber);
 
         assert!(miner
@@ -1449,7 +1446,6 @@ mod tests {
             .is_ok());
 
         miner.update_sealing(&*client, ForceUpdateSealing::No);
-        client.flush_queue();
         assert_eq!(client.chain_info().best_block_number, 4 as BlockNumber);
     }
 }

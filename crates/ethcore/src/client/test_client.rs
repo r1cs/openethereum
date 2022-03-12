@@ -909,17 +909,6 @@ impl BlockChainClient for TestBlockChainClient {
         None
     }
 
-    fn queue_info(&self) -> QueueInfo {
-        QueueInfo {
-            verified_queue_size: self.queue_size.load(AtomicOrder::SeqCst),
-            unverified_queue_size: 0,
-            verifying_queue_size: 0,
-            max_queue_size: 0,
-            max_mem_use: 0,
-            mem_used: 0,
-        }
-    }
-
     fn additional_params(&self) -> BTreeMap<String, String> {
         Default::default()
     }

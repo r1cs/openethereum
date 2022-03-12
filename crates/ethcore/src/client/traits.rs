@@ -51,7 +51,7 @@ use executed::CallError;
 use executive::Executed;
 use state::StateInfo;
 use trace::LocalizedTrace;
-use verification::queue::{kind::blocks::Unverified, QueueInfo as BlockQueueInfo};
+use verification::queue::kind::blocks::Unverified;
 
 /// State information to be used during client query
 pub enum StateOrBlock {
@@ -308,9 +308,6 @@ pub trait BlockChainClient:
 
     /// Get block receipts data by block header hash.
     fn block_receipts(&self, hash: &H256) -> Option<BlockReceipts>;
-
-    /// Get block queue information.
-    fn queue_info(&self) -> BlockQueueInfo;
 
     /// Get the registrar address, if it exists.
     fn additional_params(&self) -> BTreeMap<String, String>;

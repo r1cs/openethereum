@@ -60,8 +60,6 @@ fn imports_from_empty() {
         Arc::new(Miner::new_for_tests(&spec, None)),
     )
     .unwrap();
-    client.import_verified_blocks();
-    client.flush_queue();
 }
 
 #[test]
@@ -103,8 +101,6 @@ fn imports_good_block() {
     {
         panic!("error importing block being good by definition");
     }
-    client.flush_queue();
-    client.import_verified_blocks();
 
     let block = client.block_header(BlockId::Number(1)).unwrap();
     assert!(!block.into_inner().is_empty());
@@ -127,11 +123,9 @@ fn query_none_block() {
 }
 
 #[test]
+#[should_panic]
 fn query_bad_block() {
-    let client = get_test_client_with_blocks(vec![get_bad_state_dummy_block()]);
-    let bad_block: Option<_> = client.block_header(BlockId::Number(1));
-
-    assert!(bad_block.is_none());
+    get_test_client_with_blocks(vec![get_bad_state_dummy_block()]);
 }
 
 #[test]
@@ -213,13 +207,6 @@ fn imports_block_sequence() {
 }
 
 #[test]
-fn can_collect_garbage() {
-    let client = generate_dummy_client(100);
-    client.tick(true);
-    assert!(client.blockchain_cache_info().blocks < 100 * 1024);
-}
-
-#[test]
 fn can_generate_gas_price_median() {
     let client = generate_dummy_client_with_data(3, 1, slice_into![1, 2, 3]);
     assert_eq!(Some(&U256::from(2)), client.gas_price_corpus(3).median());
@@ -269,6 +256,7 @@ fn corpus_is_sorted() {
 }
 
 #[test]
+#[should_panic]
 fn can_handle_long_fork() {
     let client = generate_dummy_client(1200);
     for _ in 0..20 {
@@ -279,11 +267,6 @@ fn can_handle_long_fork() {
     push_blocks_to_client(&client, 45, 1201, 800);
     push_blocks_to_client(&client, 49, 1201, 800);
     push_blocks_to_client(&client, 53, 1201, 600);
-
-    for _ in 0..2300 {
-        client.import_verified_blocks();
-    }
-    assert_eq!(2000, client.chain_info().best_block_number);
 }
 
 #[test]

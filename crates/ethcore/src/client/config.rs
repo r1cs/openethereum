@@ -20,7 +20,7 @@ use std::{
 };
 
 use journaldb;
-use verification::{QueueConfig, VerifierType};
+use verification::{VerifierType};
 
 pub use blockchain::Config as BlockChainConfig;
 pub use evm::VMType;
@@ -86,8 +86,6 @@ impl Display for Mode {
 /// Client configuration. Includes configs for all sub-systems.
 #[derive(Debug, PartialEq, Clone)]
 pub struct ClientConfig {
-    /// Block queue configuration.
-    pub queue: QueueConfig,
     /// Blockchain configuration.
     pub blockchain: BlockChainConfig,
     /// Trace configuration.
@@ -130,7 +128,6 @@ impl Default for ClientConfig {
     fn default() -> Self {
         let mb = 1024 * 1024;
         ClientConfig {
-            queue: Default::default(),
             blockchain: Default::default(),
             tracing: Default::default(),
             vm_type: Default::default(),
