@@ -24,7 +24,6 @@ extern crate ethash;
 extern crate ethcore_blockchain as blockchain;
 extern crate ethcore_builtin as builtin;
 extern crate ethcore_db as db;
-extern crate ethcore_miner;
 extern crate ethereum_types;
 extern crate ethjson;
 extern crate hash_db;
