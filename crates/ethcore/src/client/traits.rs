@@ -489,12 +489,6 @@ pub enum ForceUpdateSealing {
 
 /// Client facilities used by internally sealing Engines.
 pub trait EngineClient: Sync + Send + ChainInfo {
-    /// Make a new block and seal it.
-    fn update_sealing(&self, force: ForceUpdateSealing);
-
-    /// Submit a seal for a block in the mining queue.
-    fn submit_seal(&self, block_hash: H256, seal: Vec<Bytes>);
-
     /// Get the transition to the epoch the given parent hash is part of
     /// or transitions to.
     /// This will give the epoch that any children of this parent belong to.
@@ -536,10 +530,4 @@ pub trait ProvingBlockChainClient: BlockChainClient {
 
     /// Get an epoch change signal by block hash.
     fn epoch_signal(&self, hash: H256) -> Option<Vec<u8>>;
-}
-
-/// resets the blockchain
-pub trait BlockChainReset {
-    /// reset to best_block - n
-    fn reset(&self, num: u32) -> Result<(), String>;
 }

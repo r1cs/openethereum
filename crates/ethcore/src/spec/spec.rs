@@ -35,7 +35,7 @@ use types::{header::Header, BlockNumber};
 use vm::{AccessList, ActionParams, ActionValue, CallType, EnvInfo, ParamsType};
 
 use builtin::Builtin;
-use engines::{Clique, EthEngine, InstantSeal, InstantSealParams, NullEngine,
+use engines::{EthEngine, InstantSeal, InstantSealParams, NullEngine,
     DEFAULT_BLOCKHASH_CONTRACT,
 };
 use error::Error;
@@ -788,8 +788,6 @@ impl Spec {
             ethjson::spec::Engine::InstantSeal(None) => {
                 Arc::new(InstantSeal::new(InstantSealParams::default(), machine))
             }
-            ethjson::spec::Engine::Clique(clique) => Clique::new(clique.params.into(), machine)
-                .expect("Failed to start Clique consensus engine."),
         };
 
         // Dummy value is a filler for non-existent transitions

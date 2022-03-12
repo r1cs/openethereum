@@ -16,7 +16,7 @@
 
 //! Engine deserialization.
 
-use super::{Clique, Ethash, InstantSeal, NullEngine};
+use super::{Ethash, InstantSeal, NullEngine};
 
 /// Engine deserialization.
 #[derive(Debug, PartialEq, Deserialize)]
@@ -30,8 +30,6 @@ pub enum Engine {
     /// Ethash engine.
     #[serde(rename = "Ethash")]
     Ethash(Ethash),
-    /// Clique engine.
-    Clique(Clique),
 }
 
 #[cfg(test)]
@@ -92,20 +90,6 @@ mod tests {
         let deserialized: Engine = serde_json::from_str(s).unwrap();
         match deserialized {
             Engine::Ethash(_) => {} // ethash is unit tested in its own file.
-            _ => panic!(),
-        };
-
-        let s = r#"{
-			"clique": {
-				"params": {
-					"period": 15,
-					"epoch": 30000
-				}
-			}
-		}"#;
-        let deserialized: Engine = serde_json::from_str(s).unwrap();
-        match deserialized {
-            Engine::Clique(_) => {} // Clique is unit tested in its own file.
             _ => panic!(),
         };
     }

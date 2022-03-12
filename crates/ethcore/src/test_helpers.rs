@@ -48,7 +48,6 @@ use client::{
 use engines::EngineSigner;
 use ethjson::crypto::publickey::{Public, Signature};
 use factory::Factories;
-use miner::Miner;
 use spec::Spec;
 use state::*;
 use state_db::StateDB;
@@ -146,7 +145,7 @@ pub fn generate_dummy_client_with_spec_and_data<F>(
     block_number: u32,
     txs_per_block: usize,
     tx_gas_prices: &[U256],
-    force_sealing: bool,
+    _force_sealing: bool,
 ) -> Arc<Client>
 where
     F: Fn() -> Spec,
@@ -154,13 +153,10 @@ where
     let test_spec = test_spec();
     let client_db = new_db();
 
-    let miner = Miner::new_for_tests_force_sealing(&test_spec, None, force_sealing);
-
     let client = Client::new(
         ClientConfig::default(),
         &test_spec,
         client_db,
-        Arc::new(miner),
     )
     .unwrap();
     let test_engine = &*test_spec.engine;
@@ -322,7 +318,6 @@ pub fn get_test_client_with_blocks(blocks: Vec<Bytes>) -> Arc<Client> {
         ClientConfig::default(),
         &test_spec,
         client_db,
-        Arc::new(Miner::new_for_tests(&test_spec, None)),
     )
     .unwrap();
 

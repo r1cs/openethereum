@@ -195,7 +195,6 @@ pub fn json_chain_test<H: FnMut(&str, HookType)>(
                     config,
                     &spec,
                     db,
-                    Arc::new(Miner::new_for_tests(&spec, None)),
                 )
                 .expect("Failed to instantiate a new Client");
 

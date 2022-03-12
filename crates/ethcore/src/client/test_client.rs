@@ -58,7 +58,6 @@ use vm::Schedule;
 
 use block::{ClosedBlock, OpenBlock, SealedBlock};
 use client::{
-    traits::{ForceUpdateSealing},
     AccountData, Balance, BlockChain, BlockChainClient, BlockChainInfo, BlockId,
     BlockInfo, BlockProducer, BlockStatus, Call, CallAnalytics, ChainInfo,
     EngineInfo, ImportBlock, ImportSealedBlock, LastHashes, Nonce,
@@ -70,7 +69,6 @@ use error::{Error, EthcoreResult};
 use executed::CallError;
 use executive::Executed;
 use journaldb;
-use miner::{Miner, MinerService};
 use spec::Spec;
 use state::StateInfo;
 use state_db::StateDB;
@@ -109,8 +107,6 @@ pub struct TestBlockChainClient {
     pub error_on_logs: RwLock<Option<BlockId>>,
     /// Block queue size.
     pub queue_size: AtomicUsize,
-    /// Miner
-    pub miner: Arc<Miner>,
     /// Spec
     pub spec: Spec,
     /// Timestamp assigned to latest sealed block
@@ -187,7 +183,6 @@ impl TestBlockChainClient {
             receipts: RwLock::new(HashMap::new()),
             logs: RwLock::new(Vec::new()),
             queue_size: AtomicUsize::new(0),
-            miner: Arc::new(Miner::new_for_tests(&spec, None)),
             spec: spec,
             latest_block_timestamp: RwLock::new(10_000_000),
             ancient_block: RwLock::new(None),
@@ -368,41 +363,6 @@ impl TestBlockChainClient {
                 .get(&(self.numbers.read().len() - 1))
                 .cloned(),
         }
-    }
-
-    /// Inserts a transaction with given gas price to miners transactions queue.
-    pub fn insert_transaction_with_gas_price_to_queue(&self, gas_price: U256) -> H256 {
-        let keypair = Random.generate();
-        let tx = TypedTransaction::Legacy(Transaction {
-            action: Action::Create,
-            value: U256::from(100),
-            data: "3331600055".from_hex().unwrap(),
-            gas: U256::from(100_000),
-            gas_price: gas_price,
-            nonce: U256::zero(),
-        });
-        let signed_tx = tx.sign(keypair.secret(), None);
-        self.set_balance(signed_tx.sender(), 10_000_000_000_000_000_000u64.into());
-        let hash = signed_tx.hash();
-        let res = self
-            .miner
-            .import_external_transactions(self, vec![signed_tx.into()]);
-        let res = res.into_iter().next().unwrap();
-        assert!(res.is_ok());
-
-        // if new_transaction_hashes producer channel exists, send the transaction hash
-        let _ = self
-            .new_transaction_hashes
-            .write()
-            .as_ref()
-            .and_then(|tx| Some(tx.send(hash)));
-
-        hash
-    }
-
-    /// Inserts a transaction to miners transactions queue.
-    pub fn insert_transaction_to_queue(&self) -> H256 {
-        self.insert_transaction_with_gas_price_to_queue(U256::from(20_000_000_000u64))
     }
 
     /// Set reported history size.
@@ -964,20 +924,6 @@ impl ProvingBlockChainClient for TestBlockChainClient {
 }
 
 impl super::traits::EngineClient for TestBlockChainClient {
-    fn update_sealing(&self, force: ForceUpdateSealing) {
-        self.miner.update_sealing(self, force)
-    }
-
-    fn submit_seal(&self, block_hash: H256, seal: Vec<Bytes>) {
-        let import = self
-            .miner
-            .submit_seal(block_hash, seal)
-            .and_then(|block| self.import_sealed_block(block));
-        if let Err(err) = import {
-            warn!(target: "poa", "Wrong internal seal submission! {:?}", err);
-        }
-    }
-
     fn epoch_transition_for(&self, _block_hash: H256) -> Option<::engines::EpochTransition> {
         None
     }

@@ -47,7 +47,6 @@ fn can_trace_block_and_uncle_reward() {
         client_config,
         &spec,
         db,
-        Arc::new(Miner::new_for_tests(&spec, None)),
     )
     .unwrap();
 

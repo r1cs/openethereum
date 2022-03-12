@@ -54,9 +54,8 @@ use vm::{EnvInfo, LastHashes};
 use ansi_term::Colour;
 use block::{enact_verified, ClosedBlock, Drain, LockedBlock, OpenBlock, SealedBlock};
 use client::{
-    traits::ForceUpdateSealing,
     AccountData, Balance, BlockChain as BlockChainTrait, BlockChainClient,
-    BlockChainReset, BlockId, BlockInfo, BlockProducer, Call,
+    BlockId, BlockInfo, BlockProducer, Call,
     CallAnalytics, ChainInfo, ClientConfig,
     EngineInfo, ImportBlock, ImportSealedBlock,
     Nonce, PrepareOpenBlock, ProvingBlockChainClient, PruningInfo, ReopenBlock,
@@ -73,7 +72,6 @@ use error::{
 };
 use executive::{contract_address, Executed, Executive, TransactOptions};
 use factory::{Factories, VmFactory};
-use miner::{Miner, MinerService};
 use spec::Spec;
 use state::{self, State};
 use state_db::StateDB;
@@ -100,9 +98,6 @@ struct Importer {
 	/// Queue containing pending blocks
 	pub block_verifier: BlockVerifier,
 
-	/// Handles block sealing
-    pub miner: Arc<Miner>,
-
     /// Ethereum engine to be used during import
     pub engine: Arc<dyn EthEngine>,
 }
@@ -127,14 +122,12 @@ impl Importer {
     pub fn new(
         config: &ClientConfig,
         engine: Arc<dyn EthEngine>,
-        miner: Arc<Miner>,
     ) -> Result<Importer, EthcoreError> {
 		let block_verifier = BlockVerifier::new(engine.clone(), config.verifier_type.verifying_seal());
         Ok(Importer {
             import_lock: Mutex::new(()),
             verifier: verification::new(config.verifier_type.clone()),
 			block_verifier,
-            miner,
             engine,
         })
     }
@@ -334,7 +327,7 @@ impl Importer {
             .journal_under(&mut batch, number, hash)
             .expect("DB commit failed");
 
-        let finalized: Vec<_> = ancestry_actions
+        let _finalized: Vec<_> = ancestry_actions
             .into_iter()
             .map(|ancestry_action| {
                 let AncestryAction::MarkFinalized(a) = ancestry_action;
@@ -400,7 +393,6 @@ impl Client {
         config: ClientConfig,
         spec: &Spec,
         db: Arc<dyn BlockChainDB>,
-        miner: Arc<Miner>,
     ) -> Result<Arc<Client>, ::error::Error> {
         let trie_spec = match config.fat_db {
             true => TrieSpec::Fat,
@@ -455,7 +447,7 @@ impl Client {
         }
 
         let engine = spec.engine.clone();
-        let importer = Importer::new(&config, engine.clone(), miner)?;
+        let importer = Importer::new(&config, engine.clone())?;
         let client = Arc::new(Client {
             chain: RwLock::new(chain),
             tracedb,
@@ -598,17 +590,6 @@ impl Client {
             }
             hashes.push_front(hash.clone());
         }
-    }
-
-    /// Get shared miner reference.
-    #[cfg(test)]
-    pub fn miner(&self) -> Arc<Miner> {
-        self.importer.miner.clone()
-    }
-
-    #[cfg(test)]
-    pub fn state_db(&self) -> ::parking_lot::RwLockReadGuard<StateDB> {
-        self.state_db.read()
     }
 
     #[cfg(test)]
@@ -835,76 +816,6 @@ impl Client {
                 .block_header(id)
                 .and_then(|h| h.decode(self.engine.params().eip1559_transition).ok()),
         }
-    }
-}
-
-impl BlockChainReset for Client {
-    fn reset(&self, num: u32) -> Result<(), String> {
-        if num == 0 {
-            return Err("invalid number of blocks to reset".into());
-        }
-
-        let mut blocks_to_delete = Vec::with_capacity(num as usize);
-        let mut best_block_hash = self.chain.read().best_block_hash();
-        let mut batch = DBTransaction::with_capacity(blocks_to_delete.len());
-
-        for _ in 0..num {
-            let current_header = self
-                .chain
-                .read()
-                .block_header_data(&best_block_hash)
-                .expect(
-                "best_block_hash was fetched from db; block_header_data should exist in db; qed",
-            );
-            best_block_hash = current_header.parent_hash();
-
-            let (number, hash) = (current_header.number(), current_header.hash());
-            batch.delete(::db::COL_HEADERS, hash.as_bytes());
-            batch.delete(::db::COL_BODIES, hash.as_bytes());
-            Writable::delete::<BlockDetails, H264>(&mut batch, ::db::COL_EXTRA, &hash);
-            Writable::delete::<H256, BlockNumberKey>(&mut batch, ::db::COL_EXTRA, &number);
-
-            blocks_to_delete.push((number, hash));
-        }
-
-        let hashes = blocks_to_delete
-            .iter()
-            .map(|(_, hash)| hash)
-            .collect::<Vec<_>>();
-        info!(
-            "Deleting block hashes {}",
-            Colour::Red.bold().paint(format!("{:#?}", hashes))
-        );
-
-        let mut best_block_details = Readable::read::<BlockDetails, H264>(
-            &**self.db.read().key_value(),
-            ::db::COL_EXTRA,
-            &best_block_hash,
-        )
-        .expect("block was previously imported; best_block_details should exist; qed");
-
-        let (_, last_hash) = blocks_to_delete
-            .last()
-            .expect("num is > 0; blocks_to_delete can't be empty; qed");
-        // remove the last block as a child so that it can be re-imported
-        // ethcore/blockchain/src/blockchain.rs/Blockchain::is_known_child()
-        best_block_details.children.retain(|h| *h != *last_hash);
-        batch.write(::db::COL_EXTRA, &best_block_hash, &best_block_details);
-        // update the new best block hash
-        batch.put(::db::COL_EXTRA, b"best", best_block_hash.as_bytes());
-
-        self.db
-            .read()
-            .key_value()
-            .write(batch)
-            .map_err(|err| format!("could not delete blocks; io error occurred: {}", err))?;
-
-        info!(
-            "New best block hash {}",
-            Colour::Green.bold().paint(format!("{:?}", best_block_hash))
-        );
-
-        Ok(())
     }
 }
 
@@ -1742,21 +1653,6 @@ impl ::miner::TransactionVerifierClient for Client {}
 impl ::miner::BlockChainClient for Client {}
 
 impl super::traits::EngineClient for Client {
-    fn update_sealing(&self, force: ForceUpdateSealing) {
-        self.importer.miner.update_sealing(self, force)
-    }
-
-    fn submit_seal(&self, block_hash: H256, seal: Vec<Bytes>) {
-        let import = self
-            .importer
-            .miner
-            .submit_seal(block_hash, seal)
-            .and_then(|block| self.import_sealed_block(block));
-        if let Err(err) = import {
-            warn!(target: "poa", "Wrong internal seal submission! {:?}", err);
-        }
-    }
-
     fn epoch_transition_for(&self, parent_hash: H256) -> Option<::engines::EpochTransition> {
         self.chain.read().epoch_transition_for(parent_hash)
     }

@@ -16,7 +16,6 @@
 
 //! Consensus engine specification and basic implementations.
 
-mod clique;
 mod instant_seal;
 mod null_engine;
 
@@ -24,7 +23,6 @@ pub mod block_reward;
 pub mod signer;
 
 pub use self::{
-    clique::Clique,
     instant_seal::{InstantSeal, InstantSealParams},
     null_engine::NullEngine,
     signer::EngineSigner,
@@ -438,9 +436,6 @@ pub trait Engine<M: Machine>: Sync + Send {
 
     /// Add Client which can be used for sealing, potentially querying the state and sending messages.
     fn register_client(&self, _client: Weak<M::EngineClient>) {}
-
-    /// Trigger next step of the consensus engine.
-    fn step(&self) {}
 
     /// Return a new open block header timestamp based on the parent timestamp.
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {

@@ -18,7 +18,6 @@
 
 pub mod account;
 pub mod builtin;
-pub mod clique;
 pub mod engine;
 pub mod ethash;
 pub mod genesis;
@@ -33,7 +32,6 @@ pub mod step_duration;
 pub use self::{
     account::Account,
     builtin::{Builtin, Linear, Pricing},
-    clique::{Clique, CliqueParams},
     engine::Engine,
     ethash::{BlockReward, Ethash, EthashParams},
     genesis::Genesis,

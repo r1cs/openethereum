@@ -15,13 +15,13 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::{
-    str::{from_utf8, FromStr},
+    str::{FromStr},
     sync::Arc,
 };
 
 use client::{
     traits::{
-        BlockChainClient, BlockChainReset, BlockInfo, ChainInfo, ImportBlock,
+        BlockChainClient, BlockInfo, ChainInfo, ImportBlock,
     },
     Client, ClientConfig, ImportSealedBlock, PrepareOpenBlock,
 };
@@ -29,7 +29,6 @@ use ethereum;
 use ethereum_types::{Address, U256};
 use executive::{Executive, TransactOptions};
 use miner::Miner;
-use rustc_hex::ToHex;
 use spec::Spec;
 use state::{self, CleanupMode, State, StateInfo};
 use tempdir::TempDir;
@@ -39,7 +38,6 @@ use test_helpers::{
     push_blocks_to_client,
 };
 use types::{
-    data_format::DataFormat,
     filter::Filter,
     ids::BlockId,
     transaction::{Action, Transaction, TypedTransaction},
@@ -52,12 +50,10 @@ use verification::queue::kind::blocks::Unverified;
 fn imports_from_empty() {
     let db = test_helpers::new_db();
     let spec = Spec::new_test();
-
-    let client = Client::new(
+    Client::new(
         ClientConfig::default(),
         &spec,
         db,
-        Arc::new(Miner::new_for_tests(&spec, None)),
     )
     .unwrap();
 }
@@ -72,7 +68,6 @@ fn should_return_registrar() {
         ClientConfig::default(),
         &spec,
         db,
-        Arc::new(Miner::new_for_tests(&spec, None)),
     )
     .unwrap();
     let params = client.additional_params();
@@ -91,7 +86,6 @@ fn imports_good_block() {
         ClientConfig::default(),
         &spec,
         db,
-        Arc::new(Miner::new_for_tests(&spec, None)),
     )
     .unwrap();
     let good_block = get_good_dummy_block();
@@ -115,7 +109,6 @@ fn query_none_block() {
         ClientConfig::default(),
         &spec,
         db,
-        Arc::new(Miner::new_for_tests(&spec, None)),
     )
     .unwrap();
     let non_existant = client.block_header(BlockId::Number(188));
@@ -303,7 +296,6 @@ fn change_history_size() {
             ClientConfig::default(),
             &test_spec,
             db.clone(),
-            Arc::new(Miner::new_for_tests(&test_spec, None)),
         )
         .unwrap();
 
@@ -334,7 +326,6 @@ fn change_history_size() {
         config,
         &test_spec,
         db,
-        Arc::new(Miner::new_for_tests(&test_spec, None)),
     )
     .unwrap();
     assert_eq!(client.state().balance(&address).unwrap(), 100.into());

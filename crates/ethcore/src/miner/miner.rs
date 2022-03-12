@@ -38,7 +38,6 @@ use miner::{
     MinerService,
 };
 use parking_lot::{Mutex, RwLock};
-use rayon::prelude::*;
 use types::{
     transaction::{self, PendingTransaction, UnverifiedTransaction},
     BlockNumber,
@@ -265,18 +264,8 @@ impl Miner {
     /// Creates new instance of miner with given spec and accounts.
     ///
     /// NOTE This should be only used for tests.
-    pub fn new_for_tests(spec: &Spec, accounts: Option<HashSet<Address>>) -> Miner {
-        Miner::new_for_tests_force_sealing(spec, accounts, false)
-    }
-
-    /// Creates new instance of miner with given spec and accounts.
-    ///
-    /// NOTE This should be only used for tests.
-    pub fn new_for_tests_force_sealing(
-        spec: &Spec,
-        _accounts: Option<HashSet<Address>>,
-        force_sealing: bool,
-    ) -> Miner {
+    pub fn new_for_tests(spec: &Spec, _accounts: Option<HashSet<Address>>) -> Miner {
+        let force_sealing =  false;
         let minimal_gas_price = 0.into();
         Miner::new(
             MinerOptions {
@@ -1049,9 +1038,8 @@ mod tests {
 	use types::transaction::{Action, SignedTransaction};
     use crypto::publickey::{Generator, Random};
     use rustc_hex::FromHex;
-    use types::BlockNumber;
 
-    use client::{ChainInfo, EngineClient, EachBlockWith, ImportSealedBlock, TestBlockChainClient};
+    use client::{EachBlockWith, ImportSealedBlock, TestBlockChainClient};
     use miner::{MinerService, PendingOrdering};
     use test_helpers::generate_dummy_client;
     use types::transaction::{Transaction, TypedTransaction};
@@ -1145,7 +1133,6 @@ mod tests {
         let client = TestBlockChainClient::default();
         let miner = miner();
         let transaction = transaction().into();
-        let best_block = 0;
         // when
         let res = miner
             .import_external_transactions(&client, vec![transaction])

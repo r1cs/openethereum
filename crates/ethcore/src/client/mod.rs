@@ -32,7 +32,7 @@ pub use self::{
     client::*,
     config::{BlockChainConfig, ClientConfig, DatabaseCompactionProfile, VMType},
     traits::{
-        AccountData, Balance, BlockChain, BlockChainClient, BlockChainReset, BlockInfo,
+        AccountData, Balance, BlockChain, BlockChainClient, BlockInfo,
         BlockProducer, Call, ChainInfo, EngineClient, EngineInfo,
         ImportBlock, ImportSealedBlock, IoClient, Nonce, PrepareOpenBlock,
         ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter, StateClient,
