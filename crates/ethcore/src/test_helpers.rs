@@ -16,10 +16,10 @@
 
 //! Set of different helpers for client tests
 
-use std::{fs, io, path::Path, sync::Arc};
+use std::sync::Arc;
 
 use blockchain::{
-    BlockChain, BlockChainDB, BlockChainDBHandler, Config as BlockChainConfig, ExtrasInsert,
+    BlockChain, BlockChainDB, Config as BlockChainConfig, ExtrasInsert,
 };
 use blooms_db;
 use bytes::Bytes;
@@ -28,7 +28,6 @@ use db::KeyValueDB;
 use ethereum_types::{Address, H256, U256};
 use evm::Factory as EvmFactory;
 use hash::keccak;
-use kvdb_rocksdb::{self, Database, DatabaseConfig};
 use parking_lot::RwLock;
 use rlp::{self, RlpStream};
 use tempdir::TempDir;
@@ -373,79 +372,6 @@ pub fn new_db() -> Arc<dyn BlockChainDB> {
     };
 
     Arc::new(db)
-}
-
-/// Creates a new temporary `BlockChainDB` on FS
-pub fn new_temp_db(tempdir: &Path) -> Arc<dyn BlockChainDB> {
-    let blooms_dir = TempDir::new("").unwrap();
-    let trace_blooms_dir = TempDir::new("").unwrap();
-    let key_value_dir = tempdir.join("key_value");
-
-    let db_config = DatabaseConfig::with_columns(::db::NUM_COLUMNS);
-    let key_value_db = Database::open(&db_config, key_value_dir.to_str().unwrap()).unwrap();
-    let key_value_db_with_metrics = ethcore_db::DatabaseWithMetrics::new(key_value_db);
-    let db = TestBlockChainDB {
-        blooms: blooms_db::Database::open(blooms_dir.path()).unwrap(),
-        trace_blooms: blooms_db::Database::open(trace_blooms_dir.path()).unwrap(),
-        _blooms_dir: blooms_dir,
-        _trace_blooms_dir: trace_blooms_dir,
-        key_value: Arc::new(key_value_db_with_metrics),
-    };
-
-    Arc::new(db)
-}
-
-/// Creates new instance of KeyValueDBHandler
-pub fn restoration_db_handler(
-    config: kvdb_rocksdb::DatabaseConfig,
-) -> Box<dyn BlockChainDBHandler> {
-    struct RestorationDBHandler {
-        config: kvdb_rocksdb::DatabaseConfig,
-    }
-
-    struct RestorationDB {
-        blooms: blooms_db::Database,
-        trace_blooms: blooms_db::Database,
-        key_value: Arc<dyn KeyValueDB>,
-    }
-
-    impl BlockChainDB for RestorationDB {
-        fn key_value(&self) -> &Arc<dyn KeyValueDB> {
-            &self.key_value
-        }
-
-        fn blooms(&self) -> &blooms_db::Database {
-            &self.blooms
-        }
-
-        fn trace_blooms(&self) -> &blooms_db::Database {
-            &self.trace_blooms
-        }
-    }
-    impl stats::PrometheusMetrics for RestorationDB {
-        fn prometheus_metrics(&self, _: &mut stats::PrometheusRegistry) {}
-    }
-
-    impl BlockChainDBHandler for RestorationDBHandler {
-        fn open(&self, db_path: &Path) -> io::Result<Arc<dyn BlockChainDB>> {
-            let key_value = kvdb_rocksdb::Database::open(&self.config, &db_path.to_string_lossy())?;
-            let key_value = Arc::new(db::DatabaseWithMetrics::new(key_value));
-            let blooms_path = db_path.join("blooms");
-            let trace_blooms_path = db_path.join("trace_blooms");
-            fs::create_dir_all(&blooms_path)?;
-            fs::create_dir_all(&trace_blooms_path)?;
-            let blooms = blooms_db::Database::open(blooms_path).unwrap();
-            let trace_blooms = blooms_db::Database::open(trace_blooms_path).unwrap();
-            let db = RestorationDB {
-                blooms,
-                trace_blooms,
-                key_value,
-            };
-            Ok(Arc::new(db))
-        }
-    }
-
-    Box::new(RestorationDBHandler { config })
 }
 
 /// Generates dummy blockchain with corresponding amount of blocks

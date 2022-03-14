@@ -17,10 +17,9 @@
 //! Database utilities and definitions.
 
 use kvdb::DBTransaction;
-use kvdb_rocksdb::Database;
 use parking_lot::RwLock;
 use stats::{PrometheusMetrics, PrometheusRegistry};
-use std::{collections::HashMap, hash::Hash, io::Read};
+use std::{collections::HashMap, hash::Hash};
 
 use rlp;
 
@@ -314,142 +313,8 @@ impl<KVDB: kvdb::KeyValueDB + ?Sized> Readable for KVDB {
     }
 }
 
-/// Database with enabled statistics
-pub struct DatabaseWithMetrics {
-    db: Database,
-    reads: std::sync::atomic::AtomicI64,
-    writes: std::sync::atomic::AtomicI64,
-    bytes_read: std::sync::atomic::AtomicI64,
-    bytes_written: std::sync::atomic::AtomicI64,
-}
-
-impl DatabaseWithMetrics {
-    /// Create a new instance
-    pub fn new(db: Database) -> Self {
-        Self {
-            db,
-            reads: std::sync::atomic::AtomicI64::new(0),
-            writes: std::sync::atomic::AtomicI64::new(0),
-            bytes_read: std::sync::atomic::AtomicI64::new(0),
-            bytes_written: std::sync::atomic::AtomicI64::new(0),
-        }
-    }
-}
-
 /// Ethcore definition of a KeyValueDB with embeeded metrics
 pub trait KeyValueDB: kvdb::KeyValueDB + PrometheusMetrics {}
-
-impl kvdb::KeyValueDB for DatabaseWithMetrics {
-    fn get(&self, col: Option<u32>, key: &[u8]) -> std::io::Result<Option<kvdb::DBValue>> {
-        let res = self.db.get(col, key);
-        let count = res
-            .as_ref()
-            .map_or(0, |y| y.as_ref().map_or(0, |x| x.bytes().count()));
-
-        self.reads
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        self.bytes_read
-            .fetch_add(count as i64, std::sync::atomic::Ordering::Relaxed);
-
-        res
-    }
-    fn get_by_prefix(&self, col: Option<u32>, prefix: &[u8]) -> Option<Box<[u8]>> {
-        let res = self.db.get_by_prefix(col, prefix);
-        let count = res.as_ref().map_or(0, |x| x.bytes().count());
-
-        self.reads
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        self.bytes_read
-            .fetch_add(count as i64, std::sync::atomic::Ordering::Relaxed);
-
-        res
-    }
-    fn write_buffered(&self, transaction: DBTransaction) {
-        let mut count = 0;
-        for op in &transaction.ops {
-            count += match op {
-                kvdb::DBOp::Insert { value, .. } => value.bytes().count(),
-                _ => 0,
-            };
-        }
-
-        self.writes.fetch_add(
-            transaction.ops.len() as i64,
-            std::sync::atomic::Ordering::Relaxed,
-        );
-        self.bytes_written
-            .fetch_add(count as i64, std::sync::atomic::Ordering::Relaxed);
-
-        self.db.write_buffered(transaction)
-    }
-    fn write(&self, transaction: DBTransaction) -> std::io::Result<()> {
-        let mut count = 0;
-        for op in &transaction.ops {
-            count += match op {
-                kvdb::DBOp::Insert { value, .. } => value.bytes().count(),
-                _ => 0,
-            };
-        }
-
-        self.bytes_written
-            .fetch_add(count as i64, std::sync::atomic::Ordering::Relaxed);
-        self.writes.fetch_add(
-            transaction.ops.len() as i64,
-            std::sync::atomic::Ordering::Relaxed,
-        );
-        self.db.write(transaction)
-    }
-    fn flush(&self) -> std::io::Result<()> {
-        self.db.flush()
-    }
-
-    fn iter<'a>(
-        &'a self,
-        col: Option<u32>,
-    ) -> Box<(dyn Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a)> {
-        kvdb::KeyValueDB::iter(&self.db, col)
-    }
-
-    fn iter_from_prefix<'a>(
-        &'a self,
-        col: Option<u32>,
-        prefix: &'a [u8],
-    ) -> Box<dyn Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {
-        self.db.iter_from_prefix(col, prefix)
-    }
-
-    fn restore(&self, new_db: &str) -> std::io::Result<()> {
-        self.db.restore(new_db)
-    }
-}
-
-impl KeyValueDB for DatabaseWithMetrics {}
-
-impl PrometheusMetrics for DatabaseWithMetrics {
-    fn prometheus_metrics(&self, p: &mut PrometheusRegistry) {
-        p.register_counter(
-            "kvdb_reads",
-            "db reads",
-            self.reads.load(std::sync::atomic::Ordering::Relaxed) as i64,
-        );
-        p.register_counter(
-            "kvdb_writes",
-            "db writes",
-            self.writes.load(std::sync::atomic::Ordering::Relaxed) as i64,
-        );
-        p.register_counter(
-            "kvdb_bytes_read",
-            "db bytes_reads",
-            self.bytes_read.load(std::sync::atomic::Ordering::Relaxed) as i64,
-        );
-        p.register_counter(
-            "kvdb_bytes_written",
-            "db bytes_written",
-            self.bytes_written
-                .load(std::sync::atomic::Ordering::Relaxed) as i64,
-        );
-    }
-}
 
 /// InMemory with disabled statistics
 pub struct InMemoryWithMetrics {

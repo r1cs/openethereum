@@ -29,7 +29,9 @@ pub use types::verification_queue_info::VerificationQueueInfo as QueueInfo;
 
 pub mod kind;
 
+/// block verifier
 pub type BlockVerifier = Verifier<self::kind::Blocks>;
+/// header verifier
 pub type HeaderVerifier = Verifier<self::kind::Headers>;
 
 /// A queue of items to be verified. Sits between network or other I/O and the `BlockChain`.
@@ -41,10 +43,12 @@ pub struct Verifier<K: Kind> {
 }
 
 impl<K:Kind> Verifier<K> {
+	/// new
 	pub fn new(engine: Arc<dyn EthEngine>, check_seal: bool) -> Self {
 		Self { engine, check_seal, _maker: PhantomData }
 	}
 
+	/// verify
 	pub fn verify(&self, input: K::Input) -> Result<K::Verified, Error> {
 		let item = K::create(input, &*self.engine, self.check_seal).map_err(|(_input, e)| e)?;
 		// t_nb 5.0 verify standalone block (this verification is done in VerificationQueue thread pool)

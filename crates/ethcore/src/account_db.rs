@@ -92,12 +92,6 @@ pub struct AccountDB<'db> {
 }
 
 impl<'db> AccountDB<'db> {
-    /// Create a new AccountDB from an address.
-    #[cfg(test)]
-    pub fn new(db: &'db dyn HashDB<KeccakHasher, DBValue>, address: &Address) -> Self {
-        Self::from_hash(db, keccak(address))
-    }
-
     /// Create a new AcountDB from an address' hash.
     pub fn from_hash(db: &'db dyn HashDB<KeccakHasher, DBValue>, address_hash: H256) -> Self {
         AccountDB {

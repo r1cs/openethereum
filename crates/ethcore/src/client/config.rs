@@ -71,10 +71,6 @@ pub struct ClientConfig {
     pub pruning: journaldb::Algorithm,
     /// The name of the client instance.
     pub name: String,
-    /// RocksDB column cache-size if not default
-    pub db_cache_size: Option<usize>,
-    /// State db compaction profile
-    pub db_compaction: DatabaseCompactionProfile,
     /// The chain spec name
     pub spec_name: String,
     /// Type of block verifier used by client.
@@ -105,8 +101,6 @@ impl Default for ClientConfig {
             fat_db: false,
             pruning: journaldb::Algorithm::OverlayRecent,
             name: "default".into(),
-            db_cache_size: None,
-            db_compaction: Default::default(),
             spec_name: "".into(),
             verifier_type: VerifierType::Canon,
             state_cache_size: 1 * mb,

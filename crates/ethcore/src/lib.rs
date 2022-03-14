@@ -37,7 +37,6 @@ extern crate memory_cache;
 extern crate memory_db;
 extern crate parity_bytes as bytes;
 extern crate parity_crypto as crypto;
-extern crate parity_snappy as snappy;
 extern crate parity_util_mem;
 extern crate parking_lot;
 extern crate patricia_trie_ethereum as ethtrie;
@@ -63,8 +62,6 @@ extern crate env_logger;
 extern crate ethcore_accounts as accounts;
 #[cfg(feature = "json-tests")]
 extern crate globset;
-#[cfg(any(test, feature = "kvdb-rocksdb"))]
-extern crate kvdb_rocksdb;
 #[cfg(test)]
 extern crate rlp_compress;
 #[cfg(any(test, feature = "tempdir"))]

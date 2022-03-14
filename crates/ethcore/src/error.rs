@@ -26,7 +26,6 @@ use crypto::publickey::Error as EthkeyError;
 use ethereum_types::{Address, Bloom, H256, U256};
 use ethtrie::TrieError;
 use rlp;
-use snappy::InvalidInput;
 use types::{transaction::Error as TransactionError, BlockNumber};
 use unexpected::{Mismatch, OutOfBounds};
 
@@ -248,7 +247,6 @@ error_chain! {
         Execution(ExecutionError) #[doc = "Error concerning EVM code execution."];
         Block(BlockError) #[doc = "Error concerning block processing."];
         Transaction(TransactionError) #[doc = "Error concerning transaction processing."];
-        Snappy(InvalidInput) #[doc = "Snappy error."];
         Engine(EngineError) #[doc = "Consensus vote error."];
         Ethkey(EthkeyError) #[doc = "Ethkey error."];
         Decoder(rlp::DecoderError) #[doc = "RLP decoding errors"];
