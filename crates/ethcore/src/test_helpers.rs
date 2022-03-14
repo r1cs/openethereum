@@ -352,10 +352,6 @@ impl BlockChainDB for TestBlockChainDB {
     }
 }
 
-impl stats::PrometheusMetrics for TestBlockChainDB {
-    fn prometheus_metrics(&self, _: &mut stats::PrometheusRegistry) {}
-}
-
 /// Creates new test instance of `BlockChainDB`
 pub fn new_db() -> Arc<dyn BlockChainDB> {
     let blooms_dir = TempDir::new("").unwrap();

@@ -17,9 +17,6 @@
 //! Step duration configuration parameter
 
 use std::collections::BTreeMap;
-
-use serde::Deserialize;
-
 use crate::uint::Uint;
 
 /// Step duration can be specified either as a `Uint` (in seconds), in which case it will be

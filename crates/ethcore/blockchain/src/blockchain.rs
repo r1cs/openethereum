@@ -54,10 +54,8 @@ use log::{info, trace, warn};
 use parity_bytes::Bytes;
 use parity_util_mem::{allocators::new_malloc_size_ops, MallocSizeOf};
 use parking_lot::{Mutex, RwLock};
-use rayon::prelude::*;
 use rlp::RlpStream;
 use rlp_compress::{blocks_swapper, compress, decompress};
-use stats::PrometheusMetrics;
 
 use crate::{
     best_block::{BestAncientBlock, BestBlock},
@@ -67,7 +65,7 @@ use crate::{
 };
 
 /// Database backing `BlockChain`.
-pub trait BlockChainDB: Send + Sync + PrometheusMetrics {
+pub trait BlockChainDB: Send + Sync {
     /// Generic key value store.
     fn key_value(&self) -> &Arc<dyn KeyValueDB>;
 
@@ -464,7 +462,7 @@ impl BlockProvider for BlockChain {
         let mut logs = blocks
 			.chunks(128)
 			.flat_map(move |blocks_chunk| {
-				blocks_chunk.into_par_iter()
+				blocks_chunk.into_iter()
 					.filter_map(|hash| self.block_number(&hash).map(|r| (r, hash)))
 					.filter_map(|(number, hash)| self.block_receipts(&hash).map(|r| (number, hash, r.receipts)))
 					.filter_map(|(number, hash, receipts)| self.block_body(&hash).map(|ref b| (number, hash, receipts, b.transaction_hashes())))
@@ -1978,9 +1976,6 @@ mod tests {
         fn trace_blooms(&self) -> &blooms_db::Database {
             &self.trace_blooms
         }
-    }
-    impl PrometheusMetrics for TestBlockChainDB {
-        fn prometheus_metrics(&self, _: &mut stats::PrometheusRegistry) {}
     }
 
     /// Creates new test instance of `BlockChainDB`

@@ -70,10 +70,7 @@ use trace::{
 use transaction_ext::Transaction;
 use verification::{self, queue::kind::{blocks::Unverified, BlockLike}, PreverifiedBlock, Verifier, BlockVerifier};
 // re-export
-pub use blockchain::CacheSize as BlockChainCacheSize;
-pub use reth_util::queue::ExecutionQueue;
 pub use types::{block_status::BlockStatus, blockchain_info::BlockChainInfo};
-pub use verification::QueueInfo as BlockQueueInfo;
 
 struct Importer {
     /// Lock used during block import
