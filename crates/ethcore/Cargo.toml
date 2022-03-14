@@ -79,9 +79,7 @@ blooms-db = { path = "../db/blooms-db" }
 criterion = "0.2"
 env_logger = "0.5"
 ethcore-accounts = { path = "../accounts" }
-#fetch = { path = "../net/fetch" }
 hex-literal = "0.2.1"
-parity-runtime = { path = "../runtime/runtime" }
 rlp_compress = { path = "../util/rlp-compress" }
 tempdir = "0.3"
 trie-standardmap = "0.15.2"
