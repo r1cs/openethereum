@@ -202,8 +202,7 @@ pub fn check_proof(
     env_info: &EnvInfo,
 ) -> ProvedExecution {
     let backend = self::backend::ProofCheck::new(proof);
-    let mut factories = Factories::default();
-    factories.accountdb = ::account_db::Factory::Plain;
+    let factories = Factories::default();
 
     let res = State::from_existing(
         backend,

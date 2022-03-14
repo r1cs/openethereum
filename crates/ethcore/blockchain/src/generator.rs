@@ -22,11 +22,10 @@ use std::collections::VecDeque;
 use common_types::{
     encoded,
     header::Header,
-    transaction::{Action, SignedTransaction, Transaction, TypedTransaction},
+    transaction::SignedTransaction,
     view,
     views::BlockView,
 };
-use keccak_hash::keccak;
 use rlp::{encode, RlpStream};
 use triehash_ethereum::ordered_trie_root;
 
@@ -153,9 +152,11 @@ impl BlockBuilder {
     }
 
     /// Add a block with randomly generated transactions.
-    #[inline]
+	#[cfg(test)]
+	#[inline]
     pub fn add_block_with_random_transactions(&self) -> Self {
-        // Maximum of ~50 transactions
+		use common_types::transaction::{Action, Transaction, TypedTransaction};
+		// Maximum of ~50 transactions
         let count = rand::random::<u8>() as usize / 5;
         let transactions = std::iter::repeat_with(|| {
             let data_len = rand::random::<u8>();
@@ -170,7 +171,7 @@ impl BlockBuilder {
                 value: 100.into(),
                 data,
             })
-            .sign(&keccak("").into(), None)
+            .sign(&keccak_hash::keccak("").into(), None)
         })
         .take(count);
 

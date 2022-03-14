@@ -689,9 +689,8 @@ impl fmt::Debug for Account {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use account_db::*;
     use bytes::Bytes;
-    use ethereum_types::{Address, H256};
+    use ethereum_types::{H256};
     use journaldb::new_memory_db;
     use rlp_compress::{compress, decompress, snapshot_swapper};
     use std::str::FromStr;
@@ -708,7 +707,6 @@ mod tests {
     #[test]
     fn storage_at() {
         let mut db = new_memory_db();
-        let mut db = AccountDBMut::new(&mut db, &Address::default());
         let rlp = {
             let mut a = Account::new_contract(69.into(), 0.into(), KECCAK_NULL_RLP);
             a.set_storage(
@@ -728,12 +726,12 @@ mod tests {
                 .unwrap()
         );
         assert_eq!(
-            a.storage_at(&db.immutable(), &H256::from_low_u64_be(0x00u64))
+            a.storage_at(&db, &H256::from_low_u64_be(0x00u64))
                 .unwrap(),
             H256::from_low_u64_be(0x1234u64)
         );
         assert_eq!(
-            a.storage_at(&db.immutable(), &H256::from_low_u64_be(0x01u64))
+            a.storage_at(&db, &H256::from_low_u64_be(0x01u64))
                 .unwrap(),
             H256::default()
         );
@@ -742,7 +740,6 @@ mod tests {
     #[test]
     fn note_code() {
         let mut db = new_memory_db();
-        let mut db = AccountDBMut::new(&mut db, &Address::default());
 
         let rlp = {
             let mut a = Account::new_contract(69.into(), 0.into(), KECCAK_NULL_RLP);
@@ -752,7 +749,7 @@ mod tests {
         };
 
         let mut a = Account::from_rlp(&rlp).expect("decoding db value failed");
-        assert!(a.cache_code(&db.immutable()).is_some());
+        assert!(a.cache_code(&db).is_some());
 
         let mut a = Account::from_rlp(&rlp).expect("decoding db value failed");
         assert_eq!(a.note_code(vec![0x55, 0x44, 0xffu8]), Ok(()));
@@ -762,7 +759,6 @@ mod tests {
     fn commit_storage() {
         let mut a = Account::new_contract(69.into(), 0.into(), KECCAK_NULL_RLP);
         let mut db = new_memory_db();
-        let mut db = AccountDBMut::new(&mut db, &Address::default());
         a.set_storage(H256::from_low_u64_be(0), H256::from_low_u64_be(0x1234));
         assert_eq!(a.storage_root(), None);
         a.commit_storage(&Default::default(), &mut db).unwrap();
@@ -777,7 +773,6 @@ mod tests {
     fn commit_remove_commit_storage() {
         let mut a = Account::new_contract(69.into(), 0.into(), KECCAK_NULL_RLP);
         let mut db = new_memory_db();
-        let mut db = AccountDBMut::new(&mut db, &Address::default());
         a.set_storage(H256::from_low_u64_be(0), H256::from_low_u64_be(0x1234));
         a.commit_storage(&Default::default(), &mut db).unwrap();
         a.set_storage(H256::from_low_u64_be(1), H256::from_low_u64_be(0x1234));
@@ -795,7 +790,6 @@ mod tests {
     fn commit_code() {
         let mut a = Account::new_contract(69.into(), 0.into(), KECCAK_NULL_RLP);
         let mut db = new_memory_db();
-        let mut db = AccountDBMut::new(&mut db, &Address::default());
         a.init_code(vec![0x55, 0x44, 0xffu8]);
         assert_eq!(a.code_filth, Filth::Dirty);
         assert_eq!(a.code_size(), Some(3));
@@ -811,7 +805,6 @@ mod tests {
     fn reset_code() {
         let mut a = Account::new_contract(69.into(), 0.into(), KECCAK_NULL_RLP);
         let mut db = new_memory_db();
-        let mut db = AccountDBMut::new(&mut db, &Address::default());
         a.init_code(vec![0x55, 0x44, 0xffu8]);
         assert_eq!(a.code_filth, Filth::Dirty);
         a.commit_code(&mut db);
