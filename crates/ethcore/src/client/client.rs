@@ -16,14 +16,11 @@
 
 use std::{
     collections::{BTreeMap, VecDeque},
-    io::{BufRead, BufReader},
-    str::{from_utf8},
-    sync::{atomic::{AtomicBool, AtomicU64, Ordering as AtomicOrdering}, Arc},
-    time::{Instant},
+    sync::Arc,
 };
 
 use blockchain::{
-    BlockChain, BlockChainDB, BlockNumberKey, BlockProvider, BlockReceipts, ExtrasInsert,
+    BlockChain, BlockChainDB, BlockProvider, BlockReceipts, ExtrasInsert,
     ImportRoute, TransactionAddress, TreeRoute,
 };
 use bytes::Bytes;
@@ -47,14 +44,14 @@ use types::{
 };
 use vm::{EnvInfo, LastHashes};
 
-use block::{enact_verified, ClosedBlock, Drain, LockedBlock, OpenBlock, SealedBlock};
+use block::{enact_verified, Drain, LockedBlock, OpenBlock, SealedBlock};
 use client::{
     AccountData, Balance, BlockChain as BlockChainTrait, BlockChainClient,
     BlockId, BlockInfo, BlockProducer, Call,
     CallAnalytics, ChainInfo, ClientConfig,
     EngineInfo, ImportBlock, ImportSealedBlock,
-    Nonce, PrepareOpenBlock, ProvingBlockChainClient, PruningInfo, ReopenBlock,
-    ScheduleInfo, SealedBlockImporter, StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
+    Nonce, PrepareOpenBlock, ProvingBlockChainClient, PruningInfo,
+    SealedBlockImporter, StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
     TransactionId, TransactionInfo,
 };
 use engines::{epoch::PendingTransition, EpochTransition, EthEngine, ForkChoice, MAX_UNCLE_AGE};
@@ -72,7 +69,6 @@ use trace::{
 };
 use transaction_ext::Transaction;
 use verification::{self, queue::kind::{blocks::Unverified, BlockLike}, PreverifiedBlock, Verifier, BlockVerifier};
-use vm::Schedule;
 // re-export
 pub use blockchain::CacheSize as BlockChainCacheSize;
 pub use reth_util::queue::ExecutionQueue;
@@ -1507,43 +1503,6 @@ impl BlockChainClient for Client {
     }
 }
 
-impl ReopenBlock for Client {
-    fn reopen_block(&self, block: ClosedBlock) -> OpenBlock {
-        let engine = &*self.engine;
-        let mut block = block.reopen(engine);
-        let max_uncles = engine.maximum_uncle_count(block.header.number());
-        if block.uncles.len() < max_uncles {
-            let chain = self.chain.read();
-            let h = chain.best_block_hash();
-            // Add new uncles
-            let uncles = chain
-                .find_uncle_hashes(&h, MAX_UNCLE_AGE)
-                .unwrap_or_else(Vec::new);
-
-            for h in uncles {
-                if !block.uncles.iter().any(|header| header.hash() == h) {
-                    let uncle = chain
-                        .block_header_data(&h)
-                        .expect("find_uncle_hashes only returns hashes for existing headers; qed");
-                    let uncle = uncle
-                        .decode(self.engine.params().eip1559_transition)
-                        .expect("decoding failure");
-                    block.push_uncle(uncle).expect(
-                        "pushing up to maximum_uncle_count;
-												push_uncle is not ok only if more than maximum_uncle_count is pushed;
-												so all push_uncle are Ok;
-												qed",
-                    );
-                    if block.uncles.len() >= max_uncles {
-                        break;
-                    }
-                }
-            }
-        }
-        block
-    }
-}
-
 impl PrepareOpenBlock for Client {
     fn prepare_open_block(
         &self,
@@ -1598,12 +1557,6 @@ impl PrepareOpenBlock for Client {
 
 impl BlockProducer for Client {}
 
-impl ScheduleInfo for Client {
-    fn latest_schedule(&self) -> Schedule {
-        self.engine.schedule(self.latest_env_info().number)
-    }
-}
-
 impl ImportSealedBlock for Client {
     fn import_sealed_block(&self, block: SealedBlock) -> EthcoreResult<H256> {
         let header = block.header.clone();
@@ -1639,9 +1592,6 @@ impl ImportSealedBlock for Client {
 }
 
 impl SealedBlockImporter for Client {}
-
-impl ::miner::TransactionVerifierClient for Client {}
-impl ::miner::BlockChainClient for Client {}
 
 impl super::traits::EngineClient for Client {
     fn epoch_transition_for(&self, parent_hash: H256) -> Option<::engines::EpochTransition> {

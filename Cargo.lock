@@ -858,7 +858,6 @@ dependencies = [
  "trie-standardmap",
  "triehash-ethereum",
  "unexpected",
- "using_queue",
  "vm",
  "walkdir",
  "wasm",
@@ -3635,10 +3634,6 @@ dependencies = [
  "matches",
  "percent-encoding",
 ]
-
-[[package]]
-name = "using_queue"
-version = "0.1.0"
 
 [[package]]
 name = "version_check"

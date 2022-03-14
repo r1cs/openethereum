@@ -53,14 +53,13 @@ use types::{
     views::BlockView,
     BlockNumber,
 };
-use vm::Schedule;
 
-use block::{ClosedBlock, OpenBlock, SealedBlock};
+use block::{OpenBlock, SealedBlock};
 use client::{
     AccountData, Balance, BlockChain, BlockChainClient, BlockChainInfo, BlockId,
     BlockInfo, BlockProducer, BlockStatus, Call, CallAnalytics, ChainInfo,
     EngineInfo, ImportBlock, ImportSealedBlock, LastHashes, Nonce,
-    PrepareOpenBlock, ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter,
+    PrepareOpenBlock, ProvingBlockChainClient, SealedBlockImporter,
     StateClient, StateOrBlock, TraceFilter, TraceId, TransactionId, TransactionInfo,
 };
 use engines::EthEngine;
@@ -389,12 +388,6 @@ pub fn get_temp_state_db() -> StateDB {
     StateDB::new(journal_db, 1024 * 1024)
 }
 
-impl ReopenBlock for TestBlockChainClient {
-    fn reopen_block(&self, block: ClosedBlock) -> OpenBlock {
-        block.reopen(&*self.spec.engine)
-    }
-}
-
 impl PrepareOpenBlock for TestBlockChainClient {
     fn prepare_open_block(
         &self,
@@ -429,12 +422,6 @@ impl PrepareOpenBlock for TestBlockChainClient {
     }
 }
 
-impl ScheduleInfo for TestBlockChainClient {
-    fn latest_schedule(&self) -> Schedule {
-        Schedule::new_post_eip150(24576, true, true, true)
-    }
-}
-
 impl ImportSealedBlock for TestBlockChainClient {
     fn import_sealed_block(&self, _block: SealedBlock) -> EthcoreResult<H256> {
         Ok(H256::default())
@@ -444,9 +431,6 @@ impl ImportSealedBlock for TestBlockChainClient {
 impl BlockProducer for TestBlockChainClient {}
 
 impl SealedBlockImporter for TestBlockChainClient {}
-
-impl ::miner::TransactionVerifierClient for TestBlockChainClient {}
-impl ::miner::BlockChainClient for TestBlockChainClient {}
 
 impl Nonce for TestBlockChainClient {
     fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {

@@ -22,7 +22,6 @@ use client::{
 use ethereum_types::{H256, U256};
 use ethjson;
 use log::warn;
-use miner::Miner;
 use rustc_hex::ToHex;
 use spec::Genesis;
 use std::{path::Path, sync::Arc};

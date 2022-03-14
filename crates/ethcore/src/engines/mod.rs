@@ -54,7 +54,7 @@ use block::ExecutedBlock;
 use bytes::Bytes;
 use crypto::publickey::Signature;
 use ethereum_types::{Address, H256, H64, U256};
-use machine::{self, AuxiliaryData, AuxiliaryRequest, Machine};
+use machine::{self, Machine};
 use types::ancestry_action::AncestryAction;
 use unexpected::{Mismatch, OutOfBounds};
 

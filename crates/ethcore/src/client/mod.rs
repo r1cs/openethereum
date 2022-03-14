@@ -35,7 +35,7 @@ pub use self::{
         AccountData, Balance, BlockChain, BlockChainClient, BlockInfo,
         BlockProducer, Call, ChainInfo, EngineClient, EngineInfo,
         ImportBlock, ImportSealedBlock, IoClient, Nonce, PrepareOpenBlock,
-        ProvingBlockChainClient, ReopenBlock, ScheduleInfo, SealedBlockImporter, StateClient,
+        ProvingBlockChainClient, SealedBlockImporter, StateClient,
         StateOrBlock, TransactionInfo,
     },
 };

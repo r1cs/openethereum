@@ -18,7 +18,6 @@
 
 //! Ethcore library
 
-extern crate ansi_term;
 extern crate common_types as types;
 extern crate ethash;
 extern crate ethcore_blockchain as blockchain;
@@ -53,7 +52,6 @@ extern crate time_utils;
 extern crate trie_db as trie;
 extern crate triehash_ethereum as triehash;
 extern crate unexpected;
-extern crate using_queue;
 extern crate vm;
 extern crate wasm;
 
@@ -78,8 +76,6 @@ extern crate walkdir;
 extern crate error_chain;
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate macros;
 #[macro_use]

@@ -21,7 +21,6 @@ use std::{collections::BTreeMap};
 use blockchain::{BlockReceipts, TreeRoute};
 use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
-use evm::Schedule;
 use itertools::Itertools;
 use kvdb::DBValue;
 use types::{
@@ -42,7 +41,7 @@ use types::{
 };
 use vm::LastHashes;
 
-use block::{ClosedBlock, OpenBlock, SealedBlock};
+use block::{OpenBlock, SealedBlock};
 use engines::EthEngine;
 use error::{Error, EthcoreResult};
 use executed::CallError;
@@ -441,12 +440,6 @@ impl TransactionRequest {
     }
 }
 
-/// Provides `reopen_block` method
-pub trait ReopenBlock {
-    /// Reopens an OpenBlock and updates uncles.
-    fn reopen_block(&self, block: ClosedBlock) -> OpenBlock;
-}
-
 /// Provides `prepare_open_block` method
 pub trait PrepareOpenBlock {
     /// Returns OpenBlock prepared for closing.
@@ -459,13 +452,7 @@ pub trait PrepareOpenBlock {
 }
 
 /// Provides methods used for sealing new state
-pub trait BlockProducer: PrepareOpenBlock + ReopenBlock {}
-
-/// Provides `latest_schedule` method
-pub trait ScheduleInfo {
-    /// Returns latest schedule.
-    fn latest_schedule(&self) -> Schedule;
-}
+pub trait BlockProducer: PrepareOpenBlock {}
 
 ///Provides `import_sealed_block` method
 pub trait ImportSealedBlock {
