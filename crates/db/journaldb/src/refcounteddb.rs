@@ -264,7 +264,7 @@ mod tests {
     use JournalDB;
 
     fn new_db() -> RefCountedDB {
-        let backing = Arc::new(ethcore_db::InMemoryWithMetrics::create(0));
+        let backing = Arc::new(ethcore_db::InMemory::create(0));
         RefCountedDB::new(backing, None)
     }
 

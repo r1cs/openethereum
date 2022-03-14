@@ -182,7 +182,7 @@ impl<'a> EvmTestClient<'a> {
         spec: &'a spec::Spec,
         factories: &Factories,
     ) -> Result<state::State<state_db::StateDB>, EvmTestError> {
-        let db = Arc::new(ethcore_db::InMemoryWithMetrics::create(
+        let db = Arc::new(ethcore_db::InMemory::create(
             db::NUM_COLUMNS.expect("We use column-based DB; qed"),
         ));
         let journal_db =
@@ -212,7 +212,7 @@ impl<'a> EvmTestClient<'a> {
         factories: &Factories,
         pod_state: pod_state::PodState,
     ) -> Result<state::State<state_db::StateDB>, EvmTestError> {
-        let db = Arc::new(ethcore_db::InMemoryWithMetrics::create(
+        let db = Arc::new(ethcore_db::InMemory::create(
             db::NUM_COLUMNS.expect("We use column-based DB; qed"),
         ));
         let journal_db =

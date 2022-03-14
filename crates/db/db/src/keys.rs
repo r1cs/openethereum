@@ -16,11 +16,7 @@
 
 //! Blockchain DB extras.
 
-use std::io::Write;
-
-use common_types::{
-    engines::epoch::Transition as EpochTransition, receipt::TypedReceipt, BlockNumber,
-};
+use common_types::{receipt::TypedReceipt, BlockNumber};
 use ethereum_types::{H256, H264, U256};
 use kvdb::PREFIX_LEN as DB_PREFIX_LEN;
 use parity_util_mem::MallocSizeOf;
@@ -100,14 +96,6 @@ impl Key<BlockReceipts> for H256 {
     }
 }
 
-impl Key<common_types::engines::epoch::PendingTransition> for H256 {
-    type Target = H264;
-
-    fn key(&self) -> H264 {
-        with_index(self, ExtrasIndex::PendingEpochTransition)
-    }
-}
-
 /// length of epoch keys.
 pub const EPOCH_KEY_LEN: usize = DB_PREFIX_LEN + 16;
 
@@ -134,20 +122,6 @@ pub struct EpochTransitionsKey([u8; EPOCH_KEY_LEN]);
 impl AsRef<[u8]> for EpochTransitionsKey {
     fn as_ref(&self) -> &[u8] {
         &self.0[..]
-    }
-}
-
-impl Key<EpochTransitions> for u64 {
-    type Target = EpochTransitionsKey;
-
-    fn key(&self) -> Self::Target {
-        let mut arr = [0u8; EPOCH_KEY_LEN];
-        arr[..DB_PREFIX_LEN].copy_from_slice(&EPOCH_KEY_PREFIX[..]);
-
-        write!(&mut arr[DB_PREFIX_LEN..], "{:016x}", self)
-            .expect("format arg is valid; no more than 16 chars will be written; qed");
-
-        EpochTransitionsKey(arr)
     }
 }
 
@@ -244,15 +218,6 @@ impl BlockReceipts {
     pub fn new(receipts: Vec<TypedReceipt>) -> Self {
         BlockReceipts { receipts: receipts }
     }
-}
-
-/// Candidate transitions to an epoch with specific number.
-#[derive(Clone, RlpEncodable, RlpDecodable)]
-pub struct EpochTransitions {
-    /// Epoch number
-    pub number: u64,
-    /// List of candidate transitions
-    pub candidates: Vec<EpochTransition>,
 }
 
 #[cfg(test)]

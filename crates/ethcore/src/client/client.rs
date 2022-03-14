@@ -51,7 +51,7 @@ use client::{
     StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
     TransactionId,
 };
-use engines::{epoch::PendingTransition, EthEngine, ForkChoice};
+use engines::{EthEngine, ForkChoice};
 use error::{
     BlockError, CallError, Error as EthcoreError, ErrorKind as EthcoreErrorKind,
     EthcoreResult, ExecutionError, ImportErrorKind,
@@ -117,7 +117,7 @@ impl Importer {
         &self,
         block: PreverifiedBlock,
         client: &Client,
-    ) -> EthcoreResult<(LockedBlock, Option<PendingTransition>)> {
+    ) -> EthcoreResult<LockedBlock> {
         let engine = &*self.engine;
         let header = block.header.clone();
 
@@ -209,7 +209,7 @@ impl Importer {
             bail!(e);
         }
 
-        Ok((locked_block, None))
+        Ok(locked_block)
     }
 
     // NOTE: the header of the block passed here is not necessarily sealed, as
@@ -222,7 +222,6 @@ impl Importer {
         block: B,
         header: &Header,
         block_data: encoded::Block,
-        pending: Option<PendingTransition>,
         client: &Client,
     ) -> ImportRoute
     where
@@ -290,12 +289,6 @@ impl Importer {
         // already-imported block of the same number.
         // TODO: Prove it with a test.
         let mut state = block.state.drop().1;
-
-        // t_nb 9.5 check epoch end signal, potentially generating a proof on the current
-        // state. Write transition into db.
-        if let Some(pending) = pending {
-            chain.insert_pending_transition(&mut batch, header.hash(), pending);
-        }
 
         // t_nb 9.6 push state to database Transaction. (It calls journal_under from JournalDB)
         state
@@ -791,10 +784,10 @@ impl ImportBlock for Client {
 		let bytes = block.bytes.clone();
 		let hash = header.hash();
 		// t_nb 7.0 check and lock block
-		let (closed_block, pending) =  self.importer.check_and_lock_block(block, self)?;
+		let closed_block =  self.importer.check_and_lock_block(block, self)?;
 		trace!(target:"block_import","Block #{}({}) check pass",header.number(),header.hash());
 		// t_nb 8.0 commit block to db
-		self.importer.commit_block(closed_block, &header, encoded::Block::new(bytes), pending, self);
+		self.importer.commit_block(closed_block, &header, encoded::Block::new(bytes), self);
 		trace!(target:"block_import","Flush block to db");
 		let db = self.db.read();
 		db.key_value().flush().expect("DB flush failed.");
@@ -1456,7 +1449,6 @@ impl ImportSealedBlock for Client {
 			block,
 			&header,
 			encoded::Block::new(block_data),
-			None,
 			self,
 		);
 		trace!(target: "client", "Imported sealed block #{} ({})", header.number(), hash);

@@ -913,13 +913,13 @@ mod tests {
     }
 
     fn new_db() -> EarlyMergeDB {
-        let backing = Arc::new(ethcore_db::InMemoryWithMetrics::create(0));
+        let backing = Arc::new(ethcore_db::InMemory::create(0));
         EarlyMergeDB::new(backing, None)
     }
 
     #[test]
     fn reopen() {
-        let shared_db = Arc::new(ethcore_db::InMemoryWithMetrics::create(0));
+        let shared_db = Arc::new(ethcore_db::InMemory::create(0));
         let bar = H256::random();
 
         let foo = {
@@ -1105,7 +1105,7 @@ mod tests {
     fn reopen_remove_three() {
         let _ = ::env_logger::try_init();
 
-        let shared_db = Arc::new(ethcore_db::InMemoryWithMetrics::create(0));
+        let shared_db = Arc::new(ethcore_db::InMemory::create(0));
         let foo = keccak(b"foo");
 
         {
@@ -1166,7 +1166,7 @@ mod tests {
 
     #[test]
     fn reopen_fork() {
-        let shared_db = Arc::new(ethcore_db::InMemoryWithMetrics::create(0));
+        let shared_db = Arc::new(ethcore_db::InMemory::create(0));
 
         let (foo, bar, baz) = {
             let mut jdb = EarlyMergeDB::new(shared_db.clone(), None);

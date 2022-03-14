@@ -18,7 +18,6 @@
 
 use kvdb::DBTransaction;
 use parking_lot::RwLock;
-use stats::{PrometheusMetrics, PrometheusRegistry};
 use std::{collections::HashMap, hash::Hash};
 
 use rlp;
@@ -314,14 +313,14 @@ impl<KVDB: kvdb::KeyValueDB + ?Sized> Readable for KVDB {
 }
 
 /// Ethcore definition of a KeyValueDB with embeeded metrics
-pub trait KeyValueDB: kvdb::KeyValueDB + PrometheusMetrics {}
+pub use kvdb::KeyValueDB;
 
 /// InMemory with disabled statistics
-pub struct InMemoryWithMetrics {
+pub struct InMemory {
     db: kvdb_memorydb::InMemory,
 }
 
-impl kvdb::KeyValueDB for InMemoryWithMetrics {
+impl kvdb::KeyValueDB for InMemory {
     fn get(&self, col: Option<u32>, key: &[u8]) -> std::io::Result<Option<kvdb::DBValue>> {
         self.db.get(col, key)
     }
@@ -358,13 +357,7 @@ impl kvdb::KeyValueDB for InMemoryWithMetrics {
     }
 }
 
-impl PrometheusMetrics for InMemoryWithMetrics {
-    fn prometheus_metrics(&self, _: &mut PrometheusRegistry) {}
-}
-
-impl KeyValueDB for InMemoryWithMetrics {}
-
-impl InMemoryWithMetrics {
+impl InMemory {
     /// Create new instance
     pub fn create(num_cols: u32) -> Self {
         Self {

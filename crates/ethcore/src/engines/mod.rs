@@ -29,10 +29,7 @@ pub use self::{
 };
 
 // TODO [ToDr] Remove re-export (#10130)
-pub use types::engines::{
-    epoch::{self, Transition as EpochTransition},
-    ForkChoice,
-};
+pub use types::engines::ForkChoice;
 
 use std::{
     collections::{BTreeMap, HashMap},
@@ -237,9 +234,6 @@ pub fn default_system_or_code_call<'a>(
 
 /// Type alias for a function we can get headers by hash through.
 pub type Headers<'a, H> = dyn Fn(H256) -> Option<H> + 'a;
-
-/// Type alias for a function we can query pending transitions by block hash through.
-pub type PendingTransitionStore<'a> = dyn Fn(H256) -> Option<epoch::PendingTransition> + 'a;
 
 /// Proof dependent on state.
 pub trait StateDependentProof<M: Machine>: Send + Sync {

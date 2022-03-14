@@ -383,7 +383,7 @@ impl TestBlockChainClient {
 
 /// Get temporary db state1
 pub fn get_temp_state_db() -> StateDB {
-    let db = ethcore_db::InMemoryWithMetrics::create(NUM_COLUMNS.unwrap_or(0));
+    let db = ethcore_db::InMemory::create(NUM_COLUMNS.unwrap_or(0));
     let journal_db = journaldb::new(Arc::new(db), journaldb::Algorithm::EarlyMerge, COL_STATE);
     StateDB::new(journal_db, 1024 * 1024)
 }

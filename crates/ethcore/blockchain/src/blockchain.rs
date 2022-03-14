@@ -27,10 +27,7 @@ use blooms_db;
 use common_types::{
     blockchain_info::BlockChainInfo,
     encoded,
-    engines::{
-        epoch::{PendingTransition as PendingEpochTransition, Transition as EpochTransition},
-        ForkChoice,
-    },
+    engines::ForkChoice,
     header::{ExtendedHeader, Header},
     log_entry::{LocalizedLogEntry, LogEntry},
     receipt::TypedReceipt,
@@ -44,7 +41,7 @@ use db::{DBTransaction, KeyValueDB};
 use ethcore_db::{
     self as db,
     cache_manager::CacheManager,
-    keys::{BlockDetails, BlockReceipts, EpochTransitions, TransactionAddress, EPOCH_KEY_PREFIX},
+    keys::{BlockDetails, BlockReceipts, TransactionAddress},
     CacheUpdatePolicy, Readable, Writable,
 };
 use ethereum_types::{Bloom, BloomRef, H256, U256};
@@ -575,53 +572,6 @@ impl<'a> Iterator for AncestryWithMetadataIter<'a> {
     }
 }
 
-/// An iterator which walks all epoch transitions.
-/// Returns epoch transitions.
-pub struct EpochTransitionIter<'a> {
-    chain: &'a BlockChain,
-    prefix_iter: Box<dyn Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a>,
-}
-
-impl<'a> Iterator for EpochTransitionIter<'a> {
-    type Item = (u64, EpochTransition);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            // some epochs never occurred on the main chain.
-            let (key, val) = self.prefix_iter.next()?;
-
-            // iterator may continue beyond values beginning with this
-            // prefix.
-            if !key.starts_with(&EPOCH_KEY_PREFIX[..]) {
-                return None;
-            }
-
-            let transitions: EpochTransitions = ::rlp::decode(&val[..])
-                .expect("decode error: the db is corrupted or the data structure has changed");
-
-            // if there are multiple candidates, at most one will be on the
-            // canon chain.
-            for transition in transitions.candidates.into_iter() {
-                let is_in_canon_chain = self
-                    .chain
-                    .block_hash(transition.block_number)
-                    .map_or(false, |hash| hash == transition.block_hash);
-
-                // if the transition is within the block gap, there will only be
-                // one candidate, and it will be from a snapshot restored from.
-                let is_ancient = self
-                    .chain
-                    .first_block_number()
-                    .map_or(false, |first| first > transition.block_number);
-
-                if is_ancient || is_in_canon_chain {
-                    return Some((transitions.number, transition));
-                }
-            }
-        }
-    }
-}
-
 impl BlockChain {
     /// Create new instance of blockchain from given Genesis.
     pub fn new(
@@ -1137,52 +1087,6 @@ impl BlockChain {
                 number: block_number,
             }));
         }
-    }
-
-    /// Iterate over all epoch transitions.
-    /// This will only return transitions within the canonical chain.
-    pub fn epoch_transitions(&self) -> EpochTransitionIter {
-        let iter = self
-            .db
-            .key_value()
-            .iter_from_prefix(db::COL_EXTRA, &EPOCH_KEY_PREFIX[..]);
-        EpochTransitionIter {
-            chain: self,
-            prefix_iter: iter,
-        }
-    }
-
-    /// Get a specific epoch transition by block number and provided block hash.
-    pub fn epoch_transition(&self, block_num: u64, block_hash: H256) -> Option<EpochTransition> {
-        trace!(target: "blockchain", "Loading epoch transition at block {}, {}",
-			block_num, block_hash);
-
-        self.db
-            .key_value()
-            .read(db::COL_EXTRA, &block_num)
-            .and_then(|transitions: EpochTransitions| {
-                transitions
-                    .candidates
-                    .into_iter()
-                    .find(|c| c.block_hash == block_hash)
-            })
-    }
-
-    /// Write a pending epoch transition by block hash.
-    pub fn insert_pending_transition(
-        &self,
-        batch: &mut DBTransaction,
-        hash: H256,
-        t: PendingEpochTransition,
-    ) {
-        batch.write(db::COL_EXTRA, &hash, &t);
-    }
-
-    /// Get a pending epoch transition by block hash.
-    // TODO: implement removal safely: this can only be done upon finality of a block
-    // that _uses_ the pending transition.
-    pub fn get_pending_transition(&self, hash: H256) -> Option<PendingEpochTransition> {
-        self.db.key_value().read(db::COL_EXTRA, &hash)
     }
 
     /// Add a child to a given block. Assumes that the block hash is in
@@ -1862,7 +1766,7 @@ mod tests {
             trace_blooms: blooms_db::Database::open(trace_blooms_dir.path()).unwrap(),
             _blooms_dir: blooms_dir,
             _trace_blooms_dir: trace_blooms_dir,
-            key_value: Arc::new(ethcore_db::InMemoryWithMetrics::create(
+            key_value: Arc::new(ethcore_db::InMemory::create(
                 ethcore_db::NUM_COLUMNS.unwrap(),
             )),
         };

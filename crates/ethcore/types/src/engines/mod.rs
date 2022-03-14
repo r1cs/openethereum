@@ -16,8 +16,6 @@
 
 //! Engine-specific types.
 
-pub mod epoch;
-
 /// Fork choice.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ForkChoice {
