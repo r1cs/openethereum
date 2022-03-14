@@ -17,9 +17,8 @@
 //! Blockchain database.
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     io, mem,
-    path::Path,
     sync::Arc,
 };
 
@@ -89,13 +88,6 @@ pub trait BlockChainDB: Send + Sync {
         self.trace_blooms().reopen()?;
         Ok(())
     }
-}
-
-/// Generic database handler. This trait contains one function `open`. When called, it opens database with a
-/// predefined config.
-pub trait BlockChainDBHandler: Send + Sync {
-    /// Open the predefined key-value database.
-    fn open(&self, path: &Path) -> io::Result<Arc<dyn BlockChainDB>>;
 }
 
 /// Interface for querying blocks by hash and by number.
@@ -1147,36 +1139,6 @@ impl BlockChain {
         }
     }
 
-    /// Insert an epoch transition. Provide an epoch number being transitioned to
-    /// and epoch transition object.
-    ///
-    /// The block the transition occurred at should have already been inserted into the chain.
-    pub fn insert_epoch_transition(
-        &self,
-        batch: &mut DBTransaction,
-        epoch_num: u64,
-        transition: EpochTransition,
-    ) {
-        let mut transitions = match self.db.key_value().read(db::COL_EXTRA, &epoch_num) {
-            Some(existing) => existing,
-            None => EpochTransitions {
-                number: epoch_num,
-                candidates: Vec::with_capacity(1),
-            },
-        };
-
-        // ensure we don't write any duplicates.
-        if transitions
-            .candidates
-            .iter()
-            .find(|c| c.block_hash == transition.block_hash)
-            .is_none()
-        {
-            transitions.candidates.push(transition);
-            batch.write(db::COL_EXTRA, &epoch_num, &transitions);
-        }
-    }
-
     /// Iterate over all epoch transitions.
     /// This will only return transitions within the canonical chain.
     pub fn epoch_transitions(&self) -> EpochTransitionIter {
@@ -1204,39 +1166,6 @@ impl BlockChain {
                     .into_iter()
                     .find(|c| c.block_hash == block_hash)
             })
-    }
-
-    /// Get the transition to the epoch the given parent hash is part of
-    /// or transitions to.
-    /// This will give the epoch that any children of this parent belong to.
-    ///
-    /// The block corresponding the the parent hash must be stored already.
-    pub fn epoch_transition_for(&self, parent_hash: H256) -> Option<EpochTransition> {
-        // slow path: loop back block by block
-        for hash in self.ancestry_iter(parent_hash)? {
-            let details = self.block_details(&hash)?;
-
-            // look for transition in database.
-            if let Some(transition) = self.epoch_transition(details.number, hash) {
-                return Some(transition);
-            }
-
-            // canonical hash -> fast breakout:
-            // get the last epoch transition up to this block.
-            //
-            // if `block_hash` is canonical it will only return transitions up to
-            // the parent.
-            if self.block_hash(details.number)? == hash {
-                return self
-                    .epoch_transitions()
-                    .map(|(_, t)| t)
-                    .take_while(|t| t.block_number <= details.number)
-                    .last();
-            }
-        }
-
-        // should never happen as the loop will encounter genesis before concluding.
-        None
     }
 
     /// Write a pending epoch transition by block hash.
@@ -1558,18 +1487,6 @@ impl BlockChain {
         }
     }
 
-    /// Iterator that lists `first` and then all of `first`'s ancestors, by hash.
-    pub fn ancestry_iter(&self, first: H256) -> Option<AncestryIter> {
-        if self.is_known(&first) {
-            Some(AncestryIter {
-                current: first,
-                chain: self,
-            })
-        } else {
-            None
-        }
-    }
-
     /// Iterator that lists `first` and then all of `first`'s ancestors, by extended header.
     pub fn ancestry_with_metadata_iter<'a>(&'a self, first: H256) -> AncestryWithMetadataIter {
         AncestryWithMetadataIter {
@@ -1580,49 +1497,6 @@ impl BlockChain {
             },
             chain: self,
         }
-    }
-
-    /// Given a block's `parent`, find every block header which represents a valid possible uncle.
-    pub fn find_uncle_headers(
-        &self,
-        parent: &H256,
-        uncle_generations: usize,
-    ) -> Option<Vec<encoded::Header>> {
-        self.find_uncle_hashes(parent, uncle_generations).map(|v| {
-            v.into_iter()
-                .filter_map(|h| self.block_header_data(&h))
-                .collect()
-        })
-    }
-
-    /// Given a block's `parent`, find every block hash which represents a valid possible uncle.
-    pub fn find_uncle_hashes(&self, parent: &H256, uncle_generations: usize) -> Option<Vec<H256>> {
-        if !self.is_known(parent) {
-            return None;
-        }
-
-        let mut excluded = HashSet::new();
-        let ancestry = self.ancestry_iter(parent.clone())?;
-
-        for a in ancestry.clone().take(uncle_generations) {
-            if let Some(uncles) = self.uncle_hashes(&a) {
-                excluded.extend(uncles);
-                excluded.insert(a);
-            } else {
-                break;
-            }
-        }
-
-        let mut ret = Vec::new();
-        for a in ancestry.skip(1).take(uncle_generations) {
-            if let Some(details) = self.block_details(&a) {
-                ret.extend(details.children.iter().filter(|h| !excluded.contains(h)))
-            } else {
-                break;
-            }
-        }
-
-        Some(ret)
     }
 
     /// This function returns modified block hashes.
@@ -2122,78 +1996,6 @@ mod tests {
             vec![first_hash]
         );
         assert_eq!(bc.block_hash(2), None);
-    }
-
-    #[test]
-    fn check_ancestry_iter() {
-        let genesis = BlockBuilder::genesis();
-        let first_10 = genesis.add_blocks(10);
-        let generator = BlockGenerator::new(vec![first_10]);
-
-        let db = new_db();
-        let bc = new_chain(
-            genesis.last().encoded(),
-            db.clone(),
-            BlockNumber::max_value(),
-        );
-
-        let mut block_hashes = vec![genesis.last().hash()];
-        let mut batch = db.key_value().transaction();
-        for block in generator {
-            block_hashes.push(block.hash());
-            insert_block_batch(&mut batch, &bc, block.encoded(), vec![]);
-            bc.commit();
-        }
-        db.key_value().write(batch).unwrap();
-
-        block_hashes.reverse();
-
-        assert_eq!(
-            bc.ancestry_iter(block_hashes[0].clone())
-                .unwrap()
-                .collect::<Vec<_>>(),
-            block_hashes
-        );
-        assert_eq!(block_hashes.len(), 11);
-    }
-
-    #[test]
-    fn test_find_uncles() {
-        let genesis = BlockBuilder::genesis();
-        let b1a = genesis.add_block();
-        let b2a = b1a.add_block();
-        let b3a = b2a.add_block();
-        let b4a = b3a.add_block();
-        let b5a = b4a.add_block();
-
-        let b1b = genesis.add_block_with_difficulty(9);
-        let b2b = b1a.add_block_with_difficulty(9);
-        let b3b = b2a.add_block_with_difficulty(9);
-        let b4b = b3a.add_block_with_difficulty(9);
-        let b5b = b4a.add_block_with_difficulty(9);
-
-        let uncle_headers = vec![
-            b4b.last().header().encoded(),
-            b3b.last().header().encoded(),
-            b2b.last().header().encoded(),
-        ];
-        let b4a_hash = b4a.last().hash();
-
-        let generator = BlockGenerator::new(vec![b1a, b1b, b2a, b2b, b3a, b3b, b4a, b4b, b5a, b5b]);
-
-        let db = new_db();
-        let bc = new_chain(
-            genesis.last().encoded(),
-            db.clone(),
-            BlockNumber::max_value(),
-        );
-
-        for b in generator {
-            insert_block(&db, &bc, b.encoded(), vec![]);
-        }
-
-        assert_eq!(uncle_headers, bc.find_uncle_headers(&b4a_hash, 3).unwrap());
-        // TODO: insert block that already includes one of them as an uncle to check it's not allowed.
     }
 
     fn secret() -> Secret {
@@ -2964,156 +2766,6 @@ mod tests {
         // re-loading the blockchain should load the correct best block.
         let bc = new_chain(genesis.last().encoded(), db, BlockNumber::max_value());
         assert_eq!(bc.best_block_number(), 5);
-    }
-
-    #[test]
-    fn epoch_transitions_iter() {
-        use common_types::engines::epoch::Transition as EpochTransition;
-
-        let genesis = BlockBuilder::genesis();
-        let next_5 = genesis.add_blocks(5);
-        let uncle = genesis.add_block_with_difficulty(9);
-        let generator = BlockGenerator::new(iter::once(next_5));
-
-        let db = new_db();
-        {
-            let bc = new_chain(
-                genesis.last().encoded(),
-                db.clone(),
-                BlockNumber::max_value(),
-            );
-
-            let mut batch = db.key_value().transaction();
-            // create a longer fork
-            for (i, block) in generator.into_iter().enumerate() {
-                insert_block_batch(&mut batch, &bc, block.encoded(), vec![]);
-                bc.insert_epoch_transition(
-                    &mut batch,
-                    i as u64,
-                    EpochTransition {
-                        block_hash: block.hash(),
-                        block_number: i as u64 + 1,
-                        proof: vec![],
-                    },
-                );
-                bc.commit();
-            }
-
-            assert_eq!(bc.best_block_number(), 5);
-
-            insert_block_batch(&mut batch, &bc, uncle.last().encoded(), vec![]);
-            bc.insert_epoch_transition(
-                &mut batch,
-                999,
-                EpochTransition {
-                    block_hash: uncle.last().hash(),
-                    block_number: 1,
-                    proof: vec![],
-                },
-            );
-
-            db.key_value().write(batch).unwrap();
-            bc.commit();
-
-            // epoch 999 not in canonical chain.
-            assert_eq!(
-                bc.epoch_transitions().map(|(i, _)| i).collect::<Vec<_>>(),
-                vec![0, 1, 2, 3, 4]
-            );
-        }
-
-        // re-loading the blockchain should load the correct best block.
-        let bc = new_chain(genesis.last().encoded(), db, BlockNumber::max_value());
-
-        assert_eq!(bc.best_block_number(), 5);
-        assert_eq!(
-            bc.epoch_transitions().map(|(i, _)| i).collect::<Vec<_>>(),
-            vec![0, 1, 2, 3, 4]
-        );
-    }
-
-    #[test]
-    fn epoch_transition_for() {
-        use common_types::engines::epoch::Transition as EpochTransition;
-
-        let genesis = BlockBuilder::genesis();
-        let fork_7 = genesis.add_blocks_with(7, || BlockOptions {
-            difficulty: 9.into(),
-            ..Default::default()
-        });
-        let next_10 = genesis.add_blocks(10);
-        let fork_generator = BlockGenerator::new(iter::once(fork_7));
-        let next_generator = BlockGenerator::new(iter::once(next_10));
-
-        let db = new_db();
-
-        let bc = new_chain(
-            genesis.last().encoded(),
-            db.clone(),
-            BlockNumber::max_value(),
-        );
-
-        let mut batch = db.key_value().transaction();
-        bc.insert_epoch_transition(
-            &mut batch,
-            0,
-            EpochTransition {
-                block_hash: bc.genesis_hash(),
-                block_number: 0,
-                proof: vec![],
-            },
-        );
-        db.key_value().write(batch).unwrap();
-
-        // set up a chain where we have a canonical chain of 10 blocks
-        // and a non-canonical fork of 8 from genesis.
-        let fork_hash = {
-            for block in fork_generator {
-                insert_block(&db, &bc, block.encoded(), vec![]);
-            }
-
-            assert_eq!(bc.best_block_number(), 7);
-            bc.chain_info().best_block_hash
-        };
-
-        for block in next_generator {
-            insert_block(&db, &bc, block.encoded(), vec![]);
-        }
-
-        assert_eq!(bc.best_block_number(), 10);
-
-        let mut batch = db.key_value().transaction();
-        bc.insert_epoch_transition(
-            &mut batch,
-            4,
-            EpochTransition {
-                block_hash: bc.block_hash(4).unwrap(),
-                block_number: 4,
-                proof: vec![],
-            },
-        );
-        db.key_value().write(batch).unwrap();
-
-        // blocks where the parent is one of the first 4 will be part of genesis epoch.
-        for i in 0..4 {
-            let hash = bc.block_hash(i).unwrap();
-            assert_eq!(bc.epoch_transition_for(hash).unwrap().block_number, 0);
-        }
-
-        // blocks where the parent is the transition at 4 or after will be
-        // part of that epoch.
-        for i in 4..11 {
-            let hash = bc.block_hash(i).unwrap();
-            assert_eq!(bc.epoch_transition_for(hash).unwrap().block_number, 4);
-        }
-
-        let fork_hashes = bc.ancestry_iter(fork_hash).unwrap().collect::<Vec<_>>();
-        assert_eq!(fork_hashes.len(), 8);
-
-        // non-canonical fork blocks should all have genesis transition
-        for fork_hash in fork_hashes {
-            assert_eq!(bc.epoch_transition_for(fork_hash).unwrap().block_number, 0);
-        }
     }
 
     #[test]

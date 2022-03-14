@@ -50,7 +50,7 @@ use vm::{EnvInfo, LastHashes};
 use hash::keccak;
 use rlp::{encode_list, RlpStream};
 use types::{
-    header::{ExtendedHeader, Header},
+    header::Header,
     receipt::{TransactionOutcome, TypedReceipt},
     transaction::{Error as TransactionError, SignedTransaction},
 };
@@ -163,7 +163,7 @@ pub trait Drain {
 
 impl<'x> OpenBlock<'x> {
     /// t_nb 8.1 Create a new `OpenBlock` ready for transaction pushing.
-    pub fn new<'a, I: IntoIterator<Item = ExtendedHeader>>(
+    pub fn new<'a>(
         engine: &'x dyn EthEngine,
         factories: Factories,
         tracing: bool,
@@ -173,8 +173,6 @@ impl<'x> OpenBlock<'x> {
         author: Address,
         gas_range_target: (U256, U256),
         extra_data: Bytes,
-        is_epoch_begin: bool,
-        ancestry: I,
     ) -> Result<Self, Error> {
         let number = parent.number() + 1;
 
@@ -216,8 +214,6 @@ impl<'x> OpenBlock<'x> {
 
         // t_nb 8.1.3 updating last hashes and the DAO fork, for ethash.
         engine.machine().on_new_block(&mut r.block)?;
-        engine.on_new_block(&mut r.block, is_epoch_begin, &mut ancestry.into_iter())?;
-
         Ok(r)
     }
 
@@ -535,8 +531,6 @@ pub(crate) fn enact(
     parent: &Header,
     last_hashes: Arc<LastHashes>,
     factories: Factories,
-    is_epoch_begin: bool,
-    ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
 ) -> Result<LockedBlock, Error> {
     // For trace log
     let trace_state = if log_enabled!(target: "enact", ::log::Level::Trace) {
@@ -563,8 +557,6 @@ pub(crate) fn enact(
         engine.executive_author(&header)?,
         (3141562.into(), 31415620.into()),
         vec![],
-        is_epoch_begin,
-        ancestry,
     )?;
 
     if let Some(ref s) = trace_state {
@@ -597,8 +589,6 @@ pub fn enact_verified(
     parent: &Header,
     last_hashes: Arc<LastHashes>,
     factories: Factories,
-    is_epoch_begin: bool,
-    ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
 ) -> Result<LockedBlock, Error> {
     enact(
         block.header,
@@ -610,8 +600,6 @@ pub fn enact_verified(
         parent,
         last_hashes,
         factories,
-        is_epoch_begin,
-        ancestry,
     )
 }
 
@@ -672,8 +660,6 @@ mod tests {
             Address::default(),
             (3141562.into(), 31415620.into()),
             vec![],
-            false,
-            None,
         )?;
 
         b.populate_from(&header);
@@ -729,8 +715,6 @@ mod tests {
             Address::zero(),
             (3141562.into(), 31415620.into()),
             vec![],
-            false,
-            None,
         )
         .unwrap();
         let b = b.close_and_lock().unwrap();
@@ -758,8 +742,6 @@ mod tests {
             Address::zero(),
             (3141562.into(), 31415620.into()),
             vec![],
-            false,
-            None,
         )
         .unwrap()
         .close_and_lock()
@@ -819,8 +801,6 @@ mod tests {
             Address::zero(),
             (3141562.into(), 31415620.into()),
             vec![],
-            false,
-            None,
         )
         .unwrap();
         let mut uncle1_header = Header::new();

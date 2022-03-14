@@ -153,8 +153,6 @@ mod tests {
             Address::default(),
             (3141562.into(), 31415620.into()),
             vec![],
-            false,
-            None,
         )
         .unwrap();
         let b = b.close_and_lock().unwrap();

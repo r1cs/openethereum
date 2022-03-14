@@ -259,28 +259,6 @@ pub enum Proof<M: Machine> {
     WithState(Arc<dyn StateDependentProof<M>>),
 }
 
-/// Generated epoch verifier.
-pub enum ConstructedVerifier<'a, M: Machine> {
-    /// Fully trusted verifier.
-    Trusted(Box<dyn EpochVerifier<M>>),
-    /// Verifier unconfirmed. Check whether given finality proof finalizes given hash
-    /// under previous epoch.
-    Unconfirmed(Box<dyn EpochVerifier<M>>, &'a [u8], H256),
-    /// Error constructing verifier.
-    Err(Error),
-}
-
-impl<'a, M: Machine> ConstructedVerifier<'a, M> {
-    /// Convert to a result, indicating that any necessary confirmation has been done
-    /// already.
-    pub fn known_confirmed(self) -> Result<Box<dyn EpochVerifier<M>>, Error> {
-        match self {
-            ConstructedVerifier::Trusted(v) | ConstructedVerifier::Unconfirmed(v, _, _) => Ok(v),
-            ConstructedVerifier::Err(e) => Err(e),
-        }
-    }
-}
-
 /// A consensus mechanism for the chain. Generally either proof-of-work or proof-of-stake-based.
 /// Provides hooks into each of the major parts of block import.
 pub trait Engine<M: Machine>: Sync + Send {
@@ -309,17 +287,6 @@ pub trait Engine<M: Machine>: Sync + Send {
     /// Optional maximum gas limit.
     fn maximum_gas_limit(&self) -> Option<U256> {
         None
-    }
-
-    /// Block transformation functions, before the transactions.
-    /// `epoch_begin` set to true if this block kicks off an epoch.
-    fn on_new_block(
-        &self,
-        _block: &mut ExecutedBlock,
-        _epoch_begin: bool,
-        _ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
-    ) -> Result<(), M::Error> {
-        Ok(())
     }
 
     /// Block transformation functions, after the transactions.
@@ -391,21 +358,6 @@ pub trait Engine<M: Machine>: Sync + Send {
     /// Should only be called when `register_client` has been called previously.
     fn verify_block_external(&self, _header: &Header) -> Result<(), M::Error> {
         Ok(())
-    }
-
-    /// Genesis epoch data.
-    fn genesis_epoch_data<'a>(
-        &self,
-        _header: &Header,
-        _state: &machine::Call,
-    ) -> Result<Vec<u8>, String> {
-        Ok(Vec::new())
-    }
-
-    /// Create an epoch verifier from validation proof and a flag indicating
-    /// whether finality is required.
-    fn epoch_verifier<'a>(&self, _header: &Header, _proof: &'a [u8]) -> ConstructedVerifier<'a, M> {
-        ConstructedVerifier::Trusted(Box::new(NoOp))
     }
 
     /// Populate a header's fields based on its parent's header.
@@ -605,31 +557,3 @@ pub trait EthEngine: Engine<::machine::EthereumMachine> {
 
 // convenience wrappers for existing functions.
 impl<T> EthEngine for T where T: Engine<::machine::EthereumMachine> {}
-
-/// Verifier for all blocks within an epoch with self-contained state.
-pub trait EpochVerifier<M: machine::Machine>: Send + Sync {
-    /// Lightly verify the next block header.
-    /// This may not be a header belonging to a different epoch.
-    fn verify_light(&self, header: &Header) -> Result<(), M::Error>;
-
-    /// Perform potentially heavier checks on the next block header.
-    fn verify_heavy(&self, header: &Header) -> Result<(), M::Error> {
-        self.verify_light(header)
-    }
-
-    /// Check a finality proof against this epoch verifier.
-    /// Returns `Some(hashes)` if the proof proves finality of these hashes.
-    /// Returns `None` if the proof doesn't prove anything.
-    fn check_finality_proof(&self, _proof: &[u8]) -> Option<Vec<H256>> {
-        None
-    }
-}
-
-/// Special "no-op" verifier for stateless, epoch-less engines.
-pub struct NoOp;
-
-impl<M: machine::Machine> EpochVerifier<M> for NoOp {
-    fn verify_light(&self, _header: &Header) -> Result<(), M::Error> {
-        Ok(())
-    }
-}

@@ -83,8 +83,6 @@ fn can_trace_block_and_uncle_reward() {
         author.clone(),
         (3141562.into(), 31415620.into()),
         vec![],
-        false,
-        None,
     )
     .unwrap();
     rolling_timestamp += 10;
@@ -123,8 +121,6 @@ fn can_trace_block_and_uncle_reward() {
         author.clone(),
         (3141562.into(), 31415620.into()),
         vec![],
-        false,
-        None,
     )
     .unwrap();
     rolling_timestamp += 10;
@@ -162,8 +158,6 @@ fn can_trace_block_and_uncle_reward() {
         author.clone(),
         (3141562.into(), 31415620.into()),
         vec![],
-        false,
-        None,
     )
     .unwrap();
     rolling_timestamp += 10;

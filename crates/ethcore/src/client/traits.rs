@@ -410,13 +410,6 @@ pub enum ForceUpdateSealing {
 
 /// Client facilities used by internally sealing Engines.
 pub trait EngineClient: Sync + Send + ChainInfo {
-    /// Get the transition to the epoch the given parent hash is part of
-    /// or transitions to.
-    /// This will give the epoch that any children of this parent belong to.
-    ///
-    /// The block corresponding the the parent hash must be stored already.
-    fn epoch_transition_for(&self, parent_hash: H256) -> Option<::engines::EpochTransition>;
-
     /// Attempt to cast the engine client to a full client.
     fn as_full_client(&self) -> Option<&dyn BlockChainClient>;
 
@@ -448,7 +441,4 @@ pub trait ProvingBlockChainClient: BlockChainClient {
         transaction: SignedTransaction,
         id: BlockId,
     ) -> Option<(Bytes, Vec<DBValue>)>;
-
-    /// Get an epoch change signal by block hash.
-    fn epoch_signal(&self, hash: H256) -> Option<Vec<u8>>;
 }

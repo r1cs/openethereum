@@ -31,7 +31,7 @@ mod update;
 pub mod generator;
 
 pub use self::{
-    blockchain::{BlockChain, BlockChainDB, BlockChainDBHandler, BlockProvider},
+    blockchain::{BlockChain, BlockChainDB, BlockProvider},
     cache::CacheSize,
     config::Config,
     import_route::ImportRoute,

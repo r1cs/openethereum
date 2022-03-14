@@ -194,23 +194,6 @@ impl Ethash {
     }
 }
 
-// TODO [rphmeier]
-//
-// for now, this is different than Ethash's own epochs, and signal
-// "consensus epochs".
-// in this sense, `Ethash` is epochless: the same `EpochVerifier` can be used
-// for any block in the chain.
-// in the future, we might move the Ethash epoch
-// caching onto this mechanism as well.
-impl engines::EpochVerifier<EthereumMachine> for Arc<Ethash> {
-    fn verify_light(&self, _header: &Header) -> Result<(), Error> {
-        Ok(())
-    }
-    fn verify_heavy(&self, header: &Header) -> Result<(), Error> {
-        self.verify_block_unordered(header)
-    }
-}
-
 impl Engine<EthereumMachine> for Arc<Ethash> {
     fn name(&self) -> &str {
         "Ethash"
@@ -400,14 +383,6 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
         Ok(())
     }
 
-    fn epoch_verifier<'a>(
-        &self,
-        _header: &Header,
-        _proof: &'a [u8],
-    ) -> engines::ConstructedVerifier<'a, EthereumMachine> {
-        engines::ConstructedVerifier::Trusted(Box::new(self.clone()))
-    }
-
     fn fork_choice(&self, new: &ExtendedHeader, current: &ExtendedHeader) -> engines::ForkChoice {
         engines::total_difficulty_fork_choice(new, current)
     }
@@ -576,8 +551,6 @@ mod tests {
             Address::zero(),
             (3141562.into(), 31415620.into()),
             vec![],
-            false,
-            None,
         )
         .unwrap();
         let b = b.close().unwrap();
@@ -643,8 +616,6 @@ mod tests {
             Address::zero(),
             (3141562.into(), 31415620.into()),
             vec![],
-            false,
-            None,
         )
         .unwrap();
         let mut uncle = Header::new();

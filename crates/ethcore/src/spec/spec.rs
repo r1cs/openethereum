@@ -1028,63 +1028,6 @@ impl Spec {
             .and_then(|x| load_from(params.into(), x).map_err(fmt_err))
     }
 
-    /// initialize genesis epoch data, using in-memory database for
-    /// constructor.
-    pub fn genesis_epoch_data(&self) -> Result<Vec<u8>, String> {
-        use types::transaction::{Action, Transaction, TypedTransaction};
-
-        let genesis = self.genesis_header();
-
-        let factories = Default::default();
-        let mut db = journaldb::new(
-            Arc::new(db::InMemoryWithMetrics::create(0)),
-            journaldb::Algorithm::Archive,
-            None,
-        );
-
-        self.ensure_db_good(BasicBackend(db.as_hash_db_mut()), &factories)
-            .map_err(|e| format!("Unable to initialize genesis state: {}", e))?;
-
-        let call = |a, d| {
-            let mut db = db.boxed_clone();
-            let env_info = ::evm::EnvInfo {
-                number: 0,
-                author: *genesis.author(),
-                timestamp: genesis.timestamp(),
-                difficulty: *genesis.difficulty(),
-                gas_limit: U256::max_value(),
-                last_hashes: Arc::new(Vec::new()),
-                gas_used: 0.into(),
-                base_fee: genesis.base_fee(),
-            };
-
-            let from = Address::default();
-            let tx = TypedTransaction::Legacy(Transaction {
-                nonce: self.engine.account_start_nonce(0),
-                action: Action::Call(a),
-                gas: U256::max_value(),
-                gas_price: U256::default(),
-                value: U256::default(),
-                data: d,
-            })
-            .fake_sign(from);
-
-            let res = ::state::prove_transaction_virtual(
-                db.as_hash_db_mut(),
-                *genesis.state_root(),
-                &tx,
-                self.engine.machine(),
-                &env_info,
-                factories.clone(),
-            );
-
-            res.map(|(out, proof)| (out, proof.into_iter().map(|x| x.into_vec()).collect()))
-                .ok_or_else(|| "Failed to prove call: insufficient state".into())
-        };
-
-        self.engine.genesis_epoch_data(&genesis, &call)
-    }
-
     /// Create a new Spec with InstantSeal consensus which does internal sealing (not requiring
     /// work).
     pub fn new_instant() -> Spec {

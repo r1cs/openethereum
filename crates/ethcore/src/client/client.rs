@@ -27,7 +27,6 @@ use bytes::Bytes;
 use db::{DBTransaction, DBValue};
 use ethereum_types::{Address, H256, U256};
 use hash::keccak;
-use itertools::Itertools;
 use parking_lot::{Mutex, RwLock};
 use trie::{Trie, TrieFactory, TrieSpec};
 use types::{
@@ -37,9 +36,7 @@ use types::{
     header::{ExtendedHeader, Header},
     log_entry::LocalizedLogEntry,
     receipt::{LocalizedReceipt, TypedReceipt},
-    transaction::{
-        self, Action, LocalizedTransaction, SignedTransaction, TypedTransaction,
-    },
+    transaction::{Action, LocalizedTransaction, SignedTransaction},
     BlockNumber,
 };
 use vm::{EnvInfo, LastHashes};
@@ -54,7 +51,7 @@ use client::{
     SealedBlockImporter, StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
     TransactionId, TransactionInfo,
 };
-use engines::{epoch::PendingTransition, EpochTransition, EthEngine, ForkChoice, MAX_UNCLE_AGE};
+use engines::{epoch::PendingTransition, EthEngine, ForkChoice};
 use error::{
     BlockError, CallError, Error as EthcoreError, ErrorKind as EthcoreErrorKind,
     EthcoreResult, ExecutionError, ImportErrorKind,
@@ -175,10 +172,6 @@ impl Importer {
             .read()
             .boxed_clone_canon(header.parent_hash());
 
-        let is_epoch_begin = chain
-            .epoch_transition(parent.number(), *header.parent_hash())
-            .is_some();
-
         // t_nb 8.0 Block enacting. Execution of transactions.
         let enact_result = enact_verified(
             block,
@@ -188,8 +181,6 @@ impl Importer {
             &parent,
             last_hashes,
             client.factories.clone(),
-            is_epoch_begin,
-            &mut chain.ancestry_with_metadata_iter(*header.parent_hash()),
         );
 
         let mut locked_block = match enact_result {
@@ -443,41 +434,6 @@ impl Client {
             importer,
         });
 
-        // ensure genesis epoch proof in the DB.
-        {
-            let chain = client.chain.read();
-            let gh = spec.genesis_header();
-            if chain.epoch_transition(0, gh.hash()).is_none() {
-                trace!(target: "client", "No genesis transition found.");
-
-                let proof = client.with_proving_caller(BlockId::Number(0), |call| {
-                    client.engine.genesis_epoch_data(&gh, call)
-                });
-                let proof = match proof {
-                    Ok(proof) => proof,
-                    Err(e) => {
-                        warn!(target: "client", "Error generating genesis epoch data: {}. Snapshots generated may not be complete.", e);
-                        Vec::new()
-                    }
-                };
-
-                debug!(target: "client", "Obtained genesis transition proof: {:?}", proof);
-
-                let mut batch = DBTransaction::new();
-                chain.insert_epoch_transition(
-                    &mut batch,
-                    0,
-                    EpochTransition {
-                        block_hash: gh.hash(),
-                        block_number: 0,
-                        proof: proof,
-                    },
-                );
-
-                client.db.read().key_value().write_buffered(batch);
-            }
-        }
-
         // ensure buffered changes are flushed.
         client.db.read().key_value().flush()?;
         Ok(client)
@@ -545,24 +501,6 @@ impl Client {
     /// This is triggered by a message coming from a block queue when the block is ready for insertion
     pub fn import_verified_blocks(&self) -> usize {
 		return 0;
-    }
-
-    // use a state-proving closure for the given block.
-    fn with_proving_caller<F, T>(&self, id: BlockId, with_call: F) -> T
-    where
-        F: FnOnce(&::machine::Call) -> T,
-    {
-        let call = |a, d| {
-            let tx = self.contract_call_tx(id, a, d);
-            let (result, items) = self
-                .prove_transaction(tx, id)
-                .ok_or_else(|| format!("Unable to make call. State unavailable?"))?;
-
-            let items = items.into_iter().map(|x| x.to_vec()).collect();
-            Ok((result, items))
-        };
-
-        with_call(&call)
     }
 
     // t_nb 9.14 update last hashes. They are build in step 7.5
@@ -676,28 +614,6 @@ impl Client {
                 })
             }
         }
-    }
-
-    // transaction for calling contracts from services like engine.
-    // from the null sender, with 50M gas.
-    fn contract_call_tx(
-        &self,
-        block_id: BlockId,
-        address: Address,
-        data: Bytes,
-    ) -> SignedTransaction {
-        let from = Address::default();
-        TypedTransaction::Legacy(transaction::Transaction {
-            nonce: self
-                .nonce(&from, block_id)
-                .unwrap_or_else(|| self.engine.account_start_nonce(0)),
-            action: Action::Call(address),
-            gas: U256::from(50_000_000),
-            gas_price: U256::default(),
-            value: U256::default(),
-            data: data,
-        })
-        .fake_sign(from)
     }
 
     fn do_virtual_call(
@@ -1512,8 +1428,7 @@ impl PrepareOpenBlock for Client {
         let best_header = chain.best_block_header();
         let h = best_header.hash();
 
-        let is_epoch_begin = chain.epoch_transition(best_header.number(), h).is_some();
-        let mut open_block = OpenBlock::new(
+        let open_block = OpenBlock::new(
             engine,
             self.factories.clone(),
             self.tracedb.read().tracing_enabled(),
@@ -1523,30 +1438,7 @@ impl PrepareOpenBlock for Client {
             author,
             gas_range_target,
             extra_data,
-            is_epoch_begin,
-            chain.ancestry_with_metadata_iter(best_header.hash()),
         )?;
-
-        // Add uncles
-        chain
-            .find_uncle_headers(&h, MAX_UNCLE_AGE)
-            .unwrap_or_else(Vec::new)
-            .into_iter()
-            .take(engine.maximum_uncle_count(open_block.header.number()))
-            .foreach(|h| {
-                open_block
-                    .push_uncle(
-                        h.decode(engine.params().eip1559_transition)
-                            .expect("decoding failure"),
-                    )
-                    .expect(
-                        "pushing maximum_uncle_count;
-												open_block was just created;
-												push_uncle is not ok only if more than maximum_uncle_count is pushed;
-												so all push_uncle are Ok;
-												qed",
-                    );
-            });
 
         Ok(open_block)
     }
@@ -1591,10 +1483,6 @@ impl ImportSealedBlock for Client {
 impl SealedBlockImporter for Client {}
 
 impl super::traits::EngineClient for Client {
-    fn epoch_transition_for(&self, parent_hash: H256) -> Option<::engines::EpochTransition> {
-        self.chain.read().epoch_transition_for(parent_hash)
-    }
-
     fn as_full_client(&self) -> Option<&dyn BlockChainClient> {
         Some(self)
     }
@@ -1644,15 +1532,6 @@ impl ProvingBlockChainClient for Client {
             &env_info,
             self.factories.clone(),
         )
-    }
-
-    fn epoch_signal(&self, hash: H256) -> Option<Vec<u8>> {
-        // pending transitions are never deleted, and do not contain
-        // finality proofs by definition.
-        self.chain
-            .read()
-            .get_pending_transition(hash)
-            .map(|pending| pending.proof)
     }
 }
 

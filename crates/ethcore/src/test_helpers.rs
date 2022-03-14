@@ -187,8 +187,6 @@ where
             author.clone(),
             (3141562.into(), 31415620.into()),
             vec![],
-            false,
-            None,
         )
         .unwrap();
         rolling_timestamp += 10;

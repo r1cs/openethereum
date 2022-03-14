@@ -413,8 +413,6 @@ impl PrepareOpenBlock for TestBlockChainClient {
             author,
             gas_range_target,
             extra_data,
-            false,
-            None,
         )?;
         // TODO [todr] Override timestamp for predictability
         open_block.set_timestamp(*self.latest_block_timestamp.read());
@@ -900,17 +898,9 @@ impl ProvingBlockChainClient for TestBlockChainClient {
     fn prove_transaction(&self, _: SignedTransaction, _: BlockId) -> Option<(Bytes, Vec<DBValue>)> {
         None
     }
-
-    fn epoch_signal(&self, _: H256) -> Option<Vec<u8>> {
-        None
-    }
 }
 
 impl super::traits::EngineClient for TestBlockChainClient {
-    fn epoch_transition_for(&self, _block_hash: H256) -> Option<::engines::EpochTransition> {
-        None
-    }
-
     fn as_full_client(&self) -> Option<&dyn BlockChainClient> {
         Some(self)
     }
