@@ -19,7 +19,7 @@ use ethereum_types::{Address, U256};
 use types::transaction;
 
 use block::SealedBlock;
-use client::BlockProducer;
+use client::PrepareOpenBlock;
 use engines::EthEngine;
 use error::{Error, ErrorKind};
 use executed::ExecutionError;
@@ -36,7 +36,7 @@ use types::transaction::SignedTransaction;
 const MAX_SKIPPED_TRANSACTIONS: usize = 128;
 
 /// generate and seal new block.
-pub fn generate_block(engine: &impl EthEngine, chain: &impl BlockProducer, author: Address, gas_range_target: (U256, U256),
+pub fn generate_block(engine: &impl EthEngine, chain: &impl PrepareOpenBlock, author: Address, gas_range_target: (U256, U256),
 	 extra_data: Bytes, txes: Vec<SignedTransaction>) -> Option<SealedBlock> {
 	let mut open_block = chain.prepare_open_block(author, gas_range_target, extra_data).ok()?;
 

@@ -57,10 +57,10 @@ use types::{
 use block::{OpenBlock, SealedBlock};
 use client::{
     AccountData, Balance, BlockChain, BlockChainClient, BlockChainInfo, BlockId,
-    BlockInfo, BlockProducer, BlockStatus, Call, CallAnalytics, ChainInfo,
+    BlockInfo, BlockStatus, Call, CallAnalytics, ChainInfo,
     EngineInfo, ImportBlock, ImportSealedBlock, LastHashes, Nonce,
-    PrepareOpenBlock, ProvingBlockChainClient, SealedBlockImporter,
-    StateClient, StateOrBlock, TraceFilter, TraceId, TransactionId, TransactionInfo,
+    PrepareOpenBlock, ProvingBlockChainClient,
+    StateClient, StateOrBlock, TraceFilter, TraceId, TransactionId,
 };
 use engines::EthEngine;
 use error::{Error, EthcoreResult};
@@ -426,10 +426,6 @@ impl ImportSealedBlock for TestBlockChainClient {
     }
 }
 
-impl BlockProducer for TestBlockChainClient {}
-
-impl SealedBlockImporter for TestBlockChainClient {}
-
 impl Nonce for TestBlockChainClient {
     fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
         match id {
@@ -518,12 +514,6 @@ impl BlockInfo for TestBlockChainClient {
             BlockId::Latest => self.code.read().get(address).map(|c| keccak(&c)),
             _ => None,
         }
-    }
-}
-
-impl TransactionInfo for TestBlockChainClient {
-    fn transaction_block(&self, _id: TransactionId) -> Option<H256> {
-        None // Simple default.
     }
 }
 

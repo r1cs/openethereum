@@ -35,7 +35,7 @@ use types::{
     pruning_info::PruningInfo,
     receipt::LocalizedReceipt,
     trace_filter::Filter as TraceFilter,
-    transaction::{Action, SignedTransaction},
+    transaction::SignedTransaction,
     BlockNumber,
 };
 use vm::LastHashes;
@@ -132,12 +132,6 @@ pub trait BlockInfo {
     fn code_hash(&self, address: &Address, id: BlockId) -> Option<H256>;
 }
 
-/// Provides various information on a transaction by it's ID
-pub trait TransactionInfo {
-    /// Get the hash of block that contains the transaction, if any.
-    fn transaction_block(&self, id: TransactionId) -> Option<H256>;
-}
-
 /// Provides methods to access chain state
 pub trait StateClient {
     /// Type representing chain state
@@ -155,7 +149,7 @@ pub trait StateClient {
 }
 
 /// Provides various blockchain information, like block header, chain state etc.
-pub trait BlockChain: ChainInfo + BlockInfo + TransactionInfo {}
+pub trait BlockChain: ChainInfo + BlockInfo {}
 
 // FIXME Why these methods belong to BlockChainClient and not MiningBlockChainClient?
 /// Provides methods to import block into blockchain
@@ -200,25 +194,6 @@ pub trait Call {
 pub trait EngineInfo {
     /// Get underlying engine object
     fn engine(&self) -> &dyn EthEngine;
-}
-
-/// IO operations that should off-load heavy work to another thread.
-pub trait IoClient: Sync + Send {
-    /// Queue transactions for importing.
-    fn queue_transactions(&self, transactions: Vec<Bytes>, peer_id: usize);
-
-    /// Queue block import with transaction receipts. Does no sealing and transaction validation.
-    fn queue_ancient_block(
-        &self,
-        block_bytes: Unverified,
-        receipts_bytes: Bytes,
-    ) -> EthcoreResult<H256>;
-
-    /// Return percentage of how full is queue that handles ancient blocks. 0 if empty, 1 if full.
-    fn ancient_block_queue_fullness(&self) -> f32;
-
-    /// Queue conensus engine message.
-    fn queue_consensus_message(&self, message: Bytes);
 }
 
 /// Blockchain database client. Owns and manages a blockchain and a block queue.
@@ -327,55 +302,6 @@ pub trait BlockChainClient:
     fn pruning_info(&self) -> PruningInfo;
 }
 
-/// The data required for a `Client` to create a transaction.
-///
-/// Gas limit, gas price, or nonce can be set explicitly, e.g. to create service
-/// transactions with zero gas price, or sequences of transactions with consecutive nonces.
-/// Added for AuRa needs.
-pub struct TransactionRequest {
-    /// Transaction action
-    pub action: Action,
-    /// Transaction data
-    pub data: Bytes,
-    /// Transaction gas usage
-    pub gas: Option<U256>,
-    /// Transaction gas price
-    pub gas_price: Option<U256>,
-    /// Transaction nonce
-    pub nonce: Option<U256>,
-}
-
-impl TransactionRequest {
-    /// Creates a request to call a contract at `address` with the specified call data.
-    pub fn call(address: Address, data: Bytes) -> TransactionRequest {
-        TransactionRequest {
-            action: Action::Call(address),
-            data,
-            gas: None,
-            gas_price: None,
-            nonce: None,
-        }
-    }
-
-    /// Sets a gas limit. If this is not specified, a sensible default is used.
-    pub fn gas(mut self, gas: U256) -> TransactionRequest {
-        self.gas = Some(gas);
-        self
-    }
-
-    /// Sets a gas price. If this is not specified or `None`, a sensible default is used.
-    pub fn gas_price<T: Into<Option<U256>>>(mut self, gas_price: T) -> TransactionRequest {
-        self.gas_price = gas_price.into();
-        self
-    }
-
-    /// Sets a nonce. If this is not specified, the appropriate latest nonce for the author is used.
-    pub fn nonce(mut self, nonce: U256) -> TransactionRequest {
-        self.nonce = Some(nonce);
-        self
-    }
-}
-
 /// Provides `prepare_open_block` method
 pub trait PrepareOpenBlock {
     /// Returns OpenBlock prepared for closing.
@@ -387,25 +313,10 @@ pub trait PrepareOpenBlock {
     ) -> Result<OpenBlock, Error>;
 }
 
-/// Provides methods used for sealing new state
-pub trait BlockProducer: PrepareOpenBlock {}
-
 ///Provides `import_sealed_block` method
 pub trait ImportSealedBlock {
     /// Import sealed block. Skips all verifications.
     fn import_sealed_block(&self, block: SealedBlock) -> EthcoreResult<H256>;
-}
-
-/// Provides methods to import sealed block and broadcast a block proposal
-pub trait SealedBlockImporter: ImportSealedBlock {}
-
-/// Do we want to force update sealing?
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum ForceUpdateSealing {
-    /// Ideally you want to use `No` at all times as `Yes` skips `reseal_required` checks.
-    Yes,
-    /// Don't skip `reseal_required` checks
-    No,
 }
 
 /// Client facilities used by internally sealing Engines.

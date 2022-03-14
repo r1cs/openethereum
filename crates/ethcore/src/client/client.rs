@@ -44,12 +44,12 @@ use vm::{EnvInfo, LastHashes};
 use block::{enact_verified, Drain, LockedBlock, OpenBlock, SealedBlock};
 use client::{
     AccountData, Balance, BlockChain as BlockChainTrait, BlockChainClient,
-    BlockId, BlockInfo, BlockProducer, Call,
+    BlockId, BlockInfo, Call,
     CallAnalytics, ChainInfo, ClientConfig,
     EngineInfo, ImportBlock, ImportSealedBlock,
     Nonce, PrepareOpenBlock, ProvingBlockChainClient, PruningInfo,
-    SealedBlockImporter, StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
-    TransactionId, TransactionInfo,
+    StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
+    TransactionId,
 };
 use engines::{epoch::PendingTransition, EthEngine, ForkChoice};
 use error::{
@@ -767,12 +767,6 @@ impl BlockInfo for Client {
     }
 }
 
-impl TransactionInfo for Client {
-    fn transaction_block(&self, id: TransactionId) -> Option<H256> {
-        self.transaction_address(id).map(|addr| addr.block_hash)
-    }
-}
-
 impl BlockChainTrait for Client {}
 
 impl ImportBlock for Client {
@@ -1444,8 +1438,6 @@ impl PrepareOpenBlock for Client {
     }
 }
 
-impl BlockProducer for Client {}
-
 impl ImportSealedBlock for Client {
     fn import_sealed_block(&self, block: SealedBlock) -> EthcoreResult<H256> {
         let header = block.header.clone();
@@ -1479,8 +1471,6 @@ impl ImportSealedBlock for Client {
         Ok(hash)
     }
 }
-
-impl SealedBlockImporter for Client {}
 
 impl super::traits::EngineClient for Client {
     fn as_full_client(&self) -> Option<&dyn BlockChainClient> {

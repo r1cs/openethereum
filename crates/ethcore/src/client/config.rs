@@ -14,10 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{
-    str::FromStr,
-};
-
 use journaldb;
 use verification::{VerifierType};
 
@@ -25,36 +21,6 @@ pub use blockchain::Config as BlockChainConfig;
 pub use evm::VMType;
 pub use std::time::Duration;
 pub use trace::Config as TraceConfig;
-
-/// Client state db compaction profile
-#[derive(Debug, PartialEq, Clone)]
-pub enum DatabaseCompactionProfile {
-    /// Try to determine compaction profile automatically
-    Auto,
-    /// SSD compaction profile
-    SSD,
-    /// HDD or other slow storage io compaction profile
-    HDD,
-}
-
-impl Default for DatabaseCompactionProfile {
-    fn default() -> Self {
-        DatabaseCompactionProfile::Auto
-    }
-}
-
-impl FromStr for DatabaseCompactionProfile {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "auto" => Ok(DatabaseCompactionProfile::Auto),
-            "ssd" => Ok(DatabaseCompactionProfile::SSD),
-            "hdd" => Ok(DatabaseCompactionProfile::HDD),
-            _ => Err("Invalid compaction profile given. Expected default/hdd/ssd.".into()),
-        }
-    }
-}
 
 /// Client configuration. Includes configs for all sub-systems.
 #[derive(Debug, PartialEq, Clone)]
@@ -111,24 +77,5 @@ impl Default for ClientConfig {
             transaction_verification_queue_size: 8192,
             max_round_blocks_to_import: 1,
         }
-    }
-}
-#[cfg(test)]
-mod test {
-    use super::DatabaseCompactionProfile;
-
-    #[test]
-    fn test_default_compaction_profile() {
-        assert_eq!(
-            DatabaseCompactionProfile::default(),
-            DatabaseCompactionProfile::Auto
-        );
-    }
-
-    #[test]
-    fn test_parsing_compaction_profile() {
-        assert_eq!(DatabaseCompactionProfile::Auto, "auto".parse().unwrap());
-        assert_eq!(DatabaseCompactionProfile::SSD, "ssd".parse().unwrap());
-        assert_eq!(DatabaseCompactionProfile::HDD, "hdd".parse().unwrap());
     }
 }

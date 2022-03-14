@@ -30,13 +30,13 @@ pub use self::evm_test_client::{EvmTestClient, EvmTestError, TransactErr, Transa
 pub use self::test_client::{EachBlockWith, TestBlockChainClient};
 pub use self::{
     client::*,
-    config::{BlockChainConfig, ClientConfig, DatabaseCompactionProfile, VMType},
+    config::{BlockChainConfig, ClientConfig, VMType},
     traits::{
         AccountData, Balance, BlockChain, BlockChainClient, BlockInfo,
-        BlockProducer, Call, ChainInfo, EngineClient, EngineInfo,
-        ImportBlock, ImportSealedBlock, IoClient, Nonce, PrepareOpenBlock,
-        ProvingBlockChainClient, SealedBlockImporter, StateClient,
-        StateOrBlock, TransactionInfo,
+        Call, ChainInfo, EngineClient, EngineInfo,
+        ImportBlock, ImportSealedBlock, Nonce, PrepareOpenBlock,
+        ProvingBlockChainClient, StateClient,
+        StateOrBlock,
     },
 };
 pub use state::StateInfo;
