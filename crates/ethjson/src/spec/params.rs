@@ -17,7 +17,6 @@
 //! Spec params deserialization.
 
 use crate::{
-    bytes::Bytes,
     hash::{Address, H256},
     uint::{self, Uint},
 };
@@ -71,14 +70,6 @@ pub struct Params {
     pub validate_receipts_transition: Option<Uint>,
     /// See `CommonParams` docs.
     pub eip140_transition: Option<Uint>,
-    /// See `CommonParams` docs.
-    pub eip210_transition: Option<Uint>,
-    /// See `CommonParams` docs.
-    pub eip210_contract_address: Option<Address>,
-    /// See `CommonParams` docs.
-    pub eip210_contract_code: Option<Bytes>,
-    /// See `CommonParams` docs.
-    pub eip210_contract_gas: Option<Uint>,
     /// See `CommonParams` docs.
     pub eip211_transition: Option<Uint>,
     /// See `CommonParams` docs.

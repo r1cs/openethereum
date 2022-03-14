@@ -25,19 +25,16 @@ use std::{
 };
 
 use bytes::Bytes;
-use ethereum_types::{Address, Bloom, H160, H256, U256};
+use ethereum_types::{Address, Bloom, H256, U256};
 use ethjson;
 use hash::{keccak, KECCAK_NULL_RLP};
 use parking_lot::RwLock;
 use rlp::{Rlp, RlpStream};
-use rustc_hex::FromHex;
 use types::{header::Header, BlockNumber};
 use vm::{AccessList, ActionParams, ActionValue, CallType, EnvInfo, ParamsType};
 
 use builtin::Builtin;
-use engines::{EthEngine, InstantSeal, InstantSealParams, NullEngine,
-    DEFAULT_BLOCKHASH_CONTRACT,
-};
+use engines::{EthEngine, InstantSeal, InstantSealParams, NullEngine};
 use error::Error;
 use executive::Executive;
 use factory::Factories;
@@ -100,14 +97,6 @@ pub struct CommonParams {
     pub validate_chain_id_transition: BlockNumber,
     /// Number of first block where EIP-140 rules begin.
     pub eip140_transition: BlockNumber,
-    /// Number of first block where EIP-210 rules begin.
-    pub eip210_transition: BlockNumber,
-    /// EIP-210 Blockhash contract address.
-    pub eip210_contract_address: Address,
-    /// EIP-210 Blockhash contract code.
-    pub eip210_contract_code: Bytes,
-    /// Gas allocated for EIP-210 blockhash update.
-    pub eip210_contract_gas: U256,
     /// Number of first block where EIP-211 rules begin.
     pub eip211_transition: BlockNumber,
     /// Number of first block where EIP-214 rules begin.
@@ -256,9 +245,6 @@ impl CommonParams {
         if block_number >= self.eip2028_transition {
             schedule.tx_data_non_zero_gas = 16;
         }
-        if block_number >= self.eip210_transition {
-            schedule.blockhash_gas = 800;
-        }
         if block_number >= self.eip2929_transition {
             schedule.eip2929 = true;
             schedule.eip1283 = true;
@@ -351,21 +337,6 @@ impl From<ethjson::spec::Params> for CommonParams {
             eip140_transition: p
                 .eip140_transition
                 .map_or_else(BlockNumber::max_value, Into::into),
-            eip210_transition: p
-                .eip210_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
-            eip210_contract_address: p
-                .eip210_contract_address
-                .map_or(H160::from_low_u64_be(0xf0), Into::into),
-            eip210_contract_code: p.eip210_contract_code.map_or_else(
-                || {
-                    DEFAULT_BLOCKHASH_CONTRACT
-                        .from_hex()
-                        .expect("Default BLOCKHASH contract is valid")
-                },
-                Into::into,
-            ),
-            eip210_contract_gas: p.eip210_contract_gas.map_or(1000000.into(), Into::into),
             eip211_transition: p
                 .eip211_transition
                 .map_or_else(BlockNumber::max_value, Into::into),
@@ -717,7 +688,6 @@ impl Spec {
             params.validate_receipts_transition,
             params.validate_chain_id_transition,
             params.eip140_transition,
-            params.eip210_transition,
             params.eip211_transition,
             params.eip214_transition,
             params.eip145_transition,

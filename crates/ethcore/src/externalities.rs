@@ -16,7 +16,7 @@
 
 //! Transaction Execution environment.
 use bytes::Bytes;
-use ethereum_types::{Address, BigEndianHash, H256, U256};
+use ethereum_types::{Address, H256, U256};
 use executive::*;
 use machine::EthereumMachine as Machine;
 use state::{Backend as StateBackend, CleanupMode, State, Substate};
@@ -24,7 +24,7 @@ use std::{cmp, sync::Arc};
 use trace::{Tracer, VMTracer};
 use types::transaction::UNSIGNED_SENDER;
 use vm::{
-    self, AccessList, ActionParams, ActionValue, CallType, ContractCreateResult,
+    self, ActionParams, ActionValue, CallType, ContractCreateResult,
     CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind,
 };
 
@@ -170,93 +170,22 @@ where
         self.state.balance(address).map_err(Into::into)
     }
 
-    fn blockhash(&mut self, number: &U256) -> H256 {
-        if self.env_info.number + 256 >= self.machine.params().eip210_transition {
-            let blockhash_contract_address = self.machine.params().eip210_contract_address;
-            let code_res = self
-                .state
-                .code(&blockhash_contract_address)
-                .and_then(|code| {
-                    self.state
-                        .code_hash(&blockhash_contract_address)
-                        .map(|hash| (code, hash))
-                });
-
-            let (code, code_hash) = match code_res {
-                Ok((code, hash)) => (code, hash),
-                Err(_) => return H256::zero(),
-            };
-
-            let data: H256 = BigEndianHash::from_uint(number);
-
-            let params = ActionParams {
-                sender: self.origin_info.address.clone(),
-                address: blockhash_contract_address.clone(),
-                value: ActionValue::Apparent(self.origin_info.value),
-                code_address: blockhash_contract_address.clone(),
-                origin: self.origin_info.origin.clone(),
-                gas: self.machine.params().eip210_contract_gas,
-                gas_price: 0.into(),
-                code: code,
-                code_hash: code_hash,
-                data: Some(data.as_bytes().to_vec()),
-                call_type: CallType::Call,
-                params_type: vm::ParamsType::Separate,
-                access_list: AccessList::default(),
-            };
-
-            let mut ex = Executive::new(self.state, self.env_info, self.machine, self.schedule);
-            let r = ex.call_with_stack_depth(
-                params,
-                self.substate,
-                self.stack_depth + 1,
-                self.tracer,
-                self.vm_tracer,
-            );
-            let output = match &r {
-                Ok(ref r) => H256::from_slice(&r.return_data[..32]),
-                _ => H256::default(),
-            };
-            trace!(
-                "ext: blockhash contract({}) -> {:?}({}) self.env_info.number={}\n",
-                number,
-                r,
-                output,
-                self.env_info.number
-            );
-            output
-        } else {
-            // TODO: comment out what this function expects from env_info, since it will produce panics if the latter is inconsistent
-            match *number < U256::from(self.env_info.number)
-                && number.low_u64() >= cmp::max(256, self.env_info.number) - 256
-            {
-                true => {
-                    let index = self.env_info.number - number.low_u64() - 1;
-                    assert!(
-                        index < self.env_info.last_hashes.len() as u64,
-						"Inconsistent env_info, should contain at least {:?} last hashes",
-						index + 1
-                    );
-                    let r = self.env_info.last_hashes[index as usize].clone();
-                    trace!(
-                        "ext: blockhash({}) -> {} self.env_info.number={}\n",
-                        number,
-                        r,
-                        self.env_info.number
-                    );
-                    r
-                }
-                false => {
-                    trace!(
-                        "ext: blockhash({}) -> null self.env_info.number={}\n",
-                        number,
-                        self.env_info.number
-                    );
-                    H256::zero()
-                }
-            }
-        }
-    }
+	fn blockhash(&mut self, number: &U256) -> H256 {
+		match *number < U256::from(self.env_info.number)
+			&& number.low_u64() >= cmp::max(256, self.env_info.number) - 256
+		{
+			true => {
+				let index = self.env_info.number - number.low_u64() - 1;
+				assert!(
+					index < self.env_info.last_hashes.len() as u64,
+					"Inconsistent env_info, should contain at least {:?} last hashes",
+					index + 1
+				);
+				self.env_info.last_hashes[index as usize].clone()
+			}
+			false => H256::zero(),
+		}
+	}
 
     fn create(
         &mut self,

@@ -22,27 +22,19 @@ use std::{
     sync::Arc,
 };
 
-use ethereum_types::{Address, H256, U256};
+use ethereum_types::{Address, U256};
 use types::{
     header::Header,
-    transaction::{
-        self, SignedTransaction, TypedTransaction, UnverifiedTransaction, SYSTEM_ADDRESS,
-        UNSIGNED_SENDER,
-    },
+    transaction::{self, SignedTransaction, TypedTransaction, UnverifiedTransaction},
     BlockNumber,
 };
-use vm::{
-    AccessList, ActionParams, ActionValue, CallType, CreateContractAddress, EnvInfo, ParamsType,
-    Schedule,
-};
+use vm::{CreateContractAddress, EnvInfo, Schedule};
 
 use block::ExecutedBlock;
 use builtin::Builtin;
 use error::Error;
-use executive::Executive;
 use spec::CommonParams;
-use state::{CleanupMode, Substate};
-use trace::{NoopTracer, NoopVMTracer};
+use state::CleanupMode;
 
 /// Ethash-specific extensions.
 #[derive(Debug, Clone)]
@@ -123,117 +115,9 @@ impl EthereumMachine {
 }
 
 impl EthereumMachine {
-    /// Execute a call as the system address. Block environment information passed to the
-    /// VM is modified to have its gas limit bounded at the upper limit of possible used
-    /// gases including this system call, capped at the maximum value able to be
-    /// represented by U256. This system call modifies the block state, but discards other
-    /// information. If suicides, logs or refunds happen within the system call, they
-    /// will not be executed or recorded. Gas used by this system call will not be counted
-    /// on the block.
-    pub fn execute_as_system(
-        &self,
-        block: &mut ExecutedBlock,
-        contract_address: Address,
-        gas: U256,
-        data: Option<Vec<u8>>,
-    ) -> Result<Vec<u8>, Error> {
-        let (code, code_hash) = {
-            let state = &block.state;
-
-            (
-                state.code(&contract_address)?,
-                state.code_hash(&contract_address)?,
-            )
-        };
-
-        self.execute_code_as_system(
-            block,
-            Some(contract_address),
-            code,
-            code_hash,
-            None,
-            gas,
-            data,
-            None,
-        )
-    }
-
-    /// Same as execute_as_system, but execute code directly. If contract address is None, use the null sender
-    /// address. If code is None, then this function has no effect. The call is executed without finalization, and does
-    /// not form a transaction.
-    pub fn execute_code_as_system(
-        &self,
-        block: &mut ExecutedBlock,
-        contract_address: Option<Address>,
-        code: Option<Arc<Vec<u8>>>,
-        code_hash: Option<H256>,
-        value: Option<ActionValue>,
-        gas: U256,
-        data: Option<Vec<u8>>,
-        call_type: Option<CallType>,
-    ) -> Result<Vec<u8>, Error> {
-        let env_info = {
-            let mut env_info = block.env_info();
-            env_info.gas_limit = env_info.gas_used.saturating_add(gas);
-            env_info
-        };
-
-        let mut state = block.state_mut();
-
-        let params = ActionParams {
-            code_address: contract_address.unwrap_or(UNSIGNED_SENDER),
-            address: contract_address.unwrap_or(UNSIGNED_SENDER),
-            sender: SYSTEM_ADDRESS,
-            origin: SYSTEM_ADDRESS,
-            gas,
-            gas_price: 0.into(),
-            value: value.unwrap_or_else(|| ActionValue::Transfer(0.into())),
-            code,
-            code_hash,
-            data,
-            call_type: call_type.unwrap_or(CallType::Call),
-            params_type: ParamsType::Separate,
-            access_list: AccessList::default(),
-        };
-        let schedule = self.schedule(env_info.number);
-        let mut ex = Executive::new(&mut state, &env_info, self, &schedule);
-        let mut substate = Substate::new();
-
-        let res = ex
-            .call(params, &mut substate, &mut NoopTracer, &mut NoopVMTracer)
-            .map_err(|e| ::engines::EngineError::FailedSystemCall(format!("{}", e)))?;
-        let output = res.return_data.to_vec();
-
-        Ok(output)
-    }
-
-    /// Push last known block hash to the state.
-    fn push_last_hash(&self, block: &mut ExecutedBlock) -> Result<(), Error> {
-        let params = self.params();
-        if block.header.number() == params.eip210_transition {
-            let state = block.state_mut();
-            state.init_code(
-                &params.eip210_contract_address,
-                params.eip210_contract_code.clone(),
-            )?;
-        }
-        if block.header.number() >= params.eip210_transition {
-            let parent_hash = *block.header.parent_hash();
-            let _ = self.execute_as_system(
-                block,
-                params.eip210_contract_address,
-                params.eip210_contract_gas,
-                Some(parent_hash.as_bytes().to_vec()),
-            )?;
-        }
-        Ok(())
-    }
-
     // t_nb 8.1.3 Logic to perform on a new block: updating last hashes and the DAO
     /// fork, for ethash.
     pub fn on_new_block(&self, block: &mut ExecutedBlock) -> Result<(), Error> {
-        self.push_last_hash(block)?;
-
         if let Some(ref ethash_params) = self.ethash_extensions {
             if block.header.number() == ethash_params.dao_hardfork_transition {
                 let state = block.state_mut();
