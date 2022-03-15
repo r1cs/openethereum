@@ -48,10 +48,9 @@ rustc-hex = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-time-utils = { path = "../util/time-utils" }
 trace-time = "0.1"
 triehash-ethereum = { version = "0.2",  path = "../util/triehash-ethereum" }
-unexpected = { path = "../util/unexpected" }
+unexpected = { path = "../util/unexpected", default-features = false }
 vm = { path = "../vm/vm" }
 tempdir = {version="0.3", optional = true}
 tempfile = {version = "3.1.0", optional = true}

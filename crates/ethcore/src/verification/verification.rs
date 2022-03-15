@@ -21,11 +21,7 @@
 //! 2. Signatures verification done in the queue.
 //! 3. Final verification against the blockchain done before enactment.
 
-use std::{
-    collections::HashSet,
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
-
+use std::collections::HashSet;
 use bytes::Bytes;
 use hash::keccak;
 use rlp::Rlp;
@@ -38,8 +34,6 @@ use engines::{EthEngine, MAX_UNCLE_AGE};
 use error::{BlockError, Error};
 use types::{header::Header, transaction::SignedTransaction, BlockNumber};
 use verification::queue::kind::blocks::Unverified;
-
-use time_utils::CheckedSystemTime;
 
 /// Preprocessed block data gathered in `verify_block_unordered` call
 pub struct PreverifiedBlock {
@@ -60,7 +54,7 @@ pub fn verify_block_basic(
     check_seal: bool,
 ) -> Result<(), Error> {
     // t_nb 4.1  verify header params
-    verify_header_params(&block.header, engine, true, check_seal)?;
+    verify_header_params(&block.header, engine, check_seal)?;
     // t_nb 4.2 verify header time (addded in new OE version)
     // t_nb 4.3 verify block integrity
     verify_block_integrity(block)?;
@@ -73,7 +67,7 @@ pub fn verify_block_basic(
     // t_nb 4.5 for all uncled verify header and call engine to verify block basic
     for uncle in &block.uncles {
         // t_nb 4.5.1
-        verify_header_params(uncle, engine, false, check_seal)?;
+        verify_header_params(uncle, engine, check_seal)?;
         if check_seal {
             // t_nb 4.5.2
             engine.verify_block_basic(uncle)?;
@@ -327,7 +321,6 @@ pub fn verify_block_final(expected: &Header, got: &Header) -> Result<(), Error> 
 pub fn verify_header_params(
     header: &Header,
     engine: &dyn EthEngine,
-    is_full: bool,
     check_seal: bool,
 ) -> Result<(), Error> {
     if check_seal {
@@ -398,32 +391,6 @@ pub fn verify_header_params(
         }
     }
 
-    if is_full {
-        const ACCEPTABLE_DRIFT: Duration = Duration::from_secs(15);
-        // this will resist overflow until `year 2037`
-        let max_time = SystemTime::now() + ACCEPTABLE_DRIFT;
-        let invalid_threshold = max_time + ACCEPTABLE_DRIFT * 9;
-        let timestamp =
-            CheckedSystemTime::checked_add(UNIX_EPOCH, Duration::from_secs(header.timestamp()))
-                .ok_or(BlockError::TimestampOverflow)?;
-
-        if timestamp > invalid_threshold {
-            return Err(From::from(BlockError::InvalidTimestamp(OutOfBounds {
-                max: Some(max_time),
-                min: None,
-                found: timestamp,
-            })));
-        }
-
-        if timestamp > max_time {
-            return Err(From::from(BlockError::TemporarilyInvalid(OutOfBounds {
-                max: Some(max_time),
-                min: None,
-                found: timestamp,
-            })));
-        }
-    }
-
     Ok(())
 }
 
@@ -435,14 +402,8 @@ fn verify_parent(header: &Header, parent: &Header, engine: &dyn EthEngine) -> Re
     );
 
     if !engine.is_timestamp_valid(header.timestamp(), parent.timestamp()) {
-        let now = SystemTime::now();
-        let min = CheckedSystemTime::checked_add(
-            now,
-            Duration::from_secs(parent.timestamp().saturating_add(1)),
-        )
-        .ok_or(BlockError::TimestampOverflow)?;
-        let found = CheckedSystemTime::checked_add(now, Duration::from_secs(header.timestamp()))
-            .ok_or(BlockError::TimestampOverflow)?;
+		let min = parent.timestamp().saturating_add(1);
+        let found = header.timestamp();
         return Err(From::from(BlockError::InvalidTimestamp(OutOfBounds {
             max: None,
             min: Some(min),
@@ -559,23 +520,6 @@ mod tests {
                 e, other
             ),
             Ok(_) => panic!("Block verification failed.\nExpected: {:?}\nGot: Ok", e),
-        }
-    }
-
-    fn check_fail_timestamp(result: Result<(), Error>, temp: bool) {
-        let name = if temp {
-            "TemporarilyInvalid"
-        } else {
-            "InvalidTimestamp"
-        };
-        match result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidTimestamp(_)), _)) if !temp => (),
-            Err(Error(ErrorKind::Block(BlockError::TemporarilyInvalid(_)), _)) if temp => (),
-            Err(other) => panic!(
-                "Block verification failed.\nExpected: {}\nGot: {:?}",
-                name, other
-            ),
-            Ok(_) => panic!("Block verification failed.\nExpected: {}\nGot: Ok", name),
         }
     }
 
@@ -993,44 +937,6 @@ mod tests {
                 &bc,
             ),
             UnknownParent(header.parent_hash().clone()),
-        );
-
-        header = good.clone();
-        header.set_timestamp(10);
-        check_fail_timestamp(
-            family_test(
-                &create_test_block_with_data(&header, &good_transactions, &good_uncles),
-                engine,
-                &bc,
-            ),
-            false,
-        );
-
-        header = good.clone();
-        // will return `BlockError::TimestampOverflow` when timestamp > `i32::max_value()`
-        header.set_timestamp(i32::max_value() as u64);
-        check_fail_timestamp(
-            basic_test(
-                &create_test_block_with_data(&header, &good_transactions, &good_uncles),
-                engine,
-            ),
-            false,
-        );
-
-        header = good.clone();
-        header.set_timestamp(
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs()
-                + 20,
-        );
-        check_fail_timestamp(
-            basic_test(
-                &create_test_block_with_data(&header, &good_transactions, &good_uncles),
-                engine,
-            ),
-            true,
         );
 
         header = good.clone();

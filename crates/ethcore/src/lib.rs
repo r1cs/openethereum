@@ -44,7 +44,6 @@ extern crate rayon;
 extern crate rlp;
 extern crate rustc_hex;
 extern crate serde;
-extern crate time_utils;
 extern crate trie_db as trie;
 extern crate triehash_ethereum as triehash;
 extern crate unexpected;
@@ -74,8 +73,6 @@ extern crate log;
 extern crate macros;
 #[macro_use]
 extern crate rlp_derive;
-#[macro_use]
-extern crate trace_time;
 #[macro_use]
 extern crate serde_derive;
 

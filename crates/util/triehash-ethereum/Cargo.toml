@@ -4,8 +4,9 @@ version = "0.2.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 description = "Trie-root helpers, ethereum style"
 license = "GPL-3.0"
+edition = "2018"
 
 [dependencies]
 triehash = { version = "0.5.0" }
-ethereum-types = "0.9.2"
-keccak-hasher = { path = "../keccak-hasher" }
+ethereum-types = {version = "0.9.2", default-features = false}
+keccak-hasher = { path = "../keccak-hasher", default-features = false }

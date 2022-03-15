@@ -245,7 +245,7 @@ pub mod headers {
             engine: &dyn EthEngine,
             check_seal: bool,
         ) -> Result<Self::Unverified, (Self::Input, Error)> {
-            match verify_header_params(&input, engine, true, check_seal) {
+            match verify_header_params(&input, engine, check_seal) {
                 Ok(_) => Ok(input),
                 Err(err) => Err((input, err)),
             }

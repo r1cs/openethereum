@@ -721,7 +721,6 @@ dependencies = [
  "serde_json",
  "tempdir",
  "tempfile",
- "time-utils",
  "trace-time",
  "trie-db",
  "trie-standardmap",
@@ -2527,10 +2526,6 @@ dependencies = [
  "redox_syscall 0.1.56",
  "winapi",
 ]
-
-[[package]]
-name = "time-utils"
-version = "0.1.0"
 
 [[package]]
 name = "tiny-keccak"

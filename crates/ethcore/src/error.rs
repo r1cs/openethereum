@@ -20,7 +20,7 @@
 // https://github.com/openethereum/openethereum/issues/10302
 #![allow(deprecated)]
 
-use std::{error, fmt, time::SystemTime};
+use std::{error, fmt};
 
 use crypto::publickey::Error as EthkeyError;
 use ethereum_types::{Address, Bloom, H256, U256};
@@ -86,9 +86,9 @@ pub enum BlockError {
     /// Receipts trie root header field is invalid.
     InvalidReceiptsRoot(Mismatch<H256>),
     /// Timestamp header field is invalid.
-    InvalidTimestamp(OutOfBounds<SystemTime>),
+    InvalidTimestamp(OutOfBounds<u64>),
     /// Timestamp header field is too far in future.
-    TemporarilyInvalid(OutOfBounds<SystemTime>),
+    TemporarilyInvalid(OutOfBounds<u64>),
     /// Log bloom header field is invalid.
     InvalidLogBloom(Box<Mismatch<Bloom>>),
     /// Number field of header is invalid.
@@ -142,11 +142,9 @@ impl fmt::Display for BlockError {
                 format!("Invalid receipts trie root in header: {}", mis)
             }
             InvalidTimestamp(ref oob) => {
-                let oob = oob.map(|st| st.elapsed().unwrap_or_default().as_secs());
                 format!("Invalid timestamp in header: {}", oob)
             }
             TemporarilyInvalid(ref oob) => {
-                let oob = oob.map(|st| st.elapsed().unwrap_or_default().as_secs());
                 format!("Future timestamp in header: {}", oob)
             }
             InvalidLogBloom(ref oob) => format!("Invalid log bloom in header: {}", oob),

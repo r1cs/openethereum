@@ -15,10 +15,7 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Generates Keccak-flavoured trie roots.
-
-extern crate ethereum_types;
-extern crate keccak_hasher;
-extern crate triehash;
+#![no_std]
 
 use ethereum_types::H256;
 use keccak_hasher::KeccakHasher;
@@ -54,10 +51,12 @@ where
 
 #[cfg(test)]
 mod tests {
+	extern crate std;
     use super::{ordered_trie_root, sec_trie_root, trie_root};
     use ethereum_types::H256;
     use keccak_hasher::KeccakHasher;
     use std::str::FromStr;
+	use std::vec;
     use triehash;
 
     #[test]

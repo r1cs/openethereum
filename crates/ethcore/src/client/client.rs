@@ -1442,7 +1442,6 @@ impl ImportSealedBlock for Client {
 
 		// scope for self.import_lock
 		let _import_lock = self.importer.import_lock.lock();
-		trace_time!("import_sealed_block");
 
 		let block_data = block.rlp_bytes();
 		let route = self.importer.commit_block(
