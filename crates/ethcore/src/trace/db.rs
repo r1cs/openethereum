@@ -21,7 +21,6 @@ use blockchain::BlockChainDB;
 use db::{self, cache_manager::CacheManager, CacheUpdatePolicy, Key, Readable, Writable};
 use ethereum_types::{H256, H264};
 use kvdb::DBTransaction;
-use parity_util_mem::MallocSizeOfExt;
 use parking_lot::RwLock;
 use types::BlockNumber;
 
@@ -103,31 +102,10 @@ where
         }
     }
 
-    fn cache_size(&self) -> usize {
-        self.traces.read().malloc_size_of()
-    }
-
     /// Let the cache system know that a cacheable item has been used.
     fn note_trace_used(&self, trace_id: H256) {
         let mut cache_manager = self.cache_manager.write();
         cache_manager.note_used(trace_id);
-    }
-
-    /// Ticks our cache system and throws out any old data.
-    pub fn collect_garbage(&self) {
-        let current_size = self.cache_size();
-
-        let mut traces = self.traces.write();
-        let mut cache_manager = self.cache_manager.write();
-
-        cache_manager.collect_garbage(current_size, |ids| {
-            for id in &ids {
-                traces.remove(id);
-            }
-            traces.shrink_to_fit();
-
-            traces.malloc_size_of()
-        });
     }
 
     /// Returns traces for block with hash.

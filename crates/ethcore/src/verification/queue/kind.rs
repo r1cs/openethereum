@@ -18,9 +18,7 @@
 
 use engines::EthEngine;
 use error::Error;
-
 use ethereum_types::{H256, U256};
-use parity_util_mem::MallocSizeOf;
 
 pub use self::{blocks::Blocks, headers::Headers};
 
@@ -51,13 +49,13 @@ pub trait BlockLike {
 /// consistent.
 pub trait Kind: 'static + Sized + Send + Sync {
     /// The first stage: completely unverified.
-    type Input: Sized + Send + BlockLike + MallocSizeOf;
+    type Input: Sized + Send + BlockLike;
 
     /// The second stage: partially verified.
-    type Unverified: Sized + Send + BlockLike + MallocSizeOf;
+    type Unverified: Sized + Send + BlockLike;
 
     /// The third stage: completely verified.
-    type Verified: Sized + Send + BlockLike + MallocSizeOf;
+    type Verified: Sized + Send + BlockLike;
 
     /// Attempt to create the `Unverified` item from the input.
     fn create(
@@ -89,7 +87,6 @@ pub mod blocks {
 
     use bytes::Bytes;
     use ethereum_types::{H256, U256};
-    use parity_util_mem::MallocSizeOf;
 
     /// A mode for verifying blocks.
     pub struct Blocks;
@@ -136,7 +133,7 @@ pub mod blocks {
     }
 
     /// An unverified block.
-    #[derive(PartialEq, Debug, MallocSizeOf)]
+    #[derive(PartialEq, Debug)]
     pub struct Unverified {
         /// Unverified block header.
         pub header: Header,

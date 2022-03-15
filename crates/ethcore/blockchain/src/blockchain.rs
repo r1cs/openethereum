@@ -48,7 +48,6 @@ use ethereum_types::{Bloom, BloomRef, H256, U256};
 use itertools::Itertools;
 use log::{info, trace, warn};
 use parity_bytes::Bytes;
-use parity_util_mem::{allocators::new_malloc_size_ops, MallocSizeOf};
 use parking_lot::{Mutex, RwLock};
 use rlp::RlpStream;
 use rlp_compress::{blocks_swapper, compress, decompress};
@@ -57,7 +56,7 @@ use crate::{
     best_block::{BestAncientBlock, BestBlock},
     block_info::{BlockInfo, BlockLocation, BranchBecomingCanonChainData},
     update::{ExtrasInsert, ExtrasUpdate},
-    CacheSize, Config, ImportRoute,
+    Config, ImportRoute,
 };
 
 /// Database backing `BlockChain`.
@@ -1616,71 +1615,6 @@ impl BlockChain {
     /// Get best block header
     pub fn best_block_header(&self) -> Header {
         self.best_block.read().header.clone()
-    }
-
-    /// Get current cache size.
-    pub fn cache_size(&self) -> CacheSize {
-        let mut ops = new_malloc_size_ops();
-        CacheSize {
-            blocks: self.block_headers.read().size_of(&mut ops)
-                + self.block_bodies.read().size_of(&mut ops),
-            block_details: self.block_details.read().size_of(&mut ops),
-            transaction_addresses: self.transaction_addresses.read().size_of(&mut ops),
-            block_receipts: self.block_receipts.read().size_of(&mut ops),
-        }
-    }
-
-    /// Ticks our cache system and throws out any old data.
-    pub fn collect_garbage(&self) {
-        let current_size = self.cache_size().total();
-
-        let mut block_headers = self.block_headers.write();
-        let mut block_bodies = self.block_bodies.write();
-        let mut block_details = self.block_details.write();
-        let mut block_hashes = self.block_hashes.write();
-        let mut transaction_addresses = self.transaction_addresses.write();
-        let mut block_receipts = self.block_receipts.write();
-
-        let mut cache_man = self.cache_man.lock();
-        cache_man.collect_garbage(current_size, |ids| {
-            for id in &ids {
-                match *id {
-                    CacheId::BlockHeader(ref h) => {
-                        block_headers.remove(h);
-                    }
-                    CacheId::BlockBody(ref h) => {
-                        block_bodies.remove(h);
-                    }
-                    CacheId::BlockDetails(ref h) => {
-                        block_details.remove(h);
-                    }
-                    CacheId::BlockHashes(ref h) => {
-                        block_hashes.remove(h);
-                    }
-                    CacheId::TransactionAddresses(ref h) => {
-                        transaction_addresses.remove(h);
-                    }
-                    CacheId::BlockReceipts(ref h) => {
-                        block_receipts.remove(h);
-                    }
-                }
-            }
-
-            block_headers.shrink_to_fit();
-            block_bodies.shrink_to_fit();
-            block_details.shrink_to_fit();
-            block_hashes.shrink_to_fit();
-            transaction_addresses.shrink_to_fit();
-            block_receipts.shrink_to_fit();
-
-            let mut ops = new_malloc_size_ops();
-            block_headers.size_of(&mut ops)
-                + block_bodies.size_of(&mut ops)
-                + block_details.size_of(&mut ops)
-                + block_hashes.size_of(&mut ops)
-                + transaction_addresses.size_of(&mut ops)
-                + block_receipts.size_of(&mut ops)
-        });
     }
 
     /// Create a block body from a block.

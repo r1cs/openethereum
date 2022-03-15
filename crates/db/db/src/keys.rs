@@ -19,7 +19,6 @@
 use common_types::{receipt::TypedReceipt, BlockNumber};
 use ethereum_types::{H256, H264, U256};
 use kvdb::PREFIX_LEN as DB_PREFIX_LEN;
-use parity_util_mem::MallocSizeOf;
 use rlp;
 use rlp_derive::{RlpDecodable, RlpEncodable};
 
@@ -126,7 +125,7 @@ impl AsRef<[u8]> for EpochTransitionsKey {
 }
 
 /// Familial details concerning a block
-#[derive(Debug, Clone, MallocSizeOf)]
+#[derive(Debug, Clone)]
 pub struct BlockDetails {
     /// Block number
     pub number: BlockNumber,
@@ -186,7 +185,7 @@ impl rlp::Decodable for BlockDetails {
 }
 
 /// Represents address of certain transaction within block
-#[derive(Debug, PartialEq, Clone, RlpEncodable, RlpDecodable, MallocSizeOf)]
+#[derive(Debug, PartialEq, Clone, RlpEncodable, RlpDecodable)]
 pub struct TransactionAddress {
     /// Block hash
     pub block_hash: H256,
@@ -195,7 +194,7 @@ pub struct TransactionAddress {
 }
 
 /// Contains all block receipts.
-#[derive(Clone, MallocSizeOf)]
+#[derive(Clone)]
 pub struct BlockReceipts {
     /// Block receipts
     pub receipts: Vec<TypedReceipt>,

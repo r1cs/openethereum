@@ -18,18 +18,15 @@
 
 use super::trace::{Action, Res};
 use ethereum_types::Bloom;
-use parity_util_mem::MallocSizeOf;
 use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
 
 /// Trace localized in vector of traces produced by a single transaction.
 ///
 /// Parent and children indexes refer to positions in this vector.
-#[derive(Debug, PartialEq, Clone, MallocSizeOf)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FlatTrace {
-    #[ignore_malloc_size_of = "ignored for performance reason"]
     /// Type of action performed by a transaction.
     pub action: Action,
-    #[ignore_malloc_size_of = "ignored for performance reason"]
     /// Result of this action.
     pub result: Res,
     /// Number of subtraces.
@@ -72,7 +69,7 @@ impl Decodable for FlatTrace {
 }
 
 /// Represents all traces produced by a single transaction.
-#[derive(Debug, PartialEq, Clone, RlpEncodableWrapper, RlpDecodableWrapper, MallocSizeOf)]
+#[derive(Debug, PartialEq, Clone, RlpEncodableWrapper, RlpDecodableWrapper)]
 pub struct FlatTransactionTraces(Vec<FlatTrace>);
 
 impl From<Vec<FlatTrace>> for FlatTransactionTraces {
@@ -98,7 +95,7 @@ impl Into<Vec<FlatTrace>> for FlatTransactionTraces {
 
 /// Represents all traces produced by transactions in a single block.
 #[derive(
-    Debug, PartialEq, Clone, Default, RlpEncodableWrapper, RlpDecodableWrapper, MallocSizeOf,
+    Debug, PartialEq, Clone, Default, RlpEncodableWrapper, RlpDecodableWrapper,
 )]
 pub struct FlatBlockTraces(Vec<FlatTransactionTraces>);
 

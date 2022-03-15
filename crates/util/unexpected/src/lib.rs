@@ -15,8 +15,12 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Error utils
+#![no_std]
 
-use std::fmt;
+extern crate alloc;
+
+use alloc::fmt;
+use alloc::format;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 /// Error indicating an expected value was not found.

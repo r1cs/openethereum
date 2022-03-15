@@ -14,8 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use blockchain::BlockProvider;
-
 use test_helpers::{
     generate_dummy_blockchain, generate_dummy_blockchain_with_extra,
     generate_dummy_empty_blockchain,
@@ -25,25 +23,6 @@ use test_helpers::{
 fn can_contain_arbitrary_block_sequence() {
     let bc = generate_dummy_blockchain(50);
     assert_eq!(bc.best_block_number(), 49);
-}
-
-#[test]
-fn can_collect_garbage() {
-    let bc = generate_dummy_blockchain(3000);
-
-    assert_eq!(bc.best_block_number(), 2999);
-    let best_hash = bc.best_block_hash();
-    let mut block_header = bc.block_header_data(&best_hash);
-
-    while !block_header.is_none() {
-        block_header = bc.block_header_data(&block_header.unwrap().parent_hash());
-    }
-    assert!(bc.cache_size().blocks > 1024 * 1024);
-
-    for _ in 0..2 {
-        bc.collect_garbage();
-    }
-    assert!(bc.cache_size().blocks < 1024 * 1024);
 }
 
 #[test]

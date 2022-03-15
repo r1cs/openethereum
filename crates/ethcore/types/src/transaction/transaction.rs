@@ -22,7 +22,6 @@ use crate::{
     transaction::error,
 };
 use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
-use parity_util_mem::MallocSizeOf;
 
 use rlp::{self, DecoderError, Rlp, RlpStream};
 use std::{cmp::min, ops::Deref};
@@ -45,7 +44,7 @@ pub const SYSTEM_ADDRESS: Address = H160([
 ]);
 
 /// Transaction action type.
-#[derive(Debug, Clone, PartialEq, Eq, MallocSizeOf)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     /// Create creates new contract.
     Create,
@@ -126,7 +125,7 @@ pub mod signature {
 
 /// A set of information describing an externally-originating message call
 /// or contract creation operation.
-#[derive(Default, Debug, Clone, PartialEq, Eq, MallocSizeOf)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Transaction {
     /// Nonce.
     pub nonce: U256,
@@ -231,7 +230,7 @@ impl Transaction {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct AccessListTx {
     pub transaction: Transaction,
     //optional access list
@@ -364,7 +363,7 @@ impl AccessListTx {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct EIP1559TransactionTx {
     pub transaction: AccessListTx,
     pub max_priority_fee_per_gas: U256,
@@ -501,7 +500,7 @@ impl EIP1559TransactionTx {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TypedTransaction {
     Legacy(Transaction),      // old legacy RLP encoded transaction
     AccessList(AccessListTx), // EIP-2930 Transaction with a list of addresses and storage keys that the transaction plans to access.
@@ -757,7 +756,7 @@ impl TypedTransaction {
 }
 
 /// Components that constitute transaction signature
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct SignatureComponents {
     /// The V field of the signature; the LS bit described which half of the curve our point falls
     /// in. It can be 0 or 1.
@@ -786,7 +785,7 @@ impl SignatureComponents {
 }
 
 /// Signed transaction information without verified signature.
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct UnverifiedTransaction {
     /// Plain Transaction.
     pub unsigned: TypedTransaction,
@@ -927,7 +926,7 @@ impl UnverifiedTransaction {
 }
 
 /// A `UnverifiedTransaction` with successfully recovered `sender`.
-#[derive(Debug, Clone, Eq, PartialEq, MallocSizeOf)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct SignedTransaction {
     transaction: UnverifiedTransaction,
     sender: Address,

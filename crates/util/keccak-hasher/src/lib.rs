@@ -15,6 +15,7 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Hasher implementation for the Keccak-256 hash
+#![no_std]
 extern crate ethereum_types;
 extern crate hash_db;
 extern crate plain_hasher;

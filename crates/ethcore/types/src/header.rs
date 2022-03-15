@@ -22,7 +22,6 @@ use crate::{
     BlockNumber,
 };
 use ethereum_types::{Address, Bloom, H256, U256};
-use parity_util_mem::MallocSizeOf;
 use rlp::{DecoderError, Encodable, Rlp, RlpStream};
 
 /// Semantic boolean for when a seal/signature is included.
@@ -54,7 +53,7 @@ pub struct ExtendedHeader {
 ///
 /// Two versions of header exist. First one is before EIP1559. Second version is after EIP1559.
 /// EIP1559 version added field base_fee_per_gas.
-#[derive(Debug, Clone, Eq, MallocSizeOf)]
+#[derive(Debug, Clone, Eq)]
 pub struct Header {
     /// Parent hash.
     parent_hash: H256,

@@ -28,7 +28,6 @@ use std::{
 
 use bytes::Bytes;
 use hash::keccak;
-use parity_util_mem::MallocSizeOf;
 use rlp::Rlp;
 use triehash::ordered_trie_root;
 use unexpected::{Mismatch, OutOfBounds};
@@ -43,7 +42,6 @@ use verification::queue::kind::blocks::Unverified;
 use time_utils::CheckedSystemTime;
 
 /// Preprocessed block data gathered in `verify_block_unordered` call
-#[derive(MallocSizeOf)]
 pub struct PreverifiedBlock {
     /// Populated block header
     pub header: Header,

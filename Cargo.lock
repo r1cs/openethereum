@@ -316,17 +316,13 @@ name = "common-types"
 version = "0.1.0"
 dependencies = [
  "ethereum-types",
- "ethkey",
- "hex",
  "keccak-hash",
  "parity-bytes",
  "parity-crypto",
- "parity-util-mem",
  "rlp",
  "rlp_derive",
  "rustc-hex 1.0.0",
  "serde",
- "serde_json",
  "serde_repr",
  "unexpected",
 ]
@@ -708,7 +704,6 @@ dependencies = [
  "maplit",
  "memory-cache",
  "memory-db 0.11.0",
- "num_cpus",
  "parity-bytes",
  "parity-crypto",
  "parity-util-mem",
@@ -775,12 +770,10 @@ dependencies = [
  "parity-util-mem",
  "parking_lot 0.11.1",
  "rand 0.7.3",
- "rayon",
  "rlp",
  "rlp_compress",
  "rlp_derive",
  "rustc-hex 1.0.0",
- "stats",
  "tempdir",
  "triehash-ethereum",
 ]
@@ -815,7 +808,6 @@ dependencies = [
  "ethereum-types",
  "kvdb",
  "kvdb-memorydb",
- "parity-util-mem",
  "parking_lot 0.11.1",
  "rlp",
  "rlp_derive",
@@ -1095,12 +1087,6 @@ checksum = "307c3c9f937f38e3534b1d6447ecf090cafcc9744e4a6360e8b037b2cf5af120"
 dependencies = [
  "libc",
 ]
-
-[[package]]
-name = "hex"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hex-literal"
@@ -1864,26 +1850,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "prometheus"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd0ced56dee39a6e960c15c74dc48849d614586db2eaada6497477af7c7811cd"
-dependencies = [
- "cfg-if 0.1.10",
- "fnv",
- "lazy_static",
- "protobuf",
- "spin",
- "thiserror",
-]
-
-[[package]]
-name = "protobuf"
-version = "2.16.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d883f78645c21b7281d21305181aa1f4dd9e9363e7cf2566c93121552cff003e"
-
-[[package]]
 name = "pwasm-utils"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2434,12 +2400,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
 
 [[package]]
-name = "spin"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
-
-[[package]]
 name = "stable_deref_trait"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2450,14 +2410,6 @@ name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
-name = "stats"
-version = "0.1.0"
-dependencies = [
- "log",
- "prometheus",
-]
 
 [[package]]
 name = "stream-cipher"
@@ -2554,26 +2506,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
 dependencies = [
  "unicode-width",
-]
-
-[[package]]
-name = "thiserror"
-version = "1.0.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dfdd070ccd8ccb78f4ad66bf1982dc37f620ef696c6b5028fe2ed83dd3d0d08"
-dependencies = [
- "thiserror-impl",
-]
-
-[[package]]
-name = "thiserror-impl"
-version = "1.0.20"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd80fc12f73063ac132ac92aceea36734f04a1d93c1240c6944e23a3b8841793"
-dependencies = [
- "proc-macro2 1.0.20",
- "quote 1.0.7",
- "syn 1.0.40",
 ]
 
 [[package]]
