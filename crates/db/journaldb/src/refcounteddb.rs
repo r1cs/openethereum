@@ -17,7 +17,7 @@
 //! Disk-backed, ref-counted `JournalDB` implementation.
 
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::HashMap,
     io,
     sync::Arc,
 };
@@ -30,7 +30,6 @@ use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
 use memory_db::MemoryDB;
 use overlaydb::OverlayDB;
-use parity_util_mem::{allocators::new_malloc_size_ops, MallocSizeOf};
 use rlp::{decode, encode};
 use util::{DatabaseKey, DatabaseValueRef, DatabaseValueView};
 use DB_PREFIX_LEN;
@@ -120,18 +119,6 @@ impl JournalDB for RefCountedDB {
             removes: self.removes.clone(),
             column: self.column.clone(),
         })
-    }
-
-    fn get_sizes(&self, sizes: &mut BTreeMap<String, usize>) {
-        let mut ops = new_malloc_size_ops();
-        sizes.insert(
-            String::from("db_ref_counted_inserts"),
-            self.inserts.size_of(&mut ops),
-        );
-        sizes.insert(
-            String::from("db_ref_counted_removes"),
-            self.removes.size_of(&mut ops),
-        );
     }
 
     fn is_empty(&self) -> bool {

@@ -23,7 +23,7 @@ use ethcore_db::{DBTransaction, DBValue, KeyValueDB};
 use ethereum_types::H256;
 use hash_db::{AsHashDB, HashDB};
 use keccak_hasher::KeccakHasher;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 /// expose keys of a hashDB for debugging or tests (slow).
 pub trait KeyedHashDB: HashDB<KeccakHasher, DBValue> {
@@ -42,9 +42,6 @@ pub trait AsKeyedHashDB: AsHashDB<KeccakHasher, DBValue> {
 pub trait JournalDB: KeyedHashDB {
     /// Return a copy of ourself, in a box.
     fn boxed_clone(&self) -> Box<dyn JournalDB>;
-
-    /// Returns heap memory size used
-    fn get_sizes(&self, sizes: &mut BTreeMap<String, usize>);
 
     /// Returns the size of journalled state in memory.
     /// This function has a considerable speed requirement --

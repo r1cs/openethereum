@@ -17,7 +17,7 @@
 //! State database abstraction. For more info, see the doc for `StateDB`
 
 use std::{
-    collections::{BTreeMap, HashSet, VecDeque},
+    collections::{HashSet, VecDeque},
     io,
     sync::Arc,
 };
@@ -315,20 +315,6 @@ impl StateDB {
     /// Check if pruning is enabled on the database.
     pub fn is_pruned(&self) -> bool {
         self.db.is_pruned()
-    }
-
-    /// Heap size used.
-    pub fn get_sizes(&self, sizes: &mut BTreeMap<String, usize>) {
-        self.db.get_sizes(sizes);
-
-        sizes.insert(
-            String::from("account_cache_len"),
-            self.account_cache.lock().accounts.len(),
-        );
-        sizes.insert(
-            String::from("code_cache_size"),
-            self.code_cache.lock().current_size(),
-        );
     }
 
     /// Returns underlying `JournalDB`.

@@ -17,7 +17,7 @@
 //! Disk-backed `HashDB` implementation.
 
 use std::{
-    collections::{hash_map::Entry, BTreeMap, HashMap},
+    collections::{hash_map::Entry, HashMap},
     io,
     sync::Arc,
 };
@@ -31,13 +31,12 @@ use ethereum_types::H256;
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
 use memory_db::*;
-use parity_util_mem::MallocSizeOf;
 use parking_lot::RwLock;
 use rlp::{decode, encode};
 use util::{DatabaseKey, DatabaseValueRef, DatabaseValueView};
 use DB_PREFIX_LEN;
 
-#[derive(Debug, Clone, PartialEq, Eq, MallocSizeOf)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct RefInfo {
     queue_refs: usize,
     in_archive: bool,
@@ -409,16 +408,6 @@ impl JournalDB for EarlyMergeDB {
 
     fn latest_era(&self) -> Option<u64> {
         self.latest_era
-    }
-
-    fn get_sizes(&self, sizes: &mut BTreeMap<String, usize>) {
-        let refs_size = match self.refs {
-            Some(ref c) => c.read().len(),
-            None => 0,
-        };
-
-        sizes.insert(String::from("db_archive_overlay"), self.overlay.len());
-        sizes.insert(String::from("db_early_merge_refs-size"), refs_size);
     }
 
     fn journal_under(&mut self, batch: &mut DBTransaction, now: u64, id: &H256) -> io::Result<u32> {

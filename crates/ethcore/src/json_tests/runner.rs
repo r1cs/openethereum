@@ -1,6 +1,6 @@
 use ethjson::test::{
-    ChainTests, DifficultyTests, EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
-    TestChainSpec, TestTrieSpec, TransactionTests, TrieTests,
+    ChainTests, EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
+    TestTrieSpec, TransactionTests, TrieTests,
 };
 use globset::Glob;
 use log::info;

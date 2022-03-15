@@ -17,7 +17,7 @@
 //! `JournalDB` over in-memory overlay
 
 use std::{
-    collections::{hash_map::Entry, BTreeMap, HashMap},
+    collections::{hash_map::Entry, HashMap},
     io,
     sync::Arc,
 };
@@ -30,7 +30,6 @@ use fastmap::H256FastMap;
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
 use memory_db::*;
-use parity_util_mem::MallocSizeOf;
 use parking_lot::RwLock;
 use rlp::{decode, encode, Decodable, DecoderError, Encodable, Rlp, RlpStream};
 use util::DatabaseKey;
@@ -133,7 +132,7 @@ struct JournalOverlay {
     cumulative_size: usize, // cumulative size of all entries.
 }
 
-#[derive(PartialEq, MallocSizeOf)]
+#[derive(PartialEq)]
 struct JournalEntry {
     id: H256,
     insertions: Vec<H256>,
@@ -281,27 +280,6 @@ impl ::traits::KeyedHashDB for OverlayRecentDB {
 impl JournalDB for OverlayRecentDB {
     fn boxed_clone(&self) -> Box<dyn JournalDB> {
         Box::new(self.clone())
-    }
-
-    fn get_sizes(&self, sizes: &mut BTreeMap<String, usize>) {
-        sizes.insert(
-            String::from("db_overlay_recent_transactions_size"),
-            self.transaction_overlay.len(),
-        );
-
-        let overlay = self.journal_overlay.read();
-        sizes.insert(
-            String::from("db_overlay_recent_backing_size"),
-            overlay.backing_overlay.len(),
-        );
-        sizes.insert(
-            String::from("db_overlay_recent_pending_size"),
-            overlay.pending_overlay.len(),
-        );
-        sizes.insert(
-            String::from("db_overlay_recent_journal_size"),
-            overlay.journal.len(),
-        );
     }
 
     fn journal_size(&self) -> usize {
