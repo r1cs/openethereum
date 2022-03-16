@@ -103,16 +103,7 @@ impl<M: Machine> Engine<M> for InstantSeal<M> {
     }
 
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {
-        use std::{cmp, time};
-
-        let dur = time::SystemTime::now()
-            .duration_since(time::UNIX_EPOCH)
-            .unwrap_or_default();
-        let mut now = dur.as_secs();
-        if self.params.millisecond_timestamp {
-            now = now * 1000 + dur.subsec_millis() as u64;
-        }
-        cmp::max(now, parent_timestamp)
+		parent_timestamp + if self.params.millisecond_timestamp { 1000 } else { 1 }
     }
 
     fn is_timestamp_valid(&self, header_timestamp: u64, parent_timestamp: u64) -> bool {

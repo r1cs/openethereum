@@ -60,7 +60,7 @@ use client::{
     BlockInfo, BlockStatus, Call, CallAnalytics, ChainInfo,
     EngineInfo, ImportBlock, ImportSealedBlock, LastHashes, Nonce,
     PrepareOpenBlock, ProvingBlockChainClient,
-    StateClient, StateOrBlock, TraceFilter, TraceId, TransactionId,
+    StateOrBlock, TraceFilter, TraceId, TransactionId,
 };
 use engines::EthEngine;
 use error::{Error, EthcoreResult};
@@ -628,19 +628,6 @@ impl StateInfo for TestState {
     }
     fn code(&self, _address: &Address) -> ethtrie::Result<Option<Arc<Bytes>>> {
         unimplemented!()
-    }
-}
-
-impl StateClient for TestBlockChainClient {
-    // State will not be used by test client anyway, since all methods that accept state are mocked
-    type State = TestState;
-
-    fn latest_state_and_header(&self) -> (Self::State, Header) {
-        (TestState, self.best_block_header())
-    }
-
-    fn state_at(&self, _id: BlockId) -> Option<Self::State> {
-        Some(TestState)
     }
 }
 

@@ -132,22 +132,6 @@ pub trait BlockInfo {
     fn code_hash(&self, address: &Address, id: BlockId) -> Option<H256>;
 }
 
-/// Provides methods to access chain state
-pub trait StateClient {
-    /// Type representing chain state
-    type State: StateInfo;
-
-    /// Get a copy of the best block's state and header.
-    fn latest_state_and_header(&self) -> (Self::State, Header);
-
-    /// Attempt to get a copy of a specific block's final state.
-    ///
-    /// This will not fail if given BlockId::Latest.
-    /// Otherwise, this can fail (but may not) if the DB prunes state or the block
-    /// is unknown.
-    fn state_at(&self, id: BlockId) -> Option<Self::State>;
-}
-
 /// Provides various blockchain information, like block header, chain state etc.
 pub trait BlockChain: ChainInfo + BlockInfo {}
 

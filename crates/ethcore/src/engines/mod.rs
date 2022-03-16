@@ -20,15 +20,12 @@ mod instant_seal;
 mod null_engine;
 
 pub mod block_reward;
-pub mod signer;
 
 pub use self::{
     instant_seal::{InstantSeal, InstantSealParams},
     null_engine::NullEngine,
-    signer::EngineSigner,
 };
 
-// TODO [ToDr] Remove re-export (#10130)
 pub use types::engines::ForkChoice;
 
 use std::{
@@ -318,9 +315,6 @@ pub trait Engine<M: Machine>: Sync + Send {
     fn handle_message(&self, _message: &[u8]) -> Result<(), EngineError> {
         Err(EngineError::UnexpectedMessage)
     }
-
-    /// Register a component which signs consensus messages.
-    fn set_signer(&self, _signer: Option<Box<dyn EngineSigner>>) {}
 
     /// Returns whether the current node is a validator and
     /// actually may seal a block if AuRa engine is used.

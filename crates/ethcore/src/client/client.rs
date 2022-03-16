@@ -48,7 +48,7 @@ use client::{
     CallAnalytics, ChainInfo, ClientConfig,
     EngineInfo, ImportBlock, ImportSealedBlock,
     Nonce, PrepareOpenBlock, ProvingBlockChainClient, PruningInfo,
-    StateClient, StateInfo, StateOrBlock, TraceFilter, TraceId,
+    StateInfo, StateOrBlock, TraceFilter, TraceId,
     TransactionId,
 };
 use engines::{EthEngine, ForkChoice};
@@ -792,18 +792,6 @@ impl ImportBlock for Client {
 		let db = self.db.read();
 		db.key_value().flush().expect("DB flush failed.");
 		Ok(hash)
-	}
-}
-
-impl StateClient for Client {
-	type State = State<::state_db::StateDB>;
-
-	fn latest_state_and_header(&self) -> (Self::State, Header) {
-		Client::latest_state_and_header(self)
-	}
-
-	fn state_at(&self, id: BlockId) -> Option<Self::State> {
-		Client::state_at(self, id)
 	}
 }
 

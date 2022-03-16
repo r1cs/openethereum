@@ -23,6 +23,8 @@ mod evm_test_client;
 #[cfg(any(test, feature = "test-helpers"))]
 pub mod test_client;
 mod trace;
+mod riscv;
+pub use self::riscv::RiscvEnv;
 
 #[cfg(any(test, feature = "test-helpers"))]
 pub use self::evm_test_client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
@@ -35,8 +37,7 @@ pub use self::{
         AccountData, Balance, BlockChain, BlockChainClient, BlockInfo,
         Call, ChainInfo, EngineClient, EngineInfo,
         ImportBlock, ImportSealedBlock, Nonce, PrepareOpenBlock,
-        ProvingBlockChainClient, StateClient,
-        StateOrBlock,
+        ProvingBlockChainClient, StateOrBlock,
     },
 };
 pub use state::StateInfo;

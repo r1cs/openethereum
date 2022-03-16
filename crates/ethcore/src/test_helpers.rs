@@ -28,7 +28,6 @@ use db::KeyValueDB;
 use ethereum_types::{Address, H256, U256};
 use evm::Factory as EvmFactory;
 use hash::keccak;
-use parking_lot::RwLock;
 use rlp::{self, RlpStream};
 use tempdir::TempDir;
 use types::{
@@ -44,8 +43,6 @@ use block::{Drain, OpenBlock};
 use client::{
     ChainInfo, Client, ClientConfig, ImportBlock, PrepareOpenBlock,
 };
-use engines::EngineSigner;
-use ethjson::crypto::publickey::{Public, Signature};
 use factory::Factories;
 use spec::Spec;
 use state::*;
@@ -534,46 +531,4 @@ pub fn get_bad_state_dummy_block() -> Bytes {
     block_header.set_state_root(H256::from_low_u64_be(0xbad));
 
     create_test_block(&block_header)
-}
-
-/// Test actor for chain events
-#[derive(Default)]
-pub struct TestNotify {
-    /// Messages store
-    pub messages: RwLock<Vec<Bytes>>,
-}
-
-/// Returns engine signer with specified address
-pub fn dummy_engine_signer_with_address(addr: Address) -> Box<dyn EngineSigner> {
-    struct TestEngineSigner(Address);
-
-    impl TestEngineSigner {
-        fn with_address(addr: Address) -> Self {
-            Self(addr)
-        }
-    }
-
-    impl EngineSigner for TestEngineSigner {
-        fn sign(&self, _hash: H256) -> Result<Signature, ethjson::crypto::publickey::Error> {
-            unimplemented!()
-        }
-
-        fn address(&self) -> Address {
-            self.0
-        }
-
-        fn decrypt(
-            &self,
-            _auth_data: &[u8],
-            _cipher: &[u8],
-        ) -> Result<Vec<u8>, parity_crypto::publickey::Error> {
-            unimplemented!()
-        }
-
-        fn public(&self) -> Option<Public> {
-            unimplemented!()
-        }
-    }
-
-    Box::new(TestEngineSigner::with_address(addr))
 }

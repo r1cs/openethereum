@@ -927,7 +927,6 @@ dependencies = [
  "ethereum-types",
  "hex-literal 0.2.1",
  "keccak-hash",
- "lazy_static",
  "log",
  "memory-cache",
  "num-bigint 0.2.3",
