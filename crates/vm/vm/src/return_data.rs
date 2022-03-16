@@ -16,7 +16,14 @@
 
 //! Return data structures
 
+#[cfg(not(feature = "std"))]
+use core as core_;
+#[cfg(feature = "std")]
+use std as core_;
+
 use ethereum_types::U256;
+extern crate alloc;
+use alloc::vec::Vec;
 
 /// Return data buffer. Holds memory from a previous call and a slice into that memory.
 #[derive(Debug)]
@@ -26,7 +33,7 @@ pub struct ReturnData {
     size: usize,
 }
 
-impl ::std::ops::Deref for ReturnData {
+impl core_::ops::Deref for ReturnData {
     type Target = [u8];
     fn deref(&self) -> &[u8] {
         &self.mem[self.offset..self.offset + self.size]

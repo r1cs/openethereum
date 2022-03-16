@@ -16,12 +16,21 @@
 
 //! Virtual machines support library
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+use alloc::boxed::Box;
+
 extern crate ethereum_types;
-extern crate ethjson;
+
 extern crate keccak_hash as hash;
 extern crate parity_bytes as bytes;
 extern crate patricia_trie_ethereum as ethtrie;
 extern crate rlp;
+extern crate hashbrown;
 
 pub mod access_list;
 mod action_params;

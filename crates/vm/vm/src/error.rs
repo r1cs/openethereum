@@ -16,12 +16,19 @@
 
 //! VM errors module
 
-use action_params::ActionParams;
+#[cfg(not(feature = "std"))]
+use core as core_;
+#[cfg(feature = "std")]
+use std as core_;
+
 use ethereum_types::Address;
 use ethtrie;
-use std::fmt;
-use ResumeCall;
-use ResumeCreate;
+use core_::fmt;
+extern crate alloc;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::string::String;
+use crate::{ActionParams, ResumeCall, ResumeCreate};
 
 #[derive(Debug)]
 pub enum TrapKind {
@@ -106,13 +113,13 @@ pub enum Error {
 
 impl From<Box<ethtrie::TrieError>> for Error {
     fn from(err: Box<ethtrie::TrieError>) -> Self {
-        Error::Internal(format!("Internal error: {}", err))
+        Error::Internal(format!("Internal error: {:}", err))
     }
 }
 
 impl From<ethtrie::TrieError> for Error {
     fn from(err: ethtrie::TrieError) -> Self {
-        Error::Internal(format!("Internal error: {}", err))
+        Error::Internal(format!("Internal error: {:}", err))
     }
 }
 
@@ -155,8 +162,8 @@ impl fmt::Display for Error {
     }
 }
 
-pub type Result<T> = ::std::result::Result<T, Error>;
-pub type TrapResult<T, Call, Create> = ::std::result::Result<Result<T>, TrapError<Call, Create>>;
+pub type Result<T> = core_::result::Result<T, Error>;
+pub type TrapResult<T, Call, Create> = core_::result::Result<Result<T>, TrapError<Call, Create>>;
 
 pub type ExecTrapResult<T> = TrapResult<T, Box<dyn ResumeCall>, Box<dyn ResumeCreate>>;
 pub type ExecTrapError = TrapError<Box<dyn ResumeCall>, Box<dyn ResumeCreate>>;

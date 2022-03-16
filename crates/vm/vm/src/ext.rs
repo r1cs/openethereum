@@ -16,14 +16,20 @@
 
 //! Interface for Evm externalities.
 
+#[cfg(not(feature = "std"))]
+use core as core_;
+#[cfg(feature = "std")]
+use std as core_;
+
 use bytes::Bytes;
-use call_type::CallType;
-use env_info::EnvInfo;
-use error::{Result, TrapKind};
+use crate::{CallType, Schedule};
+use crate::EnvInfo;
+use crate::error::{Result, TrapKind};
 use ethereum_types::{Address, H256, U256};
-use return_data::ReturnData;
-use schedule::Schedule;
-use std::sync::Arc;
+use crate::ReturnData;
+extern crate alloc;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 #[derive(Debug)]
 /// Result of externalities create function.
@@ -99,7 +105,7 @@ pub trait Ext {
         code: &[u8],
         address: CreateContractAddress,
         trap: bool,
-    ) -> ::std::result::Result<ContractCreateResult, TrapKind>;
+    ) -> core_::result::Result<ContractCreateResult, TrapKind>;
 
     /// Returns the address that will be created in the create call
     fn calc_address(&self, code: &[u8], address: CreateContractAddress) -> Option<Address>;
@@ -119,7 +125,7 @@ pub trait Ext {
         code_address: &Address,
         call_type: CallType,
         trap: bool,
-    ) -> ::std::result::Result<MessageCallResult, TrapKind>;
+    ) -> core_::result::Result<MessageCallResult, TrapKind>;
 
     /// Returns code at given address
     fn extcode(&self, address: &Address) -> Result<Option<Arc<Bytes>>>;

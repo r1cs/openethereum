@@ -15,14 +15,14 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Evm input params.
+extern crate alloc;
 use super::access_list::AccessList;
 use bytes::Bytes;
-use call_type::CallType;
+use crate::CallType;
 use ethereum_types::{Address, H256, U256};
-use ethjson;
-use hash::{keccak, KECCAK_EMPTY};
+use hash::KECCAK_EMPTY;
 
-use std::sync::Arc;
+use alloc::sync::Arc;
 
 /// Transaction value
 #[derive(Clone, Debug)]
@@ -115,12 +115,13 @@ impl Default for ActionParams {
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::vm::Transaction> for ActionParams {
     fn from(t: ethjson::vm::Transaction) -> Self {
         let address: Address = t.address.into();
         ActionParams {
             code_address: Address::default(),
-            code_hash: Some(keccak(&*t.code)),
+            code_hash: Some(hash::keccak(&*t.code)),
             address: address,
             sender: t.sender.into(),
             origin: t.origin.into(),

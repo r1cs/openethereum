@@ -17,9 +17,10 @@
 //! Environment information for transaction execution.
 
 use ethereum_types::{Address, H256, U256};
-use ethjson;
-use hash::keccak;
-use std::{cmp, sync::Arc};
+extern crate alloc;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use alloc::vec;
 
 type BlockNumber = u64;
 
@@ -54,15 +55,16 @@ impl Default for EnvInfo {
             number: 0,
             author: Address::default(),
             timestamp: 0,
-            difficulty: 0.into(),
-            gas_limit: 0.into(),
+            difficulty: 0u64.into(),
+            gas_limit: 0u64.into(),
             last_hashes: Arc::new(vec![]),
-            gas_used: 0.into(),
+            gas_used: 0u64.into(),
             base_fee: None,
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::vm::Env> for EnvInfo {
     fn from(e: ethjson::vm::Env) -> Self {
         let number = e.number.into();
@@ -73,50 +75,12 @@ impl From<ethjson::vm::Env> for EnvInfo {
             gas_limit: e.gas_limit.into(),
             timestamp: e.timestamp.into(),
             last_hashes: Arc::new(
-                (1..cmp::min(number + 1, 257))
-                    .map(|i| keccak(format!("{}", number - i).as_bytes()))
+                (1..core::cmp::min(number + 1, 257))
+                    .map(|i| hash::keccak(format!("{}", number - i).as_bytes()))
                     .collect(),
             ),
             gas_used: U256::default(),
             base_fee: e.base_fee.map(|i| i.into()),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use ethereum_types::{Address, U256};
-    use ethjson;
-    use std::str::FromStr;
-
-    #[test]
-    fn it_serializes_from_json() {
-        let env_info = EnvInfo::from(ethjson::vm::Env {
-            author: ethjson::hash::Address(
-                Address::from_str("000000f00000000f000000000000f00000000f00").unwrap(),
-            ),
-            number: ethjson::uint::Uint(U256::from(1_112_339)),
-            difficulty: ethjson::uint::Uint(U256::from(50_000)),
-            gas_limit: ethjson::uint::Uint(U256::from(40_000)),
-            timestamp: ethjson::uint::Uint(U256::from(1_100)),
-            base_fee: None,
-        });
-
-        assert_eq!(env_info.number, 1112339);
-        assert_eq!(
-            env_info.author,
-            Address::from_str("000000f00000000f000000000000f00000000f00").unwrap()
-        );
-        assert_eq!(env_info.gas_limit, 40000.into());
-        assert_eq!(env_info.difficulty, 50000.into());
-        assert_eq!(env_info.gas_used, 0.into());
-    }
-
-    #[test]
-    fn it_can_be_created_as_default() {
-        let default_env_info = EnvInfo::default();
-
-        assert_eq!(default_env_info.difficulty, 0.into());
     }
 }

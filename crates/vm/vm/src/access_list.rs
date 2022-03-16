@@ -1,11 +1,19 @@
+#[cfg(not(feature = "std"))]
+use core as core_;
+#[cfg(feature = "std")]
+use std as core_;
+
+extern crate alloc;
+
+use hashbrown::HashMap;
 use ethereum_types::{Address, H256};
-use std::{
+use core_::{
     borrow::Borrow,
-    collections::HashMap,
     hash::{Hash, Hasher},
 };
 
-use std::{cell::RefCell, rc::Rc};
+use core_::cell::RefCell;
+use alloc::rc::Rc;
 
 // Implementation of a hasheable borrowed pair
 trait KeyPair<A, B> {
@@ -81,8 +89,8 @@ impl Default for AccessList {
     }
 }
 
-impl std::fmt::Display for AccessList {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core_::fmt::Display for AccessList {
+    fn fmt(&self, f: &mut core_::fmt::Formatter<'_>) -> core_::fmt::Result {
         let journal = self.journal.as_ref().borrow();
         for (addr, id) in journal.addresses.iter() {
             write!(f, "| ADDR {} -> {}\n", addr, id)?;

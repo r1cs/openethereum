@@ -2825,6 +2825,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum-types",
  "ethjson",
+ "hashbrown 0.11.2",
  "keccak-hash",
  "parity-bytes",
  "patricia-trie-ethereum",
