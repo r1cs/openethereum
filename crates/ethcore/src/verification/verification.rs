@@ -371,25 +371,12 @@ pub fn verify_header_params(
 
     let maximum_extra_data_size = engine.maximum_extra_data_size();
     if header.number() != 0 && header.extra_data().len() > maximum_extra_data_size {
-        return Err(From::from(BlockError::ExtraDataOutOfBounds(OutOfBounds {
-            min: None,
-            max: Some(maximum_extra_data_size),
-            found: header.extra_data().len(),
-        })));
-    }
-
-    if let Some(ref ext) = engine.machine().ethash_extensions() {
-        if header.number() >= ext.dao_hardfork_transition
-            && header.number() <= ext.dao_hardfork_transition + 9
-            && header.extra_data()[..] != b"dao-hard-fork"[..]
-        {
-            return Err(From::from(BlockError::ExtraDataOutOfBounds(OutOfBounds {
-                min: None,
-                max: None,
-                found: 0,
-            })));
-        }
-    }
+		return Err(From::from(BlockError::ExtraDataOutOfBounds(OutOfBounds {
+			min: None,
+			max: Some(maximum_extra_data_size),
+			found: header.extra_data().len(),
+		})));
+	}
 
     Ok(())
 }

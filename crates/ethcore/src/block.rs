@@ -212,8 +212,6 @@ impl<'x> OpenBlock<'x> {
         // t_nb 8.1.3 this adds engine specific things
         engine.populate_from_parent(&mut r.block.header, parent);
 
-        // t_nb 8.1.3 updating last hashes and the DAO fork, for ethash.
-        engine.machine().on_new_block(&mut r.block)?;
         Ok(r)
     }
 

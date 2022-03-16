@@ -76,7 +76,6 @@ pub type ScheduleCreationRules = dyn Fn(&mut Schedule, BlockNumber) + Sync + Sen
 pub struct EthereumMachine {
     params: CommonParams,
     builtins: Arc<BTreeMap<Address, Builtin>>,
-    ethash_extensions: Option<EthashExtensions>,
     schedule_rules: Option<Box<ScheduleCreationRules>>,
 }
 
@@ -86,53 +85,17 @@ impl EthereumMachine {
         EthereumMachine {
             params,
             builtins: Arc::new(builtins),
-            ethash_extensions: None,
             schedule_rules: None,
         }
-    }
-
-    /// Ethereum machine with ethash extensions.
-    // TODO: either unify or specify to mainnet specifically and include other specific-chain HFs?
-    pub fn with_ethash_extensions(
-        params: CommonParams,
-        builtins: BTreeMap<Address, Builtin>,
-        extensions: EthashExtensions,
-    ) -> EthereumMachine {
-        let mut machine = EthereumMachine::regular(params, builtins);
-        machine.ethash_extensions = Some(extensions);
-        machine
     }
 
     /// Attach special rules to the creation of schedule.
     pub fn set_schedule_creation_rules(&mut self, rules: Box<ScheduleCreationRules>) {
         self.schedule_rules = Some(rules);
     }
-
-    /// Get a reference to the ethash-specific extensions.
-    pub fn ethash_extensions(&self) -> Option<&EthashExtensions> {
-        self.ethash_extensions.as_ref()
-    }
 }
 
 impl EthereumMachine {
-    // t_nb 8.1.3 Logic to perform on a new block: updating last hashes and the DAO
-    /// fork, for ethash.
-    pub fn on_new_block(&self, block: &mut ExecutedBlock) -> Result<(), Error> {
-        if let Some(ref ethash_params) = self.ethash_extensions {
-            if block.header.number() == ethash_params.dao_hardfork_transition {
-                let state = block.state_mut();
-                for child in &ethash_params.dao_hardfork_accounts {
-                    let beneficiary = &ethash_params.dao_hardfork_beneficiary;
-                    state.balance(child).and_then(|b| {
-                        state.transfer_balance(child, beneficiary, &b, CleanupMode::NoEmpty)
-                    })?;
-                }
-            }
-        }
-
-        Ok(())
-    }
-
     /// Populate a header's fields based on its parent's header.
     /// Usually implements the chain scoring rule based on weight.
     /// The gas floor target must not be lower than the engine's minimum gas limit.
@@ -161,14 +124,6 @@ impl EthereumMachine {
                 cmp::max(gas_limit_target, gas_limit - gas_limit / bound_divisor + 1)
             }
         });
-
-        if let Some(ref ethash_params) = self.ethash_extensions {
-            if header.number() >= ethash_params.dao_hardfork_transition
-                && header.number() <= ethash_params.dao_hardfork_transition + 9
-            {
-                header.set_extra_data(b"dao-hard-fork"[..].to_owned());
-            }
-        }
     }
 
     /// Get the general parameters of the chain.
@@ -178,16 +133,7 @@ impl EthereumMachine {
 
     /// Get the EVM schedule for the given block number.
     pub fn schedule(&self, block_number: BlockNumber) -> Schedule {
-        let mut schedule = match self.ethash_extensions {
-            None => self.params.schedule(block_number),
-            Some(ref ext) => {
-                if block_number < ext.homestead_transition {
-                    Schedule::new_frontier()
-                } else {
-                    self.params.schedule(block_number)
-                }
-            }
-        };
+        let mut schedule =  self.params.scheduleFull();
 
         if let Some(ref rules) = self.schedule_rules {
             (rules)(&mut schedule, block_number)
@@ -270,20 +216,8 @@ impl EthereumMachine {
         t: &UnverifiedTransaction,
         header: &Header,
     ) -> Result<(), transaction::Error> {
-        let check_low_s = match self.ethash_extensions {
-            Some(ref ext) => header.number() >= ext.homestead_transition,
-            None => true,
-        };
-
-        let chain_id = if header.number() < self.params().validate_chain_id_transition {
-            t.chain_id()
-        } else if header.number() >= self.params().eip155_transition {
-            Some(self.params().chain_id)
-        } else {
-            None
-        };
-        t.verify_basic(check_low_s, chain_id)?;
-
+        let chain_id = Some(self.params().chain_id);
+        t.verify_basic(true, chain_id)?;
         Ok(())
     }
 
@@ -444,28 +378,16 @@ mod tests {
     use ethereum_types::H160;
     use std::str::FromStr;
 
-    fn get_default_ethash_extensions() -> EthashExtensions {
-        EthashExtensions {
-            homestead_transition: 1150000,
-            dao_hardfork_transition: u64::max_value(),
-            dao_hardfork_beneficiary: H160::from_str("0000000000000000000000000000000000000001")
-                .unwrap(),
-            dao_hardfork_accounts: Vec::new(),
-        }
-    }
-
     #[test]
     fn should_disallow_unsigned_transactions() {
         let rlp = "ea80843b9aca0083015f90948921ebb5f79e9e3920abe571004d0b1d5119c154865af3107a400080038080";
         let transaction: UnverifiedTransaction =
             TypedTransaction::decode(&::rustc_hex::FromHex::from_hex(rlp).unwrap()).unwrap();
         let spec = ::ethereum::new_ropsten_test();
-        let ethparams = get_default_ethash_extensions();
 
-        let machine = EthereumMachine::with_ethash_extensions(
+        let machine = EthereumMachine::regular(
             spec.params().clone(),
             Default::default(),
-            ethparams,
         );
         let mut header = ::types::header::Header::new();
         header.set_number(15);

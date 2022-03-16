@@ -180,6 +180,19 @@ pub struct CommonParams {
 }
 
 impl CommonParams {
+
+	//l2 client should enable all eip rules
+	pub fn scheduleFull(&self)-> ::vm::Schedule{
+		let max_code_size = self.max_code_size;
+		let mut schedule = ::vm::Schedule::new_post_eip150(
+			max_code_size as _,
+			true,
+			true,
+			true,
+		);
+		self.update_schedule(u64::max_value(),&mut schedule);
+		schedule
+	}
     /// Schedule for an EVM in the post-EIP-150-era of the Ethereum main net.
     pub fn schedule(&self, block_number: u64) -> ::vm::Schedule {
         if block_number < self.eip150_transition {
@@ -662,11 +675,7 @@ impl Spec {
         params: CommonParams,
         builtins: BTreeMap<Address, Builtin>,
     ) -> EthereumMachine {
-        if let ethjson::spec::Engine::Ethash(ref ethash) = *engine_spec {
-            EthereumMachine::with_ethash_extensions(params, builtins, ethash.params.clone().into())
-        } else {
             EthereumMachine::regular(params, builtins)
-        }
     }
 
     /// Convert engine spec into a arc'd Engine of the right underlying type.
