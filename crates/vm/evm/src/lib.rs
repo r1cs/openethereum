@@ -27,9 +27,6 @@ extern crate parity_util_mem;
 extern crate parking_lot;
 extern crate vm;
 
-#[macro_use]
-extern crate lazy_static;
-
 #[cfg_attr(feature = "evm-debug", macro_use)]
 extern crate log;
 
