@@ -31,6 +31,7 @@ use rlp::{DecoderError, Prototype, Rlp, RlpStream};
 use trie::{node::Node, ChildReference, NibbleSlice, NodeCodec};
 
 /// Concrete implementation of a `NodeCodec` with Rlp encoding, generic over the `Hasher`
+#[derive(Default, Clone)]
 pub struct RlpNodeCodec<H: Hasher> {
     mark: PhantomData<H>,
 }

@@ -89,7 +89,7 @@ where
 		db: &'db dyn HashDBRef<H, DBValue>,
 		root: &'db H::Out,
 	) -> Result<Self, H::Out, C::Error> {
-		if !db.contains(root, nibbleslice::EMPTY_ENCODED) {
+		if !db.contains(root) {
 			Err(Box::new(TrieError::InvalidStateRoot(*root)))
 		} else {
 			Ok(TrieDB {db, root, hash_count: 0, codec_marker: PhantomData})
@@ -102,7 +102,7 @@ where
 	/// Get the data of the root node.
 	pub fn root_data(&self) -> Result<DBValue, H::Out, C::Error> {
 		self.db
-			.get(self.root, nibbleslice::EMPTY_ENCODED)
+			.get(self.root)
 			.ok_or_else(|| Box::new(TrieError::InvalidStateRoot(*self.root)))
 	}
 
@@ -115,7 +115,7 @@ where
 		match (partial_key == nibbleslice::EMPTY_ENCODED, C::try_decode_hash(node)) {
 			(false, Some(key)) => {
 				self.db
-					.get(&key, partial_key)
+					.get(&key)
 					.map(|v| Cow::Owned(v))
 					.ok_or_else(|| Box::new(TrieError::IncompleteDatabase(key)))
 			}

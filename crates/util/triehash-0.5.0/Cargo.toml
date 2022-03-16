@@ -1,0 +1,12 @@
+[package]
+name = "triehash"
+version = "0.5.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+description = "In-memory patricia trie operations"
+repository = "https://github.com/paritytech/parity-common"
+license = "GPL-3.0"
+edition = "2018"
+
+[dependencies]
+hash-db = { path = "../../db/hash-db-0.12.4", default-features = false }
+rlp = { version = "0.4.6", default-features = false }

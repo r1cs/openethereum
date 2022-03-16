@@ -26,7 +26,7 @@ version = "0.10"
 default-features = false
 
 [dependencies.hash-db]
-version = "0.12.4"
+path = "../hash-db-0.12.4"
 default-features = false
 
 [dependencies.hashbrown]
@@ -61,4 +61,4 @@ version = "0.12.4"
 
 [features]
 default = ["std"]
-std = ["elastic-array/std", "hash-db/std", "rand/std"]
+std = ["elastic-array/std", "rand/std"]

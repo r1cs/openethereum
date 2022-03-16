@@ -30,6 +30,7 @@ use ::core_::hash::Hash;
 
 #[cfg(feature = "std")]
 use ::std::collections::{HashSet, VecDeque};
+use core_;
 
 #[cfg(not(feature = "std"))]
 use ::alloc::collections::vec_deque::VecDeque;
@@ -116,7 +117,7 @@ enum Node<H> {
 
 impl<O> Node<O>
 where
-	O: AsRef<[u8]> + AsMut<[u8]> + Default + crate::MaybeDebug + PartialEq + Eq + Hash + Send + Sync + Clone + Copy
+	O: AsRef<[u8]> + AsMut<[u8]> + Default + core_::fmt::Debug + PartialEq + Eq + Hash + Send + Sync + Clone + Copy
 {
 	// load an inline node into memory or get the hash to do the lookup later.
 	fn inline_or_hash<C, H>(
@@ -368,7 +369,7 @@ where
 		db: &'a mut dyn HashDB<H, DBValue>,
 		root: &'a mut H::Out,
 	) -> Result<Self, H::Out, C::Error> {
-		if !db.contains(root, nibbleslice::EMPTY_ENCODED) {
+		if !db.contains(root) {
 			return Err(Box::new(TrieError::InvalidStateRoot(*root)));
 		}
 
@@ -395,7 +396,7 @@ where
 
 	// cache a node by hash
 	fn cache(&mut self, hash: H::Out, key: &[u8]) -> Result<StorageHandle, H::Out, C::Error> {
-		let node_encoded = self.db.get(&hash, key).ok_or_else(|| Box::new(TrieError::IncompleteDatabase(hash)))?;
+		let node_encoded = self.db.get(&hash).ok_or_else(|| Box::new(TrieError::IncompleteDatabase(hash)))?;
 		let node = Node::from_encoded::<C, H>(
 			&node_encoded,
 			&*self.db,
@@ -875,7 +876,7 @@ where
 		// always kill all the nodes on death row.
 		trace!(target: "trie", "{:?} nodes to remove from db", self.death_row.len());
 		for (hash, prefix) in self.death_row.drain() {
-			self.db.remove(&hash, &prefix);
+			self.db.remove(&hash);
 		}
 
 		let handle = match self.root_handle() {
@@ -891,7 +892,7 @@ where
 				});
 				trace!(target: "trie", "encoded root node: {:#x?}", &encoded_root[..]);
 
-				*self.root = self.db.insert(nibbleslice::EMPTY_ENCODED, &encoded_root[..]);
+				*self.root = self.db.insert(&encoded_root[..]);
 				self.hash_count += 1;
 
 				self.root_handle = NodeHandle::Hash(*self.root);
@@ -924,7 +925,7 @@ where
 							node.into_encoded::<_, C, H>(commit_child)
 						};
 						if encoded.len() >= H::LENGTH {
-							let hash = self.db.insert(&prefix, &encoded[..]);
+							let hash = self.db.insert(&encoded[..]);
 							self.hash_count +=1;
 							ChildReference::Hash(hash)
 						} else {

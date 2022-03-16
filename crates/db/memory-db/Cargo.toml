@@ -23,7 +23,7 @@ name = "bench"
 harness = false
 
 [dependencies]
-hash-db = "0.11.0"
+hash-db = {path = "../hash-db-0.12.4"}
 
 [dev-dependencies.criterion]
 version = "0.2.8"

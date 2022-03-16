@@ -88,7 +88,7 @@ where
 		// insert if it doesn't exist.
 		if out.is_none() {
 			let aux_hash = H::hash(hash.as_ref());
-			db.emplace(aux_hash, &[], DBValue::from_slice(key));
+			db.emplace(aux_hash, DBValue::from_slice(key));
 		}
 		Ok(out)
 	}
@@ -100,7 +100,7 @@ where
 		// remove if it already exists.
 		if out.is_some() {
 			let aux_hash = H::hash(hash.as_ref());
-			self.raw.db_mut().remove(&aux_hash, &[]);
+			self.raw.db_mut().remove(&aux_hash);
 		}
 
 		Ok(out)

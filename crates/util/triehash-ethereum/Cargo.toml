@@ -7,6 +7,6 @@ license = "GPL-3.0"
 edition = "2018"
 
 [dependencies]
-triehash = { version = "0.5.0" }
+triehash = { path = "../triehash-0.5.0" }
 ethereum-types = {version = "0.9.2", default-features = false}
 keccak-hasher = { path = "../keccak-hasher", default-features = false }

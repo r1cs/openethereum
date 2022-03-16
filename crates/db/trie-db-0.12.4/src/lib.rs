@@ -60,19 +60,7 @@ use core_::marker::PhantomData;
 #[cfg(feature = "std")]
 use std::error::Error;
 
-#[cfg(feature = "std")]
-use std::fmt;
-#[cfg(feature = "std")]
-pub trait MaybeDebug: fmt::Debug {}
-#[cfg(feature = "std")]
-impl<T: fmt::Debug> MaybeDebug for T {}
-
-
-#[cfg(not(feature = "std"))]
-pub trait MaybeDebug {}
-#[cfg(not(feature = "std"))]
-impl<T> MaybeDebug for T {}
-
+use core_::fmt;
 
 pub mod node;
 pub mod triedb;
@@ -116,8 +104,7 @@ pub enum TrieError<T, E> {
 	DecoderError(T, E),
 }
 
-#[cfg(feature = "std")]
-impl<T, E> fmt::Display for TrieError<T, E> where T: MaybeDebug, E: MaybeDebug {
+impl<T, E> fmt::Display for TrieError<T, E> where T: fmt::Debug, E: fmt::Debug {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
 			TrieError::InvalidStateRoot(ref root) => write!(f, "Invalid state root: {:?}", root),
