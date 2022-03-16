@@ -10,5 +10,5 @@ keywords = ["eip-152", "eip152", "eip"]
 license = "GPL-3.0"
 edition = "2018"
 
-[dependencies]
+[dev-dependencies]
 rustc-hex = "2.0.1"

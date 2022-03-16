@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
+#![no_std]
+
 /// The precomputed values for BLAKE2b [from the spec](https://tools.ietf.org/html/rfc7693#section-2.7)
 /// There are 10 16-byte arrays - one for each round
 /// the entries are calculated from the sigma constants.
@@ -92,6 +94,9 @@ pub fn compress(h: &mut [u64; 8], m: [u64; 16], t: [u64; 2], f: bool, rounds: us
 
 #[cfg(test)]
 mod tests {
+	extern crate std;
+	use std::vec;
+	use std::vec::Vec;
     use crate::compress;
     use rustc_hex::FromHex;
 
