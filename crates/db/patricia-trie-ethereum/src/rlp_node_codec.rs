@@ -16,16 +16,21 @@
 
 //! `NodeCodec` implementation for Rlp
 
+
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+
+use core_::marker::PhantomData;
+use core_::result::Result;
+
 use elastic_array::ElasticArray128;
 use ethereum_types::H256;
 use hash_db::Hasher;
 use keccak_hasher::KeccakHasher;
 use rlp::{DecoderError, Prototype, Rlp, RlpStream};
-use std::marker::PhantomData;
 use trie::{node::Node, ChildReference, NibbleSlice, NodeCodec};
 
 /// Concrete implementation of a `NodeCodec` with Rlp encoding, generic over the `Hasher`
-#[derive(Default, Clone)]
 pub struct RlpNodeCodec<H: Hasher> {
     mark: PhantomData<H>,
 }
@@ -44,7 +49,7 @@ impl NodeCodec<KeccakHasher> for RlpNodeCodec<KeccakHasher> {
     fn hashed_null_node() -> <KeccakHasher as Hasher>::Out {
         HASHED_NULL_NODE
     }
-    fn decode(data: &[u8]) -> ::std::result::Result<Node, Self::Error> {
+    fn decode(data: &[u8]) -> Result<Node, Self::Error> {
         let r = Rlp::new(data);
         match r.prototype()? {
             // either leaf or extension - decode first item with NibbleSlice::???

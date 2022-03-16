@@ -63,6 +63,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8fd72866655d1904d6b0997d0b07ba561047d070fbe29de039031c641b61217"
 
 [[package]]
+name = "ahash"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43bb833f0bf979d8475d38fbf09ed3b8a55e1885fe93ad3f93239fc6a4f17b98"
+dependencies = [
+ "getrandom 0.2.2",
+ "once_cell",
+ "version_check 0.9.4",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -303,6 +314,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clear_on_drop"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9cc5db465b294c3fa986d5bbb0f3017cd850bff6dd6c52f9ccff8b4d21b7b08"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -334,7 +354,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f590d95d011aa80b063ffe3253422ed5aa462af4e9867d43ce8337562bac77c4"
 dependencies = [
  "const-random-macro",
- "proc-macro-hack",
+ "proc-macro-hack 0.5.19",
 ]
 
 [[package]]
@@ -345,7 +365,7 @@ checksum = "615f6e27d000a2bffbc7f2f6a8669179378fa27ee4d0a509e985dfc0a7defb40"
 dependencies = [
  "getrandom 0.2.2",
  "lazy_static",
- "proc-macro-hack",
+ "proc-macro-hack 0.5.19",
  "tiny-keccak 2.0.2",
 ]
 
@@ -590,12 +610,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_logger"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aafcde04e90a5226a6443b7aabdb016ba2f8307c847d524724bd9b346dd1a2d3"
+dependencies = [
+ "atty",
+ "humantime",
+ "log",
+ "regex",
+ "termcolor",
+]
+
+[[package]]
 name = "error-chain"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ab49e9dcb602294bc42f9a7dfc9bc6e936fca4418ea300dbfb84fe16de0b7d9"
 dependencies = [
- "version_check",
+ "version_check 0.1.5",
 ]
 
 [[package]]
@@ -677,7 +710,7 @@ dependencies = [
  "criterion 0.2.11",
  "crossbeam-channel",
  "eip-152",
- "env_logger",
+ "env_logger 0.5.13",
  "error-chain",
  "ethash",
  "ethcore-accounts",
@@ -690,7 +723,7 @@ dependencies = [
  "evm",
  "globset",
  "hash-db 0.11.0",
- "hex-literal",
+ "hex-literal 0.2.1",
  "itertools 0.5.10",
  "journaldb",
  "keccak-hash",
@@ -706,7 +739,7 @@ dependencies = [
  "memory-db 0.11.0",
  "parity-bytes",
  "parity-crypto",
- "parity-util-mem",
+ "parity-util-mem 0.7.0",
  "parking_lot 0.11.1",
  "patricia-trie-ethereum",
  "rand 0.7.3",
@@ -722,8 +755,8 @@ dependencies = [
  "tempdir",
  "tempfile",
  "trace-time",
- "trie-db",
- "trie-standardmap",
+ "trie-db 0.11.0",
+ "trie-standardmap 0.15.2",
  "triehash-ethereum",
  "unexpected",
  "vm",
@@ -755,7 +788,7 @@ dependencies = [
  "ansi_term 0.11.0",
  "blooms-db",
  "common-types",
- "env_logger",
+ "env_logger 0.5.13",
  "ethcore-db",
  "ethereum-types",
  "ethkey",
@@ -766,7 +799,7 @@ dependencies = [
  "log",
  "parity-bytes",
  "parity-crypto",
- "parity-util-mem",
+ "parity-util-mem 0.7.0",
  "parking_lot 0.11.1",
  "rand 0.7.3",
  "rlp",
@@ -788,7 +821,7 @@ dependencies = [
  "ethereum-types",
  "ethjson",
  "ethkey",
- "hex-literal",
+ "hex-literal 0.2.1",
  "keccak-hash",
  "log",
  "macros",
@@ -893,14 +926,14 @@ dependencies = [
  "criterion 0.2.11",
  "ethcore-builtin",
  "ethereum-types",
- "hex-literal",
+ "hex-literal 0.2.1",
  "keccak-hash",
  "lazy_static",
  "log",
  "memory-cache",
  "num-bigint 0.2.3",
  "parity-bytes",
- "parity-util-mem",
+ "parity-util-mem 0.7.0",
  "parking_lot 0.11.1",
  "rustc-hex 1.0.0",
  "vm",
@@ -1027,6 +1060,12 @@ checksum = "1b03501f6e1a2a97f1618879aba3156f14ca2847faa530c4e28859638bd11483"
 
 [[package]]
 name = "hash-db"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b3c95a428c86ed4633d83e07ef9e0a147a906da01e931f07e74a85bedce5a43"
+
+[[package]]
+name = "hash-db"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d23bd4e7b5eda0d0f3a307e8b381fdc8ba9000f26fbe912250c0a4cc3956364a"
@@ -1036,6 +1075,15 @@ name = "hash256-std-hasher"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5c13dbac3cc50684760f54af18545c9e80fb75e93a3e586d71ebdc13138f6a4"
+dependencies = [
+ "crunchy 0.2.2",
+]
+
+[[package]]
+name = "hash256-std-hasher"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "663ce20dae36902c16d12c6aaae400ca40d922407a8cf2b4caf8cae9b39b4f03"
 dependencies = [
  "crunchy 0.2.2",
 ]
@@ -1070,6 +1118,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
+dependencies = [
+ "ahash 0.7.4",
+]
+
+[[package]]
+name = "hashmap_core"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d6852e5a86250521973b0c1d39677166d8a9c0047c908d7e04f1aa04177973c"
+
+[[package]]
 name = "heapsize"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1089,12 +1152,31 @@ dependencies = [
 
 [[package]]
 name = "hex-literal"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ddc2928beef125e519d69ae1baa8c37ea2e0d3848545217f6db0179c5eb1d639"
+dependencies = [
+ "hex-literal-impl 0.1.2",
+ "proc-macro-hack 0.4.3",
+]
+
+[[package]]
+name = "hex-literal"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "961de220ec9a91af2e1e5bd80d02109155695e516771762381ef8581317066e0"
 dependencies = [
- "hex-literal-impl",
- "proc-macro-hack",
+ "hex-literal-impl 0.2.1",
+ "proc-macro-hack 0.5.19",
+]
+
+[[package]]
+name = "hex-literal-impl"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "520870c3213943eb8d7803e80180d12a6c7ceb4ae74602544529d1643dc4ddda"
+dependencies = [
+ "proc-macro-hack 0.4.3",
 ]
 
 [[package]]
@@ -1103,7 +1185,7 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d4c5c844e2fee0bf673d54c2c177f1713b3d2af2ff6e666b49cb7572e6cf42d"
 dependencies = [
- "proc-macro-hack",
+ "proc-macro-hack 0.5.19",
 ]
 
 [[package]]
@@ -1200,7 +1282,7 @@ checksum = "501266b7edd0174f8530248f87f99c88fbe60ca4ef3dd486835b8d8d53136f7f"
 name = "journaldb"
 version = "0.2.0"
 dependencies = [
- "env_logger",
+ "env_logger 0.5.13",
  "ethcore-db",
  "ethereum-types",
  "fastmap",
@@ -1231,7 +1313,7 @@ name = "keccak-hasher"
 version = "0.1.1"
 dependencies = [
  "ethereum-types",
- "hash-db 0.11.0",
+ "hash-db 0.12.4",
  "plain_hasher",
  "tiny-keccak 1.5.0",
 ]
@@ -1244,6 +1326,17 @@ checksum = "cb9d3670023f4c04153d90b8a557a822d1b27ed702bb015a87cf7bffead5b611"
 dependencies = [
  "hash-db 0.11.0",
  "hash256-std-hasher 0.11.0",
+ "tiny-keccak 1.5.0",
+]
+
+[[package]]
+name = "keccak-hasher"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c936c737d79690593c34275faf583151a0e8c0abf34eaecad10399eed0beb7d"
+dependencies = [
+ "hash-db 0.12.4",
+ "hash256-std-hasher 0.12.4",
  "tiny-keccak 1.5.0",
 ]
 
@@ -1356,6 +1449,17 @@ name = "macros"
 version = "0.1.0"
 
 [[package]]
+name = "malloc_size_of_derive"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "632647502a8bfa82458c07134791fffa7a719f00427d1afd79c3cb6d4960a982"
+dependencies = [
+ "proc-macro2 1.0.20",
+ "syn 1.0.40",
+ "synstructure",
+]
+
+[[package]]
 name = "maplit"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1406,7 +1510,7 @@ name = "memory-cache"
 version = "0.1.0"
 dependencies = [
  "lru-cache",
- "parity-util-mem",
+ "parity-util-mem 0.7.0",
 ]
 
 [[package]]
@@ -1416,7 +1520,7 @@ dependencies = [
  "criterion 0.2.11",
  "hash-db 0.11.0",
  "keccak-hasher 0.11.0",
- "parity-util-mem",
+ "parity-util-mem 0.7.0",
 ]
 
 [[package]]
@@ -1427,6 +1531,17 @@ checksum = "94da53143d45f6bad3753f532e56ad57a6a26c0ca6881794583310c7cb4c885f"
 dependencies = [
  "hash-db 0.11.0",
  "heapsize",
+]
+
+[[package]]
+name = "memory-db"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1eeeeab44c01c7da4409e68ec5b5db74c92305386efab3615e495b1dacaec196"
+dependencies = [
+ "hash-db 0.12.4",
+ "hashmap_core",
+ "parity-util-mem 0.1.0",
 ]
 
 [[package]]
@@ -1528,9 +1643,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.4.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b631f7e854af39a1739f401cf34a8a013dfe09eac4fa4dba91e9768bd28168d"
+checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
 
 [[package]]
 name = "opaque-debug"
@@ -1595,6 +1710,18 @@ dependencies = [
  "bitvec",
  "byte-slice-cast",
  "serde",
+]
+
+[[package]]
+name = "parity-util-mem"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89e80f22052161e0cb55cb5a8a75890420c525031f95c9d262dbb0434aa85dc1"
+dependencies = [
+ "cfg-if 0.1.10",
+ "clear_on_drop",
+ "malloc_size_of_derive",
+ "winapi",
 ]
 
 [[package]]
@@ -1723,14 +1850,14 @@ version = "0.1.0"
 dependencies = [
  "elastic-array",
  "ethereum-types",
- "hash-db 0.11.0",
+ "hash-db 0.12.4",
  "journaldb",
  "keccak-hash",
  "keccak-hasher 0.1.1",
  "memory-db 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-bytes",
  "rlp",
- "trie-db",
+ "trie-db 0.12.4",
 ]
 
 [[package]]
@@ -1825,9 +1952,24 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-hack"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7f95648580798cc44ff8efb9bb0d7ee5205ea32e087b31b0732f3e8c2648ee2"
+dependencies = [
+ "proc-macro-hack-impl",
+]
+
+[[package]]
+name = "proc-macro-hack"
 version = "0.5.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbf0c48bc1d91375ae5c3cd81e3722dff1abcf81a30960240640d223f59fe0e5"
+
+[[package]]
+name = "proc-macro-hack-impl"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7be55bf0ae1635f4d7c7ddd6efc05c631e98a82104a73d35550bbc52db960027"
 
 [[package]]
 name = "proc-macro2"
@@ -2576,6 +2718,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "trie-db"
+version = "0.12.4"
+dependencies = [
+ "criterion 0.2.11",
+ "elastic-array",
+ "env_logger 0.6.2",
+ "hash-db 0.12.4",
+ "hashbrown 0.11.2",
+ "hex-literal 0.1.4",
+ "keccak-hasher 0.12.4",
+ "log",
+ "memory-db 0.12.4",
+ "rand 0.6.5",
+ "trie-root",
+ "trie-standardmap 0.12.4",
+]
+
+[[package]]
+name = "trie-root"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "485c5dd851148b6fdac9009f7c256d0a4b5f99f08bd2e63c258f1e483aed4f1d"
+dependencies = [
+ "hash-db 0.12.4",
+]
+
+[[package]]
+name = "trie-standardmap"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40787fb1a63a97ed56d12bc303937ea274e09d1afa2e20e4f074eff2074b24d3"
+dependencies = [
+ "hash-db 0.12.4",
+ "keccak-hasher 0.12.4",
+]
+
+[[package]]
 name = "trie-standardmap"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2651,6 +2830,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
 
 [[package]]
+name = "version_check"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
+
+[[package]]
 name = "vm"
 version = "0.1.0"
 dependencies = [
@@ -2690,7 +2875,7 @@ name = "wasm"
 version = "0.1.0"
 dependencies = [
  "byteorder",
- "env_logger",
+ "env_logger 0.5.13",
  "ethereum-types",
  "libc",
  "log",

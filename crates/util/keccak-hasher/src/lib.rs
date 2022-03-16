@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Hasher implementation for the Keccak-256 hash
 #![no_std]
+
+//! Hasher implementation for the Keccak-256 hash
 extern crate ethereum_types;
 extern crate hash_db;
 extern crate plain_hasher;
@@ -25,6 +26,7 @@ use ethereum_types::H256;
 use hash_db::Hasher;
 use plain_hasher::PlainHasher;
 use tiny_keccak::Keccak;
+
 /// Concrete `Hasher` impl for the Keccak-256 hash
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct KeccakHasher;
