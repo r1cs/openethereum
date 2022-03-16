@@ -17,8 +17,6 @@
 #[macro_use]
 extern crate criterion;
 
-#[macro_use]
-extern crate lazy_static;
 extern crate ethcore;
 extern crate ethcore_builtin;
 extern crate ethereum_types;
@@ -34,10 +32,6 @@ use ethcore_builtin::Builtin;
 use ethereum_types::H160;
 use rustc_hex::FromHex;
 
-lazy_static! {
-    static ref BYZANTIUM_MACHINE: EthereumMachine = new_byzantium_test_machine();
-}
-
 struct BuiltinBenchmark<'a> {
     builtin: &'a Builtin,
     input: Vec<u8>,
@@ -46,7 +40,7 @@ struct BuiltinBenchmark<'a> {
 
 impl<'a> BuiltinBenchmark<'a> {
     fn new(builtin_address: &'static str, input: &str, expected: &str) -> BuiltinBenchmark<'a> {
-        let builtins = BYZANTIUM_MACHINE.builtins();
+        let builtins = new_byzantium_test_machine().builtins();
 
         let builtin = builtins
             .get(&H160::from_str(builtin_address).unwrap())

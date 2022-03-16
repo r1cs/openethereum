@@ -569,12 +569,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "edit-distance"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbbaaaf38131deb9ca518a274a45bfdb8771f139517b073b16c2d3d32ae5037b"
-
-[[package]]
 name = "eip-152"
 version = "0.1.0"
 dependencies = [
@@ -629,17 +623,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ab49e9dcb602294bc42f9a7dfc9bc6e936fca4418ea300dbfb84fe16de0b7d9"
 dependencies = [
  "version_check 0.1.5",
-]
-
-[[package]]
-name = "eth-secp256k1"
-version = "0.5.7"
-source = "git+https://github.com/paritytech/rust-secp256k1?rev=9791e79f21a5309dcb6e0bd254b1ef88fca2f1f4#9791e79f21a5309dcb6e0bd254b1ef88fca2f1f4"
-dependencies = [
- "arrayvec 0.4.12",
- "cc",
- "cfg-if 0.1.10",
- "rand 0.6.5",
 ]
 
 [[package]]
@@ -718,7 +701,6 @@ dependencies = [
  "ethcore-db",
  "ethereum-types",
  "ethjson",
- "ethkey",
  "evm",
  "globset",
  "hash-db 0.12.4",
@@ -729,7 +711,6 @@ dependencies = [
  "keccak-hasher 0.1.1",
  "kvdb",
  "kvdb-memorydb",
- "lazy_static",
  "log",
  "lru-cache",
  "macros",
@@ -738,7 +719,6 @@ dependencies = [
  "memory-db 0.11.0",
  "parity-bytes",
  "parity-crypto",
- "parity-util-mem 0.7.0",
  "parking_lot 0.11.1",
  "patricia-trie-ethereum",
  "rand 0.7.3",
@@ -747,13 +727,12 @@ dependencies = [
  "rlp",
  "rlp_compress",
  "rlp_derive",
- "rustc-hex 1.0.0",
+ "rustc-hex 2.1.0",
  "serde",
  "serde_derive",
  "serde_json",
  "tempdir",
  "tempfile",
- "trace-time",
  "trie-db",
  "trie-standardmap 0.15.2",
  "triehash-ethereum",
@@ -772,7 +751,6 @@ dependencies = [
  "env_logger 0.5.13",
  "ethcore-db",
  "ethereum-types",
- "ethkey",
  "itertools 0.5.10",
  "keccak-hash",
  "kvdb",
@@ -780,7 +758,6 @@ dependencies = [
  "log",
  "parity-bytes",
  "parity-crypto",
- "parity-util-mem 0.7.0",
  "parking_lot 0.11.1",
  "rand 0.7.3",
  "rlp",
@@ -801,11 +778,9 @@ dependencies = [
  "eth_pairings",
  "ethereum-types",
  "ethjson",
- "ethkey",
  "hex-literal 0.2.1",
  "keccak-hash",
  "log",
- "macros",
  "maplit",
  "num",
  "parity-bytes",
@@ -853,25 +828,6 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
-]
-
-[[package]]
-name = "ethkey"
-version = "0.3.0"
-dependencies = [
- "edit-distance",
- "eth-secp256k1",
- "ethereum-types",
- "lazy_static",
- "log",
- "parity-crypto",
- "parity-wordlist",
- "quick-error",
- "rand 0.7.3",
- "rustc-hex 1.0.0",
- "serde",
- "serde_derive",
- "tiny-keccak 1.5.0",
 ]
 
 [[package]]
@@ -1473,7 +1429,6 @@ dependencies = [
  "criterion 0.2.11",
  "hash-db 0.12.4",
  "keccak-hasher 0.11.0",
- "parity-util-mem 0.7.0",
 ]
 
 [[package]]
@@ -1688,16 +1643,6 @@ dependencies = [
  "proc-macro2 1.0.20",
  "syn 1.0.40",
  "synstructure",
-]
-
-[[package]]
-name = "parity-wordlist"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "573d08f0d3bc8a6ffcdac1de2725b5daeed8db26345a9c12d91648e2d6457f3e"
-dependencies = [
- "lazy_static",
- "rand 0.6.5",
 ]
 
 [[package]]
@@ -2600,15 +2545,6 @@ checksum = "4574b75faccaacddb9b284faecdf0b544b80b6b294f3d062d325c5726a209c20"
 dependencies = [
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "trace-time"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9adf04084eeb9a1ea91be6c3f8ef3df392391c91fc7d8f696d4875f6754e715"
-dependencies = [
- "log",
 ]
 
 [[package]]

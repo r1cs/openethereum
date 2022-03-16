@@ -1634,7 +1634,8 @@ mod tests {
     use rustc_hex::FromHex;
     use state::{CleanupMode, Substate};
     use std::{str::FromStr, sync::Arc};
-    use test_helpers::{get_temp_state, get_temp_state_with_factory};
+	use bytes::Bytes;
+	use test_helpers::{get_temp_state, get_temp_state_with_factory};
     use trace::{
         trace, ExecutiveTracer, ExecutiveVMTracer, FlatTrace, MemoryDiff, NoopTracer, NoopVMTracer,
         StorageDiff, Tracer, VMExecutedOperation, VMOperation, VMTrace, VMTracer,
@@ -2412,7 +2413,7 @@ mod tests {
         // 58 - get PC
         // 55 - sstore
 
-        let code_a = "6000600060006000601873945304eb96065b2a98b57a48a06ae28d285a71b56103e8f15855"
+        let code_a : Vec<u8> = "6000600060006000601873945304eb96065b2a98b57a48a06ae28d285a71b56103e8f15855"
             .from_hex()
             .unwrap();
 
@@ -2428,7 +2429,7 @@ mod tests {
         // 01 - add
         // 58 - get PC
         // 55 - sstore
-        let code_b =
+        let code_b : Vec<u8> =
             "60006000600060006017730f572e5295c57f15886f9b263e2f6d2d6c7b5ec66101f4f16001015855"
                 .from_hex()
                 .unwrap();
@@ -2440,15 +2441,15 @@ mod tests {
         let mut params = ActionParams::default();
         params.address = address_a.clone();
         params.sender = sender.clone();
-        params.gas = U256::from(100_000);
+        params.gas = U256::from(100_000u64);
         params.code = Some(Arc::new(code_a.clone()));
-        params.value = ActionValue::Transfer(U256::from(100_000));
+        params.value = ActionValue::Transfer(U256::from(100_000u64));
 
         let mut state = get_temp_state_with_factory(factory);
         state.init_code(&address_a, code_a.clone()).unwrap();
         state.init_code(&address_b, code_b.clone()).unwrap();
         state
-            .add_balance(&sender, &U256::from(100_000), CleanupMode::NoEmpty)
+            .add_balance(&sender, &U256::from(100_000u64), CleanupMode::NoEmpty)
             .unwrap();
 
         let info = EnvInfo::default();
@@ -2462,12 +2463,12 @@ mod tests {
                 .unwrap()
         };
 
-        assert_eq!(gas_left, U256::from(73_237));
+        assert_eq!(gas_left, U256::from(73_237u64));
         assert_eq!(
             state
-                .storage_at(&address_a, &BigEndianHash::from_uint(&U256::from(0x23)))
+                .storage_at(&address_a, &BigEndianHash::from_uint(&U256::from(0x23u64)))
                 .unwrap(),
-            BigEndianHash::from_uint(&U256::from(1))
+            BigEndianHash::from_uint(&U256::from(1u64))
         );
     }
 
@@ -2494,7 +2495,7 @@ mod tests {
         // 60 01 - push 1
         // 55 - sstore
         let sender = Address::from_str("cd1722f3947def4cf144679da39c4c32bdc35681").unwrap();
-        let code = "600160005401600055600060006000600060003060e05a03f1600155"
+        let code: Bytes = "600160005401600055600060006000600060003060e05a03f1600155"
             .from_hex()
             .unwrap();
         let address = contract_address(
@@ -2506,7 +2507,7 @@ mod tests {
         .0;
         let mut params = ActionParams::default();
         params.address = address.clone();
-        params.gas = U256::from(100_000);
+        params.gas = U256::from(100_000u64);
         params.code = Some(Arc::new(code.clone()));
         let mut state = get_temp_state_with_factory(factory);
         state.init_code(&address, code).unwrap();
@@ -2932,7 +2933,7 @@ mod tests {
         let sender = Address::from_str("0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6").unwrap();
         // EIP-140 test case
         let code = "6c726576657274656420646174616000557f726576657274206d657373616765000000000000000000000000000000000000600052600e6000fd".from_hex().unwrap();
-        let returns = "726576657274206d657373616765".from_hex().unwrap();
+        let returns: Vec<u8> = "726576657274206d657373616765".from_hex().unwrap();
         let mut state = get_temp_state_with_factory(factory.clone());
         state
             .add_balance(
@@ -2947,7 +2948,7 @@ mod tests {
         params.address = contract_address.clone();
         params.sender = sender.clone();
         params.origin = sender.clone();
-        params.gas = U256::from(20025);
+        params.gas = U256::from(20025u64);
         params.code = Some(Arc::new(code));
         params.value = ActionValue::Transfer(U256::zero());
         let info = EnvInfo::default();
@@ -2965,15 +2966,15 @@ mod tests {
             ex.call(params, &mut substate, &mut NoopTracer, &mut NoopVMTracer)
                 .unwrap()
         };
-        (&mut output).copy_from_slice(&return_data[..(cmp::min(14, return_data.len()))]);
+        output.copy_from_slice(&return_data[..(cmp::min(14, return_data.len()))]);
 
-        assert_eq!(result, U256::from(1));
+        assert_eq!(result, U256::from(1u64));
         assert_eq!(output[..], returns[..]);
         assert_eq!(
             state
                 .storage_at(&contract_address, &BigEndianHash::from_uint(&U256::zero()))
                 .unwrap(),
-            BigEndianHash::from_uint(&U256::from(0))
+            BigEndianHash::from_uint(&U256::from(0u64))
         );
     }
 
