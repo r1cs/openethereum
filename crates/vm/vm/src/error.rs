@@ -103,8 +103,6 @@ pub enum Error {
     InvalidCode,
     /// Likely to cause consensus issues.
     Internal(String),
-    /// Wasm runtime error
-    Wasm(String),
     /// Out of bounds access in RETURNDATACOPY.
     OutOfBounds,
     /// Execution has been reverted with REVERT.
@@ -155,7 +153,6 @@ impl fmt::Display for Error {
             Internal(ref msg) => write!(f, "Internal error: {}", msg),
             MutableCallInStaticContext => write!(f, "Mutable call in static context"),
             InvalidCode => write!(f, "Invalid code to deploy as a contract"),
-            Wasm(ref msg) => write!(f, "Internal error: {}", msg),
             OutOfBounds => write!(f, "Out of bounds"),
             Reverted => write!(f, "Reverted"),
         }

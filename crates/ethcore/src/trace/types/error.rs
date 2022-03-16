@@ -49,8 +49,6 @@ pub enum Error {
     MutableCallInStaticContext,
     /// When invalid code was attempted to deploy
     InvalidCode,
-    /// Wasm error
-    Wasm,
     /// Contract tried to access past the return data buffer.
     OutOfBounds,
     /// Execution has been reverted with REVERT instruction.
@@ -70,7 +68,6 @@ impl<'a> From<&'a VmError> for Error {
             VmError::InvalidSubEntry { .. } => Error::InvalidSubEntry,
             VmError::BuiltIn { .. } => Error::BuiltIn,
             VmError::InvalidCode => Error::InvalidCode,
-            VmError::Wasm { .. } => Error::Wasm,
             VmError::Internal(_) => Error::Internal,
             VmError::MutableCallInStaticContext => Error::MutableCallInStaticContext,
             VmError::OutOfBounds => Error::OutOfBounds,
@@ -99,7 +96,6 @@ impl fmt::Display for Error {
             BuiltIn => "Built-in failed",
             InvalidSubEntry => "Invalid subroutine entry",
             InvalidCode => "Invalid code",
-            Wasm => "Wasm runtime error",
             Internal => "Internal error",
             MutableCallInStaticContext => "Mutable Call In Static Context",
             OutOfBounds => "Out of bounds",
@@ -121,7 +117,6 @@ impl Encodable for Error {
             Internal => 5,
             BuiltIn => 6,
             MutableCallInStaticContext => 7,
-            Wasm => 8,
             OutOfBounds => 9,
             Reverted => 10,
             SubStackUnderflow => 11,
@@ -147,7 +142,6 @@ impl Decodable for Error {
             5 => Ok(Internal),
             6 => Ok(BuiltIn),
             7 => Ok(MutableCallInStaticContext),
-            8 => Ok(Wasm),
             9 => Ok(OutOfBounds),
             10 => Ok(Reverted),
             11 => Ok(SubStackUnderflow),

@@ -4,17 +4,17 @@ use ethereum_types::{Address, U256};
 use kvdb::KeyValueDB;
 use block::OpenBlock;
 use client::PrepareOpenBlock;
-use engines::{Engine, EthEngine};
+use engines::EthEngine;
 use error::Error;
 use ethtrie::TrieFactory;
 use evm::VMType;
 use factory::{Factories, VmFactory};
-use journaldb::Algorithm::OverlayRecent;
 use state_db::StateDB;
 use trie::TrieSpec;
 use types::header::Header;
 use vm::LastHashes;
 
+/// Riscv evm execution env.
 pub struct RiscvEnv {
 	engine: Arc<dyn EthEngine>,
 	state_db: StateDB,
@@ -43,7 +43,7 @@ impl RiscvEnv {
 		};
 
 		let journal_db = journaldb::new(db, pruning, ::db::COL_STATE);
-		let mut state_db = StateDB::new(journal_db, state_cache_size);
+		let state_db = StateDB::new(journal_db, state_cache_size);
 
 		Ok(RiscvEnv {
 			engine,

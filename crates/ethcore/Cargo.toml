@@ -54,7 +54,6 @@ vm = { path = "../vm/vm" }
 tempdir = {version="0.3", optional = true}
 tempfile = {version = "3.1.0", optional = true}
 walkdir = {version = "2.3", optional = true}
-wasm = { path = "../vm/wasm" }
 rayon = {version = "1.1", optional = true}
 regex = {version = "1.3.9", optional = true}
 
@@ -64,7 +63,6 @@ lazy_static = "1.2.0"
 blooms-db = { path = "../db/blooms-db" }
 criterion = "0.2"
 env_logger = "0.5"
-ethcore-accounts = { path = "../accounts" }
 ethkey = { path = "../accounts/ethkey" }
 hex-literal = "0.2.1"
 rlp_compress = { path = "../util/rlp-compress" }

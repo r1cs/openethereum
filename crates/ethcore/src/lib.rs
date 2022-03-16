@@ -48,14 +48,11 @@ extern crate trie_db as trie;
 extern crate triehash_ethereum as triehash;
 extern crate unexpected;
 extern crate vm;
-extern crate wasm;
 
 #[cfg(any(test, feature = "blooms-db"))]
 extern crate blooms_db;
 #[cfg(any(test, feature = "env_logger"))]
 extern crate env_logger;
-#[cfg(test)]
-extern crate ethcore_accounts as accounts;
 #[cfg(feature = "json-tests")]
 extern crate globset;
 #[cfg(test)]

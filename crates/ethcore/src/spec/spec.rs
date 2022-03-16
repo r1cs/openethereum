@@ -143,10 +143,6 @@ pub struct CommonParams {
     pub nonce_cap_increment: u64,
     /// Enable dust cleanup for contracts.
     pub remove_dust_contracts: bool,
-    /// Wasm activation blocknumber, if any disabled initially.
-    pub wasm_activation_transition: BlockNumber,
-    /// Wasm deactivation blocknumber, if enabled.
-    pub wasm_disable_transition: BlockNumber,
     /// Number of first block where KIP-4 rules begin. Only has effect if Wasm is activated.
     pub kip4_transition: BlockNumber,
     /// Number of first block where KIP-6 rules begin. Only has effect if Wasm is activated.
@@ -274,18 +270,6 @@ impl CommonParams {
                 false => ::vm::CleanDustMode::BasicOnly,
             };
         }
-        if block_number >= self.wasm_activation_transition
-            && block_number < self.wasm_disable_transition
-        {
-            let mut wasm = ::vm::WasmCosts::default();
-            if block_number >= self.kip4_transition {
-                wasm.have_create2 = true;
-            }
-            if block_number >= self.kip6_transition {
-                wasm.have_gasleft = true;
-            }
-            schedule.wasm = Some(wasm);
-        }
     }
 
     /// Return Some if the current parameters contain a bugfix hard fork not on block 0.
@@ -411,12 +395,6 @@ impl From<ethjson::spec::Params> for CommonParams {
                 .max_transaction_size
                 .map_or(MAX_TRANSACTION_SIZE, Into::into),
             max_code_size_transition: p.max_code_size_transition.map_or(0, Into::into),
-            wasm_activation_transition: p
-                .wasm_activation_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
-            wasm_disable_transition: p
-                .wasm_disable_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
             kip4_transition: p
                 .kip4_transition
                 .map_or_else(BlockNumber::max_value, Into::into),
@@ -708,8 +686,6 @@ impl Spec {
             params.eip3529_transition,
             params.eip3541_transition,
             params.dust_protection_transition,
-            params.wasm_activation_transition,
-            params.wasm_disable_transition,
             params.kip4_transition,
             params.kip6_transition,
             params.max_code_size_transition,

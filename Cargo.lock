@@ -713,7 +713,6 @@ dependencies = [
  "env_logger 0.5.13",
  "error-chain",
  "ethash",
- "ethcore-accounts",
  "ethcore-blockchain",
  "ethcore-builtin",
  "ethcore-db",
@@ -761,24 +760,6 @@ dependencies = [
  "unexpected",
  "vm",
  "walkdir",
- "wasm",
-]
-
-[[package]]
-name = "ethcore-accounts"
-version = "0.1.0"
-dependencies = [
- "common-types",
- "ethereum-types",
- "ethkey",
- "ethstore",
- "log",
- "parity-crypto",
- "parking_lot 0.11.1",
- "serde",
- "serde_derive",
- "serde_json",
- "tempdir",
 ]
 
 [[package]]
@@ -891,30 +872,6 @@ dependencies = [
  "serde",
  "serde_derive",
  "tiny-keccak 1.5.0",
-]
-
-[[package]]
-name = "ethstore"
-version = "0.2.1"
-dependencies = [
- "ethereum-types",
- "ethkey",
- "itertools 0.5.10",
- "lazy_static",
- "libc",
- "log",
- "matches",
- "parity-crypto",
- "parity-wordlist",
- "parking_lot 0.11.1",
- "rand 0.7.3",
- "rustc-hex 1.0.0",
- "serde",
- "serde_derive",
- "serde_json",
- "smallvec 0.6.13",
- "tempdir",
- "time",
 ]
 
 [[package]]
@@ -1468,12 +1425,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
 
 [[package]]
-name = "matches"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
-
-[[package]]
 name = "maybe-uninit"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1545,18 +1496,6 @@ dependencies = [
  "hashmap_core",
  "parity-util-mem 0.1.0",
 ]
-
-[[package]]
-name = "memory_units"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
-
-[[package]]
-name = "nan-preserving-float"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34d4f00fcc2f4c9efa8cc971db0da9e28290e28e97af47585e48691ef10ff31f"
 
 [[package]]
 name = "nodrop"
@@ -1749,15 +1688,6 @@ dependencies = [
  "proc-macro2 1.0.20",
  "syn 1.0.40",
  "synstructure",
-]
-
-[[package]]
-name = "parity-wasm"
-version = "0.31.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "511379a8194230c2395d2f5fa627a5a7e108a9f976656ce723ae68fca4097bfc"
-dependencies = [
- "byteorder",
 ]
 
 [[package]]
@@ -1985,17 +1915,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "175c513d55719db99da20232b06cda8bab6b83ec2d04e3283edf0213c37c1a29"
 dependencies = [
  "unicode-xid 0.2.0",
-]
-
-[[package]]
-name = "pwasm-utils"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efb0dcbddbb600f47a7098d33762a00552c671992171637f5bb310b37fe1f0e4"
-dependencies = [
- "byteorder",
- "log",
- "parity-wasm",
 ]
 
 [[package]]
@@ -2656,17 +2575,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "time"
-version = "0.1.42"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db8dcfca086c1143c9270ac42a2bbd8a7ee477b78ac8e45b19abfb0cbede4b6f"
-dependencies = [
- "libc",
- "redox_syscall 0.1.56",
- "winapi",
-]
-
-[[package]]
 name = "tiny-keccak"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2854,33 +2762,6 @@ name = "wasi"
 version = "0.10.2+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd6fbd9a79829dd1ad0cc20627bf1ed606756a7f77edff7b66b7064f9cb327c6"
-
-[[package]]
-name = "wasm"
-version = "0.1.0"
-dependencies = [
- "byteorder",
- "env_logger 0.5.13",
- "ethereum-types",
- "libc",
- "log",
- "parity-wasm",
- "pwasm-utils",
- "vm",
- "wasmi",
-]
-
-[[package]]
-name = "wasmi"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b4a6d379e9332b1b1f52c5a87f2481c85c7c931d8ec411963dfb8f26b1ec1e3"
-dependencies = [
- "byteorder",
- "memory_units",
- "nan-preserving-float",
- "parity-wasm",
-]
 
 [[package]]
 name = "winapi"
