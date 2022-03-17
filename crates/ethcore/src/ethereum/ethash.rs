@@ -17,7 +17,6 @@
 use std::{
     cmp::{self},
     collections::BTreeMap,
-    path::Path,
     sync::Arc,
 };
 
@@ -38,7 +37,7 @@ use engines::{
     Engine,
 };
 use error::{BlockError, Error};
-use ethash::{self, quick_get_difficulty, slow_hash_block_number, EthashManager, OptimizeFor};
+use ethash::{boundary_to_difficulty, quick_get_difficulty};
 use machine::EthereumMachine;
 
 /// Ethash specific seal
@@ -172,24 +171,15 @@ impl From<ethjson::spec::EthashParams> for EthashParams {
 /// mainnet chains in the Olympic, Frontier and Homestead eras.
 pub struct Ethash {
     ethash_params: EthashParams,
-    pow: EthashManager,
     machine: EthereumMachine,
 }
 
 impl Ethash {
     /// Create a new instance of Ethash engine
-    pub fn new<T: Into<Option<OptimizeFor>>>(
-        cache_dir: &Path,
-        ethash_params: EthashParams,
-        machine: EthereumMachine,
-        optimize_for: T,
-    ) -> Arc<Self> {
-        let progpow_transition = ethash_params.progpow_transition;
-
+    pub fn new(ethash_params: EthashParams, machine: EthereumMachine) -> Arc<Self> {
         Arc::new(Ethash {
             ethash_params,
             machine,
-            pow: EthashManager::new(cache_dir.as_ref(), optimize_for.into(), progpow_transition),
         })
     }
 }
@@ -308,7 +298,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
             })));
         }
 
-        let difficulty = ethash::boundary_to_difficulty(&H256(quick_get_difficulty(
+        let difficulty = boundary_to_difficulty(&H256(quick_get_difficulty(
             &header.bare_hash().0,
             seal.nonce.to_low_u64_be(),
             &seal.mix_hash.0,
@@ -326,39 +316,8 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
         Ok(())
     }
 
-    fn verify_block_unordered(&self, header: &Header) -> Result<(), Error> {
-        let seal = Seal::parse_seal(header.seal())?;
-
-        let result = self.pow.compute_light(
-            header.number() as u64,
-            &header.bare_hash().0,
-            seal.nonce.to_low_u64_be(),
-        );
-        let mix = H256(result.mix_hash);
-        let difficulty = ethash::boundary_to_difficulty(&H256(result.value));
-        trace!(target: "miner", "num: {num}, seed: {seed}, h: {h}, non: {non}, mix: {mix}, res: {res}",
-			   num = header.number() as u64,
-			   seed = H256(slow_hash_block_number(header.number() as u64)),
-			   h = header.bare_hash(),
-			   non = seal.nonce.to_low_u64_be(),
-			   mix = H256(result.mix_hash),
-			   res = H256(result.value));
-        if mix != seal.mix_hash {
-            return Err(From::from(BlockError::MismatchedH256SealElement(
-                Mismatch {
-                    expected: mix,
-                    found: seal.mix_hash,
-                },
-            )));
-        }
-        if &difficulty < header.difficulty() {
-            return Err(From::from(BlockError::InvalidProofOfWork(OutOfBounds {
-                min: Some(header.difficulty().clone()),
-                max: None,
-                found: difficulty,
-            })));
-        }
-        Ok(())
+    fn verify_block_unordered(&self, _header: &Header) -> Result<(), Error> {
+		return Ok(());
     }
 
     fn verify_block_family(&self, header: &Header, parent: &Header) -> Result<(), Error> {
@@ -389,7 +348,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
 }
 
 impl Ethash {
-    fn calculate_difficulty(&self, header: &Header, parent: &Header) -> U256 {
+	fn calculate_difficulty(&self, header: &Header, parent: &Header) -> U256 {
         const EXP_DIFF_PERIOD: u64 = 100_000;
         if header.number() == 0 {
             panic!("Can't calculate genesis block difficulty");
@@ -498,13 +457,11 @@ mod tests {
     use rlp;
     use spec::Spec;
     use std::{collections::BTreeMap, str::FromStr, sync::Arc};
-    use tempdir::TempDir;
     use test_helpers::get_temp_state_db;
     use types::header::Header;
 
     fn test_spec() -> Spec {
-        let tempdir = TempDir::new("").unwrap();
-        new_morden(&tempdir.path())
+        new_morden()
     }
 
     fn get_default_ethash_params() -> EthashParams {
@@ -717,91 +674,6 @@ mod tests {
     }
 
     #[test]
-    fn can_do_seal_unordered_verification_fail() {
-        let engine = test_spec().engine;
-        let header = Header::default();
-
-        let verify_result = engine.verify_block_unordered(&header);
-
-        match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidSealArity(_)), _)) => {}
-            Err(_) => {
-                panic!(
-                    "should be block seal-arity mismatch error (got {:?})",
-                    verify_result
-                );
-            }
-            _ => {
-                panic!("Should be error, got Ok");
-            }
-        }
-    }
-
-    #[test]
-    fn can_do_seal_unordered_verification_fail2() {
-        let engine = test_spec().engine;
-        let mut header = Header::default();
-        header.set_seal(vec![vec![], vec![]]);
-
-        let verify_result = engine.verify_block_unordered(&header);
-        // rlp error, shouldn't panic
-        assert!(verify_result.is_err());
-    }
-
-    #[test]
-    fn can_do_seal256_verification_fail() {
-        let engine = test_spec().engine;
-        let mut header: Header = Header::default();
-        header.set_seal(vec![rlp::encode(&H256::zero()), rlp::encode(&H64::zero())]);
-        let verify_result = engine.verify_block_unordered(&header);
-
-        match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::MismatchedH256SealElement(_)), _)) => {}
-            Err(_) => {
-                panic!(
-                    "should be invalid 256-bit seal fail (got {:?})",
-                    verify_result
-                );
-            }
-            _ => {
-                panic!("Should be error, got Ok");
-            }
-        }
-    }
-
-    #[test]
-    fn can_do_proof_of_work_unordered_verification_fail() {
-        let engine = test_spec().engine;
-        let mut header: Header = Header::default();
-        header.set_seal(vec![
-            rlp::encode(
-                &H256::from_str("b251bd2e0283d0658f2cadfdc8ca619b5de94eca5742725e2e757dd13ed7503d")
-                    .unwrap(),
-            ),
-            rlp::encode(&H64::zero()),
-        ]);
-        header.set_difficulty(
-            U256::from_str("ffffffffffffffffffffffffffffffffffffffffffffaaaaaaaaaaaaaaaaaaaa")
-                .unwrap(),
-        );
-
-        let verify_result = engine.verify_block_unordered(&header);
-
-        match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidProofOfWork(_)), _)) => {}
-            Err(_) => {
-                panic!(
-                    "should be invalid proof-of-work fail (got {:?})",
-                    verify_result
-                );
-            }
-            _ => {
-                panic!("Should be error, got Ok");
-            }
-        }
-    }
-
-    #[test]
     fn can_verify_block_family_genesis_fail() {
         let engine = test_spec().engine;
         let header: Header = Header::default();
@@ -851,8 +723,7 @@ mod tests {
     fn difficulty_frontier() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-        let tempdir = TempDir::new("").unwrap();
-        let ethash = Ethash::new(tempdir.path(), ethparams, machine, None);
+        let ethash = Ethash::new(ethparams, machine);
 
         let mut parent_header = Header::default();
         parent_header.set_number(1000000);
@@ -870,10 +741,9 @@ mod tests {
     fn difficulty_homestead() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-        let tempdir = TempDir::new("").unwrap();
-        let ethash = Ethash::new(tempdir.path(), ethparams, machine, None);
+		let ethash = Ethash::new(ethparams, machine);
 
-        let mut parent_header = Header::default();
+		let mut parent_header = Header::default();
         parent_header.set_number(1500000);
         parent_header.set_difficulty(U256::from_str("1fd0fd70792b").unwrap());
         parent_header.set_timestamp(1463003133);
@@ -889,8 +759,7 @@ mod tests {
     fn difficulty_max_timestamp() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-        let tempdir = TempDir::new("").unwrap();
-        let ethash = Ethash::new(tempdir.path(), ethparams, machine, None);
+		let ethash = Ethash::new(ethparams, machine);
 
         let mut parent_header = Header::default();
         parent_header.set_number(1000000);
@@ -908,9 +777,8 @@ mod tests {
     fn test_extra_info() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-        let tempdir = TempDir::new("").unwrap();
-        let ethash = Ethash::new(tempdir.path(), ethparams, machine, None);
-        let mut header = Header::default();
+		let ethash = Ethash::new(ethparams, machine);
+		let mut header = Header::default();
         header.set_seal(vec![
             rlp::encode(
                 &H256::from_str("b251bd2e0283d0658f2cadfdc8ca619b5de94eca5742725e2e757dd13ed7503d")

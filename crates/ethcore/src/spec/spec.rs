@@ -20,7 +20,6 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     convert::TryFrom,
     io::Read,
-    path::Path,
     sync::Arc,
 };
 
@@ -44,8 +43,6 @@ use pod_state::PodState;
 use spec::{seal::Generic as GenericSeal, Genesis};
 use state::{backend::Basic as BasicBackend, Backend, State, Substate};
 use trace::{NoopTracer, NoopVMTracer};
-
-pub use ethash::OptimizeFor;
 
 const MAX_TRANSACTION_SIZE: usize = 300 * 1024;
 
@@ -422,43 +419,6 @@ impl From<ethjson::spec::Params> for CommonParams {
     }
 }
 
-/// Runtime parameters for the spec that are related to how the software should run the chain,
-/// rather than integral properties of the chain itself.
-#[derive(Debug, Clone, Copy)]
-pub struct SpecParams<'a> {
-    /// The path to the folder used to cache nodes. This is typically /tmp/ on Unix-like systems
-    pub cache_dir: &'a Path,
-    /// Whether to run slower at the expense of better memory usage, or run faster while using
-    /// more
-    /// memory. This may get more fine-grained in the future but for now is simply a binary
-    /// option.
-    pub optimization_setting: Option<OptimizeFor>,
-}
-
-impl<'a> SpecParams<'a> {
-    /// Create from a cache path, with null values for the other fields
-    pub fn from_path(path: &'a Path) -> Self {
-        SpecParams {
-            cache_dir: path,
-            optimization_setting: None,
-        }
-    }
-
-    /// Create from a cache path and an optimization setting
-    pub fn new(path: &'a Path, optimization: OptimizeFor) -> Self {
-        SpecParams {
-            cache_dir: path,
-            optimization_setting: Some(optimization),
-        }
-    }
-}
-
-impl<'a, T: AsRef<Path>> From<&'a T> for SpecParams<'a> {
-    fn from(path: &'a T) -> Self {
-        Self::from_path(path.as_ref())
-    }
-}
-
 /// Parameters for a block chain; includes both those intrinsic to the design of the
 /// chain and those to be interpreted by the active chain engine.
 pub struct Spec {
@@ -560,7 +520,7 @@ fn convert_json_to_spec(
 }
 
 /// Load from JSON object.
-fn load_from(spec_params: SpecParams, s: ethjson::spec::Spec) -> Result<Spec, Error> {
+fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
     let builtins: Result<BTreeMap<Address, Builtin>, _> = s
         .accounts
         .builtins()
@@ -572,7 +532,7 @@ fn load_from(spec_params: SpecParams, s: ethjson::spec::Spec) -> Result<Spec, Er
     let GenericSeal(seal_rlp) = g.seal.into();
     let params = CommonParams::from(s.params);
 
-    let (engine, hard_forks) = Spec::engine(spec_params, s.engine, params, builtins);
+    let (engine, hard_forks) = Spec::engine(s.engine, params, builtins);
 
     let mut s = Spec {
         name: s.name.clone().into(),
@@ -617,10 +577,7 @@ fn load_from(spec_params: SpecParams, s: ethjson::spec::Spec) -> Result<Spec, Er
 
 macro_rules! load_bundled {
     ($e:expr) => {
-        Spec::load(
-            &::std::env::temp_dir(),
-            include_bytes!(concat!("../../res/chainspec/", $e, ".json")) as &[u8],
-        )
+        Spec::load(include_bytes!(concat!("../../res/chainspec/", $e, ".json")) as &[u8])
         .expect(concat!("Chain spec ", $e, " is invalid."))
     };
 }
@@ -650,7 +607,6 @@ impl Spec {
     /// Convert engine spec into a arc'd Engine of the right underlying type.
     /// TODO avoid this hard-coded nastiness - use dynamic-linked plugin framework instead.
     fn engine(
-        spec_params: SpecParams,
         engine_spec: ethjson::spec::Engine,
         params: CommonParams,
         builtins: BTreeMap<Address, Builtin>,
@@ -722,10 +678,8 @@ impl Spec {
                 }
 
                 Arc::new(::ethereum::Ethash::new(
-                    spec_params.cache_dir,
                     ethash.params.into(),
                     machine,
-                    spec_params.optimization_setting,
                 ))
             }
             ethjson::spec::Engine::InstantSeal(Some(instant_seal)) => {
@@ -965,13 +919,13 @@ impl Spec {
 
     /// Loads spec from json file. Provide factories for executing contracts and ensuring
     /// storage goes to the right place.
-    pub fn load<'a, T: Into<SpecParams<'a>>, R>(params: T, reader: R) -> Result<Self, String>
+    pub fn load<'a, R>(reader: R) -> Result<Self, String>
     where
         R: Read,
     {
         ethjson::spec::Spec::load(reader)
             .map_err(fmt_err)
-            .and_then(|x| load_from(params.into(), x).map_err(fmt_err))
+            .and_then(|x| load_from(x).map_err(fmt_err))
     }
 
     /// Create a new Spec with InstantSeal consensus which does internal sealing (not requiring
@@ -1062,14 +1016,12 @@ mod tests {
     use ethereum_types::{H160, H256};
     use state::State;
     use std::str::FromStr;
-    use tempdir::TempDir;
     use test_helpers::get_temp_state_db;
     use types::{view, views::BlockView};
 
     #[test]
     fn test_load_empty() {
-        let tempdir = TempDir::new("").unwrap();
-        assert!(Spec::load(&tempdir.path(), &[] as &[u8]).is_err());
+        assert!(Spec::load(&[] as &[u8]).is_err());
     }
 
     #[test]

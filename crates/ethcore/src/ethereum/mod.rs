@@ -30,12 +30,8 @@ use super::spec::*;
 use machine::EthereumMachine;
 
 /// Load chain spec from `SpecParams` and JSON.
-pub fn load<'a, T: Into<Option<SpecParams<'a>>>>(params: T, b: &[u8]) -> Spec {
-    match params.into() {
-        Some(params) => Spec::load(params, b),
-        None => Spec::load(&::std::env::temp_dir(), b),
-    }
-    .expect("chain spec is invalid")
+pub fn load(b: &[u8]) -> Spec {
+	Spec::load(b).expect("chain spec is invalid")
 }
 
 fn load_machine(b: &[u8]) -> EthereumMachine {
@@ -43,185 +39,120 @@ fn load_machine(b: &[u8]) -> EthereumMachine {
 }
 
 /// Create a new Foundation mainnet chain spec.
-pub fn new_foundation<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/foundation.json"),
-    )
+pub fn new_foundation() -> Spec {
+    load(include_bytes!("../../res/chainspec/foundation.json"))
 }
 
 /// Create a new POA Network mainnet chain spec.
-pub fn new_poanet<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/poacore.json"),
-    )
+pub fn new_poanet() -> Spec {
+    load(include_bytes!("../../res/chainspec/poacore.json"))
 }
 
 /// Create a new xDai chain spec.
-pub fn new_xdai<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/xdai.json"),
-    )
+pub fn new_xdai() -> Spec {
+    load(include_bytes!("../../res/chainspec/xdai.json"))
 }
 
 /// Create a new Volta mainnet chain spec.
-pub fn new_volta<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/volta.json"),
-    )
+pub fn new_volta() -> Spec {
+    load(include_bytes!("../../res/chainspec/volta.json"))
 }
 
 /// Create a new EWC mainnet chain spec.
-pub fn new_ewc<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/ewc.json"),
-    )
+pub fn new_ewc() -> Spec {
+    load(include_bytes!("../../res/chainspec/ewc.json"))
 }
 
 /// Create a new Musicoin mainnet chain spec.
-pub fn new_musicoin<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
+pub fn new_musicoin() -> Spec {
     // The musicoin chain spec uses a block reward contract which can be found at
     // https://gist.github.com/andresilva/6f2afaf9486732a0797f4bdeae018ee9
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/musicoin.json"),
-    )
+    load(include_bytes!("../../res/chainspec/musicoin.json"))
 }
 
 /// Create a new Ellaism mainnet chain spec.
-pub fn new_ellaism<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/ellaism.json"),
-    )
+pub fn new_ellaism() -> Spec {
+    load(include_bytes!("../../res/chainspec/ellaism.json"))
 }
 
 /// Create a new MIX mainnet chain spec.
-pub fn new_mix<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/mix.json"),
-    )
+pub fn new_mix() -> Spec {
+    load(include_bytes!("../../res/chainspec/mix.json"))
 }
 
 /// Create a new Callisto chain spec
-pub fn new_callisto<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/callisto.json"),
-    )
+pub fn new_callisto() -> Spec {
+    load(include_bytes!("../../res/chainspec/callisto.json"))
 }
 
 /// Create a new Morden testnet chain spec.
-pub fn new_morden<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/morden.json"),
-    )
+pub fn new_morden() -> Spec {
+    load(include_bytes!("../../res/chainspec/morden.json"))
 }
 
 /// Create a new Ropsten testnet chain spec.
-pub fn new_ropsten<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/ropsten.json"),
-    )
+pub fn new_ropsten() -> Spec {
+    load(include_bytes!("../../res/chainspec/ropsten.json"))
 }
 
 /// Create a new Kovan testnet chain spec.
-pub fn new_kovan<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/kovan.json"),
-    )
+pub fn new_kovan() -> Spec {
+    load(include_bytes!("../../res/chainspec/kovan.json"))
 }
 
 /// Create a new Rinkeby testnet chain spec.
-pub fn new_rinkeby<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/rinkeby.json"),
-    )
+pub fn new_rinkeby() -> Spec {
+    load(include_bytes!("../../res/chainspec/rinkeby.json"))
 }
 
 /// Create a new Görli testnet chain spec.
-pub fn new_goerli<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/goerli.json"),
-    )
+pub fn new_goerli() -> Spec {
+    load(include_bytes!("../../res/chainspec/goerli.json"))
 }
 
 /// Create a new POA Sokol testnet chain spec.
-pub fn new_sokol<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/poasokol.json"),
-    )
+pub fn new_sokol() -> Spec {
+    load(include_bytes!("../../res/chainspec/poasokol.json"))
 }
 /// Create a new YOLO spec
-pub fn new_yolo3<'a, T: Into<SpecParams<'a>>>(params: T) -> Spec {
-    load(
-        params.into(),
-        include_bytes!("../../res/chainspec/yolo3.json"),
-    )
+pub fn new_yolo3() -> Spec {
+    load(include_bytes!("../../res/chainspec/yolo3.json"))
 }
 
 // For tests
 
 /// Create a new Foundation Frontier-era chain spec as though it never changes to Homestead.
 pub fn new_frontier_test() -> Spec {
-    load(
-        None,
-        include_bytes!("../../res/chainspec/test/frontier_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/frontier_test.json"))
 }
 
 /// Create a new Ropsten chain spec.
 pub fn new_ropsten_test() -> Spec {
-    load(None, include_bytes!("../../res/chainspec/ropsten.json"))
+    load(include_bytes!("../../res/chainspec/ropsten.json"))
 }
-
 /// Create a new Foundation Homestead-era chain spec as though it never changed from Frontier.
 pub fn new_homestead_test() -> Spec {
-    load(
-        None,
-        include_bytes!("../../res/chainspec/test/homestead_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/homestead_test.json"))
 }
 
 /// Create a new Foundation Homestead-EIP150-era chain spec as though it never changed from Homestead/Frontier.
 pub fn new_eip150_test() -> Spec {
-    load(
-        None,
-        include_bytes!("../../res/chainspec/test/eip150_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/eip150_test.json"))
 }
 
 /// Create a new Foundation Homestead-EIP161-era chain spec as though it never changed from Homestead/Frontier.
 pub fn new_eip161_test() -> Spec {
-    load(
-        None,
-        include_bytes!("../../res/chainspec/test/eip161_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/eip161_test.json"))
 }
 
 /// Create a new Foundation Frontier/Homestead/DAO chain spec with transition points at #5 and #8.
 pub fn new_transition_test() -> Spec {
-    load(
-        None,
-        include_bytes!("../../res/chainspec/test/transition_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/transition_test.json"))
 }
 
 /// Create a new Foundation Mainnet chain spec without genesis accounts.
 pub fn new_mainnet_like() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/frontier_like_test.json"),
     )
 }
@@ -229,7 +160,6 @@ pub fn new_mainnet_like() -> Spec {
 /// Create a new Foundation Byzantium era spec.
 pub fn new_byzantium_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/byzantium_test.json"),
     )
 }
@@ -237,7 +167,6 @@ pub fn new_byzantium_test() -> Spec {
 /// Create a new Foundation Constantinople era spec.
 pub fn new_constantinople_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/constantinople_test.json"),
     )
 }
@@ -245,7 +174,6 @@ pub fn new_constantinople_test() -> Spec {
 /// Create a new Foundation St. Peter's (Contantinople Fix) era spec.
 pub fn new_constantinople_fix_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/st_peters_test.json"),
     )
 }
@@ -253,7 +181,6 @@ pub fn new_constantinople_fix_test() -> Spec {
 /// Create a new Foundation Istanbul era spec.
 pub fn new_istanbul_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/istanbul_test.json"),
     )
 }
@@ -261,7 +188,6 @@ pub fn new_istanbul_test() -> Spec {
 /// Create a new BizantiumToConstaninopleFixAt5 era spec.
 pub fn new_byzantium_to_constantinoplefixat5_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/byzantium_to_constantinoplefixat5_test.json"),
     )
 }
@@ -269,7 +195,6 @@ pub fn new_byzantium_to_constantinoplefixat5_test() -> Spec {
 /// Create a new Foundation Berlin era spec.
 pub fn new_berlin_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/berlin_test.json"),
     )
 }
@@ -277,7 +202,6 @@ pub fn new_berlin_test() -> Spec {
 /// Create a new Foundation London era spec.
 pub fn new_london_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/london_test.json"),
     )
 }
@@ -285,7 +209,6 @@ pub fn new_london_test() -> Spec {
 /// Create a new BerlinToLondonAt5 era spec.
 pub fn new_berlin_to_london_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/berlin_to_londonat5_test.json"),
     )
 }
@@ -293,7 +216,6 @@ pub fn new_berlin_to_london_test() -> Spec {
 /// Create a new Musicoin-MCIP3-era spec.
 pub fn new_mcip3_test() -> Spec {
     load(
-        None,
         include_bytes!("../../res/chainspec/test/mcip3_test.json"),
     )
 }
@@ -368,7 +290,7 @@ mod tests {
 
     #[test]
     fn ensure_db_good() {
-        let spec = new_morden(&::std::env::temp_dir());
+        let spec = new_morden();
         let engine = &spec.engine;
         let genesis_header = spec.genesis_header();
         let db = spec
@@ -415,7 +337,7 @@ mod tests {
 
     #[test]
     fn morden() {
-        let morden = new_morden(&::std::env::temp_dir());
+        let morden = new_morden();
 
         assert_eq!(
             morden.state_root(),
@@ -434,7 +356,7 @@ mod tests {
 
     #[test]
     fn frontier() {
-        let frontier = new_foundation(&::std::env::temp_dir());
+        let frontier = new_foundation();
 
         assert_eq!(
             frontier.state_root(),
