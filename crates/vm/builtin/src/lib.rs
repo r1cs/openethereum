@@ -22,25 +22,25 @@ use std::{
     cmp::{max, min},
     collections::BTreeMap,
     convert::{TryFrom, TryInto},
-    io::{self, Cursor, Read},
+    io::{self, Read},
     mem::size_of,
     str::FromStr,
 };
 
-use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
+use byteorder::{ByteOrder, BigEndian, LittleEndian};
 use eip_152::compress;
+use ethereum_types::{H256, U256};
+use num_bigint::BigUint;
+use num_traits::{One, Zero};
+use parity_bytes::BytesRef;
+use crypto::hash::{sha256, ripemd160};
+use crypto::publickey::{recover, Signature};
+
+#[cfg(feature = "std")]
 use eth_pairings::public_interface::eip2537::{
     EIP2537Executor, SCALAR_BYTE_LENGTH, SERIALIZED_G1_POINT_BYTE_LENGTH,
     SERIALIZED_G2_POINT_BYTE_LENGTH,
 };
-use ethereum_types::{H256, U256};
-use ethjson;
-use keccak_hash::keccak;
-use log::{trace, warn};
-use num::{BigUint, One, Zero};
-use parity_bytes::BytesRef;
-use crypto::hash::{sha256, ripemd160};
-use crypto::publickey::{recover, Signature};
 
 /// Native implementation of a built-in contract.
 pub trait Implementation: Send + Sync {
@@ -567,6 +567,7 @@ impl Builtin {
     }
 }
 
+#[cfg(feature = "std")]
 impl TryFrom<ethjson::spec::builtin::Builtin> for Builtin {
     type Error = String;
 
@@ -582,6 +583,7 @@ impl TryFrom<ethjson::spec::builtin::Builtin> for Builtin {
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::spec::builtin::Pricing> for Pricing {
     fn from(pricing: ethjson::spec::builtin::Pricing) -> Self {
         match pricing {
@@ -594,7 +596,6 @@ impl From<ethjson::spec::builtin::Pricing> for Pricing {
             }),
             ethjson::spec::builtin::Pricing::Modexp(exp) => Pricing::Modexp(ModexpPricer {
                 divisor: if exp.divisor == 0 {
-                    warn!(target: "builtin", "Zero modexp divisor specified. Falling back to default: 10.");
                     10
                 } else {
                     exp.divisor
@@ -657,34 +658,47 @@ enum EthereumBuiltin {
     Ripemd160(Ripemd160),
     /// modexp (EIP 198)
     Modexp(Modexp),
-    /// alt_bn128_add
-    Bn128Add(Bn128Add),
-    /// alt_bn128_mul
-    Bn128Mul(Bn128Mul),
-    /// alt_bn128_pairing
-    Bn128Pairing(Bn128Pairing),
-    /// blake2_f (The Blake2 compression function F, EIP-152)
+	#[cfg(feature = "std")]
+	/// alt_bn128_add
+	Bn128Add(Bn128Add),
+	#[cfg(feature = "std")]
+	/// alt_bn128_mul
+	Bn128Mul(Bn128Mul),
+	#[cfg(feature = "std")]
+	/// alt_bn128_pairing
+	Bn128Pairing(Bn128Pairing),
+	/// blake2_f (The Blake2 compression function F, EIP-152)
     Blake2F(Blake2F),
-    /// bls12_381 addition in g1
-    Bls12G1Add(Bls12G1Add),
-    /// bls12_381 multiplication in g1
-    Bls12G1Mul(Bls12G1Mul),
-    /// bls12_381 multiexponentiation in g1
-    Bls12G1MultiExp(Bls12G1MultiExp),
-    /// bls12_381 addition in g2
-    Bls12G2Add(Bls12G2Add),
-    /// bls12_381 multiplication in g2
-    Bls12G2Mul(Bls12G2Mul),
-    /// bls12_381 multiexponentiation in g2
-    Bls12G2MultiExp(Bls12G2MultiExp),
-    /// bls12_381 pairing
-    Bls12Pairing(Bls12Pairing),
-    /// bls12_381 fp to g1 mapping
-    Bls12MapFpToG1(Bls12MapFpToG1),
-    /// bls12_381 fp2 to g2 mapping
-    Bls12MapFp2ToG2(Bls12MapFp2ToG2),
+	#[cfg(feature = "std")]
+	/// bls12_381 addition in g1
+	Bls12G1Add(Bls12G1Add),
+	#[cfg(feature = "std")]
+	/// bls12_381 multiplication in g1
+	Bls12G1Mul(Bls12G1Mul),
+	#[cfg(feature = "std")]
+	/// bls12_381 multiexponentiation in g1
+	Bls12G1MultiExp(Bls12G1MultiExp),
+	#[cfg(feature = "std")]
+	/// bls12_381 addition in g2
+	Bls12G2Add(Bls12G2Add),
+	#[cfg(feature = "std")]
+	/// bls12_381 multiplication in g2
+	Bls12G2Mul(Bls12G2Mul),
+	#[cfg(feature = "std")]
+	/// bls12_381 multiexponentiation in g2
+	Bls12G2MultiExp(Bls12G2MultiExp),
+	#[cfg(feature = "std")]
+	/// bls12_381 pairing
+	Bls12Pairing(Bls12Pairing),
+	#[cfg(feature = "std")]
+	/// bls12_381 fp to g1 mapping
+	Bls12MapFpToG1(Bls12MapFpToG1),
+	#[cfg(feature = "std")]
+	/// bls12_381 fp2 to g2 mapping
+	Bls12MapFp2ToG2(Bls12MapFp2ToG2),
 }
 
+#[cfg(feature = "std")]
 impl FromStr for EthereumBuiltin {
     type Err = String;
 
@@ -721,18 +735,30 @@ impl Implementation for EthereumBuiltin {
             EthereumBuiltin::Sha256(inner) => inner.execute(input, output),
             EthereumBuiltin::Ripemd160(inner) => inner.execute(input, output),
             EthereumBuiltin::Modexp(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bn128Add(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bn128Mul(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bn128Pairing(inner) => inner.execute(input, output),
             EthereumBuiltin::Blake2F(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1Add(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1Mul(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1MultiExp(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2Add(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2Mul(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2MultiExp(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12Pairing(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12MapFpToG1(inner) => inner.execute(input, output),
+			#[cfg(feature = "std")]
             EthereumBuiltin::Bls12MapFp2ToG2(inner) => inner.execute(input, output),
         }
     }
@@ -829,7 +855,7 @@ impl Implementation for EcRecover {
 
         let s = Signature::from_rsv(&r, &s, bit);
         if s.is_valid() {
-            if let Ok(address) = recover(&s, &hash) {
+            if let Some(address) = recover(&s, &hash) {
                 output.write(0, &[0; 12]);
                 output.write(12, &address.as_bytes());
             }
@@ -852,32 +878,27 @@ impl Implementation for Blake2F {
     /// [4 bytes for rounds][64 bytes for h][128 bytes for m][8 bytes for t_0][8 bytes for t_1][1 byte for f]
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         const BLAKE2_F_ARG_LEN: usize = 213;
-        const PROOF: &str = "Checked the length of the input above; qed";
-
         if input.len() != BLAKE2_F_ARG_LEN {
-            trace!(target: "builtin", "input length for Blake2 F precompile should be exactly 213 bytes, was {}", input.len());
             return Err("input length for Blake2 F precompile should be exactly 213 bytes".into());
         }
 
-        let mut cursor = Cursor::new(input);
-        let rounds = cursor.read_u32::<BigEndian>().expect(PROOF);
-
+        let rounds = BigEndian::read_u32(input);
         // state vector, h
         let mut h = [0u64; 8];
-        for state_word in &mut h {
-            *state_word = cursor.read_u64::<LittleEndian>().expect(PROOF);
+        for (i, state_word) in h.iter_mut().enumerate() {
+            *state_word = LittleEndian::read_u64(&input[4+8*i..]);
         }
 
         // message block vector, m
         let mut m = [0u64; 16];
-        for msg_word in &mut m {
-            *msg_word = cursor.read_u64::<LittleEndian>().expect(PROOF);
+        for (i, msg_word) in m.iter_mut().enumerate() {
+            *msg_word = LittleEndian::read_u64(&input[68+8*i..]);
         }
 
         // 2w-bit offset counter, t
         let t = [
-            cursor.read_u64::<LittleEndian>().expect(PROOF),
-            cursor.read_u64::<LittleEndian>().expect(PROOF),
+			LittleEndian::read_u64(&input[196..]),
+			LittleEndian::read_u64(&input[204..]),
         ];
 
         // final block indicator flag, "f"
@@ -885,7 +906,6 @@ impl Implementation for Blake2F {
             Some(1) => true,
             Some(0) => false,
             _ => {
-                trace!(target: "builtin", "incorrect final block indicator flag, was: {:?}", input.last());
                 return Err("incorrect final block indicator flag".into());
             }
         };
@@ -1020,6 +1040,7 @@ impl Implementation for Modexp {
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12G1Add {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::g1_add(input);
@@ -1030,15 +1051,14 @@ impl Implementation for Bls12G1Add {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12G1Add error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12G1Add error")
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12G1Mul {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::g1_mul(input);
@@ -1049,15 +1069,14 @@ impl Implementation for Bls12G1Mul {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12G1Mul error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12G1Mul error")
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12G1MultiExp {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::g1_multiexp(input);
@@ -1068,15 +1087,14 @@ impl Implementation for Bls12G1MultiExp {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12G1MultiExp error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12G1MultiExp error")
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12G2Add {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::g2_add(input);
@@ -1087,15 +1105,14 @@ impl Implementation for Bls12G2Add {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12G2Add error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12G2Add error")
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12G2Mul {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::g2_mul(input);
@@ -1106,15 +1123,14 @@ impl Implementation for Bls12G2Mul {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12G2Mul error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12G2Mul error")
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12G2MultiExp {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::g2_multiexp(input);
@@ -1125,15 +1141,14 @@ impl Implementation for Bls12G2MultiExp {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12G2MultiExp error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12G2MultiExp error")
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12Pairing {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::pair(input);
@@ -1144,15 +1159,14 @@ impl Implementation for Bls12Pairing {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12Pairing error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12Pairing error")
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12MapFpToG1 {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::map_fp_to_g1(input);
@@ -1163,15 +1177,14 @@ impl Implementation for Bls12MapFpToG1 {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12MapFpToG1 error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12MapFpToG1 error")
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bls12MapFp2ToG2 {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
         let result = EIP2537Executor::map_fp2_to_g2(input);
@@ -1182,9 +1195,7 @@ impl Implementation for Bls12MapFp2ToG2 {
 
                 Ok(())
             }
-            Err(e) => {
-                trace!(target: "builtin", "Bls12MapFp2ToG2 error: {:?}", e);
-
+            Err(_e) => {
                 Err("Bls12MapFp2ToG2 error")
             }
         }
@@ -1223,6 +1234,7 @@ fn read_point(reader: &mut io::Chain<&[u8], io::Repeat>) -> Result<bn::G1, &'sta
     })
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bn128Add {
     // Can fail if any of the 2 points does not belong the bn128 curve
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
@@ -1248,6 +1260,7 @@ impl Implementation for Bn128Add {
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bn128Mul {
     // Can fail if first paramter (bn128 curve point) does not actually belong to the curve
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
@@ -1272,6 +1285,7 @@ impl Implementation for Bn128Mul {
     }
 }
 
+#[cfg(feature = "std")]
 impl Implementation for Bn128Pairing {
     /// Can fail if:
     ///     - input length is not a multiple of 192
@@ -1283,7 +1297,6 @@ impl Implementation for Bn128Pairing {
         }
 
         if let Err(err) = self.execute_with_error(input, output) {
-            trace!(target: "builtin", "Pairing error: {:?}", err);
             return Err(err);
         }
         Ok(())
@@ -1372,12 +1385,13 @@ mod tests {
     use hex_literal::hex;
     use macros::map;
     use maplit::btreemap;
-    use num::{BigUint, One, Zero};
+    use num_bigint::BigUint;
     use parity_bytes::BytesRef;
     use rustc_hex::FromHex;
     use std::convert::TryFrom;
+	use num_traits::{One, Zero};
 
-    #[test]
+	#[test]
     fn blake2f_cost() {
         let f = Builtin {
             pricer: map![0 => Pricing::Blake2F(123)],
