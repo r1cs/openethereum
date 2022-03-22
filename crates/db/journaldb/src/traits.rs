@@ -119,3 +119,22 @@ pub trait JournalDB: KeyedHashDB {
         self.backing().write(batch).map(|_| res).map_err(Into::into)
     }
 }
+
+
+pub trait FakeJournalDB:HashDB<KeccakHasher,DBValue> {
+
+	/// Return a copy of ourself, in a box.
+	fn boxed_clone(&self) -> Box<dyn FakeJournalDB>;
+
+	/// Journal recent database operations as being associated with a given era and id.
+	// TODO: give the overlay to this function so journaldbs don't manage the overlays themeselves.
+	fn journal_under(&mut self, batch: &mut DBTransaction, now: u64, id: &H256) -> u32;
+
+	/// Mark a given block as canonical, indicating that competing blocks' states may be pruned out.
+	fn mark_canonical(&mut self, batch: &mut DBTransaction, era: u64, id: &H256) -> Option<u32>;
+
+	/// Whether this database is pruned.
+	fn is_pruned(&self) -> bool {
+		true
+	}
+}

@@ -18,6 +18,7 @@
 
 //! Ethcore library
 
+extern crate alloc;
 extern crate common_types as types;
 extern crate ethash;
 extern crate ethcore_blockchain as blockchain;
@@ -100,6 +101,7 @@ mod factory;
 
 #[cfg(feature = "json-tests")]
 pub mod json_tests;
+pub mod riscv;
 #[cfg(any(test, feature = "test-helpers"))]
 pub mod test_helpers;
 #[cfg(test)]

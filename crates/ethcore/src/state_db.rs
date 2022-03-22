@@ -24,7 +24,7 @@ use std::{
 
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
-use journaldb::JournalDB;
+use journaldb::{ FakeJournalDB};
 use keccak_hasher::KeccakHasher;
 use kvdb::{DBTransaction, DBValue};
 use lru_cache::LruCache;
@@ -92,7 +92,7 @@ struct BlockChanges {
 /// `StateDB` is propagated into the global cache.
 pub struct StateDB {
     /// Backing database.
-    db: Box<dyn JournalDB>,
+    db: Box<dyn FakeJournalDB>,
     /// Shared canonical state cache.
     account_cache: Arc<Mutex<AccountCache>>,
     /// DB Code cache. Maps code hashes to shared bytes.
@@ -114,7 +114,7 @@ impl StateDB {
     /// of the LRU cache in bytes. Actual used memory may (read: will) be higher due to bookkeeping.
     // TODO: make the cache size actually accurate by moving the account storage cache
     // into the `AccountCache` structure as its own `LruCache<(Address, H256), H256>`.
-    pub fn new(db: Box<dyn JournalDB>, cache_size: usize) -> StateDB {
+    pub fn new(db: Box<dyn FakeJournalDB>, cache_size: usize) -> StateDB {
         let acc_cache_size = cache_size * ACCOUNT_CACHE_RATIO / 100;
         let code_cache_size = cache_size - acc_cache_size;
         let cache_items = acc_cache_size / ::std::mem::size_of::<Option<Account>>();
@@ -140,11 +140,11 @@ impl StateDB {
         batch: &mut DBTransaction,
         now: u64,
         id: &H256,
-    ) -> io::Result<u32> {
-        let records = self.db.journal_under(batch, now, id)?;
+    ) -> Option<u32> {
+        let records = self.db.journal_under(batch, now, id);
         self.commit_hash = Some(id.clone());
         self.commit_number = Some(now);
-        Ok(records)
+        Some(records)
     }
 
     // t_nb 9.15
@@ -155,7 +155,7 @@ impl StateDB {
         batch: &mut DBTransaction,
         end_era: u64,
         canon_id: &H256,
-    ) -> io::Result<u32> {
+    ) -> Option<u32> {
         self.db.mark_canonical(batch, end_era, canon_id)
     }
 
@@ -318,7 +318,7 @@ impl StateDB {
     }
 
     /// Returns underlying `JournalDB`.
-    pub fn journal_db(&self) -> &dyn JournalDB {
+    pub fn journal_db(&self) -> &dyn FakeJournalDB {
         &*self.db
     }
 

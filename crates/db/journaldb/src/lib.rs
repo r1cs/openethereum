@@ -37,6 +37,9 @@ extern crate keccak_hash as keccak;
 #[cfg(test)]
 extern crate kvdb_memorydb;
 
+extern crate alloc;
+extern crate core;
+
 use std::{fmt, io, str, sync::Arc};
 
 mod archivedb;
@@ -48,10 +51,14 @@ mod refcounteddb;
 mod traits;
 mod util;
 
+pub mod oracle;
 pub mod overlaydb;
 
 /// Export the `JournalDB` trait.
 pub use self::traits::JournalDB;
+
+//Export tge `fakeJournalDB`
+pub use self::traits::FakeJournalDB;
 
 /// Export as keyed hash trait
 pub use self::traits::AsKeyedHashDB;
@@ -151,12 +158,7 @@ pub fn new(
     algorithm: Algorithm,
     col: Option<u32>,
 ) -> Box<dyn JournalDB> {
-    match algorithm {
-        Algorithm::Archive => Box::new(archivedb::ArchiveDB::new(backing, col)),
-        Algorithm::EarlyMerge => Box::new(earlymergedb::EarlyMergeDB::new(backing, col)),
-        Algorithm::OverlayRecent => Box::new(overlayrecentdb::OverlayRecentDB::new(backing, col)),
-        Algorithm::RefCounted => Box::new(refcounteddb::RefCountedDB::new(backing, col)),
-    }
+panic!("useless")
 }
 
 // all keys must be at least 12 bytes
@@ -180,6 +182,7 @@ fn error_negatively_reference_hash(hash: &ethereum_types::H256) -> io::Error {
 pub fn new_memory_db() -> memory_db::MemoryDB<keccak_hasher::KeccakHasher, kvdb::DBValue> {
     memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
 }
+
 
 #[cfg(test)]
 mod tests {
