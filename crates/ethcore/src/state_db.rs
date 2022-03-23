@@ -18,19 +18,23 @@
 
 use std::{
     collections::{HashSet, VecDeque},
+    io,
     sync::Arc,
 };
 
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
-use journaldb::{KeyedHashDB};
+use journaldb::JournalDB;
 use keccak_hasher::KeccakHasher;
-use kvdb::{DBValue};
+use kvdb::{DBTransaction, DBValue};
 use lru_cache::LruCache;
 use memory_cache::MemoryLruCache;
 use parking_lot::Mutex;
+use types::BlockNumber;
 
 use state::{self, Account};
+
+const STATE_CACHE_BLOCKS: usize = 12;
 
 // The percentage of supplied cache size to go to accounts.
 const ACCOUNT_CACHE_RATIO: usize = 90;
@@ -75,11 +79,6 @@ struct BlockChanges {
 pub struct StateDB {
     /// Backing database.
     db: Box<dyn KeyedHashDB>,
-    /// Shared canonical state cache.
-    account_cache: Arc<Mutex<AccountCache>>,
-    /// DB Code cache. Maps code hashes to shared bytes.
-    code_cache: Arc<Mutex<MemoryLruCache<H256, Arc<Vec<u8>>>>>,
-    cache_size: usize,
     /// Hash of the block on top of which this instance was created or
     /// `None` if cache is disabled
     parent_hash: Option<H256>,
@@ -97,14 +96,23 @@ impl StateDB {
 
         StateDB {
             db: db,
-            account_cache: Arc::new(Mutex::new(AccountCache {
-                accounts: LruCache::new(cache_items),
-                modifications: VecDeque::new(),
-            })),
-            code_cache: Arc::new(Mutex::new(MemoryLruCache::new(code_cache_size))),
-            cache_size: cache_size,
             parent_hash: None,
         }
+    }
+        }
+    }
+
+    /// Journal all recent operations under the given era and ID.
+    pub fn journal_under(
+        &mut self,
+        batch: &mut DBTransaction,
+        now: u64,
+        id: &H256,
+    ) -> io::Result<u32> {
+        let records = self.db.journal_under(batch, now, id)?;
+        self.commit_hash = Some(id.clone());
+        self.commit_number = Some(now);
+        Ok(records)
     }
 
     /// Conversion method to interpret self as `HashDB` reference
@@ -117,14 +125,34 @@ impl StateDB {
         self.db.as_hash_db_mut()
     }
 
+    /// Clone the database.
+    pub fn boxed_clone(&self) -> StateDB {
+        StateDB {
+            db: self.db.boxed_clone(),
+            parent_hash: None,
+            commit_hash: None,
+            commit_number: None,
+        }
+    }
+
+    /// Clone the database for a canonical state.
+    pub fn boxed_clone_canon(&self, parent: &H256) -> StateDB {
+        StateDB {
+            db: self.db.boxed_clone(),
+            parent_hash: Some(parent.clone()),
+            commit_hash: None,
+            commit_number: None,
+        }
+    }
+
+    /// Check if pruning is enabled on the database.
+    pub fn is_pruned(&self) -> bool {
+        self.db.is_pruned()
+    }
+
     /// Returns underlying `JournalDB`.
     pub fn journal_db(&self) -> &dyn KeyedHashDB {
         &*self.db
-    }
-
-    /// Query how much memory is set aside for the accounts cache (in bytes).
-    pub fn cache_size(&self) -> usize {
-        self.cache_size
     }
 
     /// Check if the account can be returned from cache by matching current block parent hash against canonical
@@ -175,44 +203,27 @@ impl state::Backend for StateDB {
         self.db.as_hash_db_mut()
     }
 
-    fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) { }
+    fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) {
+        return
+    }
 
     fn cache_code(&self, hash: H256, code: Arc<Vec<u8>>) {
-        let mut cache = self.code_cache.lock();
-
-        cache.insert(hash, code);
+       return
     }
 
     fn get_cached_account(&self, addr: &Address) -> Option<Option<Account>> {
-        self.parent_hash.as_ref().and_then(|parent_hash| {
-            let mut cache = self.account_cache.lock();
-            if !Self::is_allowed(addr, parent_hash, &cache.modifications) {
-                return None;
-            }
-            cache
-                .accounts
-                .get_mut(addr)
-                .map(|a| a.as_ref().map(|a| a.clone_basic()))
-        })
+       None
     }
 
     fn get_cached<F, U>(&self, a: &Address, f: F) -> Option<U>
     where
         F: FnOnce(Option<&mut Account>) -> U,
     {
-        self.parent_hash.as_ref().and_then(|parent_hash| {
-            let mut cache = self.account_cache.lock();
-            if !Self::is_allowed(a, parent_hash, &cache.modifications) {
-                return None;
-            }
-            cache.accounts.get_mut(a).map(|c| f(c.as_mut()))
-        })
+       None
     }
 
     fn get_cached_code(&self, hash: &H256) -> Option<Arc<Vec<u8>>> {
-        let mut cache = self.code_cache.lock();
-
-        cache.get_mut(hash).map(|code| code.clone())
+        None
     }
 }
 
