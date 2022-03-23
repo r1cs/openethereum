@@ -16,7 +16,6 @@
 
 //! Helpers and tests for operating on jsontests.
 
-mod chain;
 mod executive;
 mod local;
 mod state;

@@ -1,5 +1,5 @@
 use ethjson::test::{
-    ChainTests, EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
+    EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
     TestTrieSpec, TransactionTests, TrieTests,
 };
 use globset::Glob;
@@ -85,9 +85,6 @@ impl TestRunner {
         for t in &self.0.local {
             res += Self::run_local_tests(&t);
         }
-        for t in &self.0.chain {
-            res += Self::run_chain_tests(&t);
-        }
         for t in &self.0.state {
             res += Self::run_state_tests(&t);
         }
@@ -151,22 +148,6 @@ impl TestRunner {
             ),
             _ => TestResult::zero(),
         }
-    }
-
-    fn run_chain_tests(test: &ChainTests) -> TestResult {
-        Self::run1(
-            test,
-            &test.path,
-            |test: &ChainTests, path: &Path, json: &[u8]| {
-                for skip in &test.skip {
-                    if Self::in_set(&path, &skip.paths) {
-                        println!("   - {} ..SKIPPED", path.to_string_lossy());
-                        return Vec::new();
-                    }
-                }
-                super::chain::json_chain_test(&test, &path, &json, &mut |_, _| {})
-            },
-        )
     }
 
     fn run_state_tests(test: &StateTests) -> TestResult {
