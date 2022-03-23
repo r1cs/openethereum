@@ -18,23 +18,20 @@
 
 use std::{
     collections::{HashSet, VecDeque},
-    io,
     sync::Arc,
 };
 
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
-use journaldb::JournalDB;
+use journaldb::{KeyedHashDB};
 use keccak_hasher::KeccakHasher;
-use kvdb::{DBTransaction, DBValue};
+use kvdb::{ DBValue};
 use lru_cache::LruCache;
 use memory_cache::MemoryLruCache;
 use parking_lot::Mutex;
-use types::BlockNumber;
 
 use state::{self, Account};
 
-const STATE_CACHE_BLOCKS: usize = 12;
 
 // The percentage of supplied cache size to go to accounts.
 const ACCOUNT_CACHE_RATIO: usize = 90;
@@ -99,21 +96,7 @@ impl StateDB {
             parent_hash: None,
         }
     }
-        }
-    }
 
-    /// Journal all recent operations under the given era and ID.
-    pub fn journal_under(
-        &mut self,
-        batch: &mut DBTransaction,
-        now: u64,
-        id: &H256,
-    ) -> io::Result<u32> {
-        let records = self.db.journal_under(batch, now, id)?;
-        self.commit_hash = Some(id.clone());
-        self.commit_number = Some(now);
-        Ok(records)
-    }
 
     /// Conversion method to interpret self as `HashDB` reference
     pub fn as_hash_db(&self) -> &dyn HashDB<KeccakHasher, DBValue> {
@@ -123,31 +106,6 @@ impl StateDB {
     /// Conversion method to interpret self as mutable `HashDB` reference
     pub fn as_hash_db_mut(&mut self) -> &mut dyn HashDB<KeccakHasher, DBValue> {
         self.db.as_hash_db_mut()
-    }
-
-    /// Clone the database.
-    pub fn boxed_clone(&self) -> StateDB {
-        StateDB {
-            db: self.db.boxed_clone(),
-            parent_hash: None,
-            commit_hash: None,
-            commit_number: None,
-        }
-    }
-
-    /// Clone the database for a canonical state.
-    pub fn boxed_clone_canon(&self, parent: &H256) -> StateDB {
-        StateDB {
-            db: self.db.boxed_clone(),
-            parent_hash: Some(parent.clone()),
-            commit_hash: None,
-            commit_number: None,
-        }
-    }
-
-    /// Check if pruning is enabled on the database.
-    pub fn is_pruned(&self) -> bool {
-        self.db.is_pruned()
     }
 
     /// Returns underlying `JournalDB`.
