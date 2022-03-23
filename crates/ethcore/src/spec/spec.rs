@@ -1049,7 +1049,7 @@ mod tests {
             .ensure_db_good(get_temp_state_db(), &Default::default())
             .unwrap();
         let state = State::from_existing(
-            db.boxed_clone(),
+            db,
             spec.state_root(),
             spec.engine.account_start_nonce(0),
             Default::default(),

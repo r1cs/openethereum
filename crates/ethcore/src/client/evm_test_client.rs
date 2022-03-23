@@ -24,7 +24,6 @@ use evm::{FinalizationResult, VMType};
 use executive;
 use factory::{self, Factories};
 use journaldb;
-use kvdb::{self, KeyValueDB};
 use pod_state;
 use spec;
 use state;
@@ -124,27 +123,6 @@ impl<'a> EvmTestClient<'a> {
         self.dump_state = dump_state;
     }
 
-    /// Creates new EVM test client with in-memory DB initialized with genesis of given Spec.
-    /// Takes a `TrieSpec` to set the type of trie.
-    pub fn new_with_trie(
-        spec: &'a spec::Spec,
-        trie_spec: trie::TrieSpec,
-    ) -> Result<Self, EvmTestError> {
-        let factories = Self::factories(trie_spec);
-        let state = Self::state_from_spec(spec, &factories)?;
-
-        Ok(EvmTestClient {
-            state,
-            spec,
-            dump_state: no_dump_state,
-        })
-    }
-
-    /// Creates new EVM test client with an in-memory DB initialized with genesis of given chain Spec.
-    pub fn new(spec: &'a spec::Spec) -> Result<Self, EvmTestError> {
-        Self::new_with_trie(spec, trie::TrieSpec::Secure)
-    }
-
     /// Creates new EVM test client with an in-memory DB initialized with given PodState.
     /// Takes a `TrieSpec` to set the type of trie.
     pub fn from_pod_state_with_trie(
@@ -176,35 +154,6 @@ impl<'a> EvmTestClient<'a> {
             trie: trie::TrieFactory::new(trie_spec),
             accountdb: Default::default(),
         }
-    }
-
-    fn state_from_spec(
-        spec: &'a spec::Spec,
-        factories: &Factories,
-    ) -> Result<state::State<state_db::StateDB>, EvmTestError> {
-        let db = Arc::new(ethcore_db::InMemory::create(
-            db::NUM_COLUMNS.expect("We use column-based DB; qed"),
-        ));
-        let journal_db =
-            journaldb::new(db.clone(), journaldb::Algorithm::EarlyMerge, db::COL_STATE);
-        let mut state_db = state_db::StateDB::new(journal_db, 5 * 1024 * 1024);
-        state_db = spec.ensure_db_good(state_db, factories)?;
-
-        let genesis = spec.genesis_header();
-        // Write DB
-        {
-            let mut batch = kvdb::DBTransaction::new();
-            state_db.journal_under(&mut batch, 0, &genesis.hash())?;
-            db.write(batch)?;
-        }
-
-        state::State::from_existing(
-            state_db,
-            *genesis.state_root(),
-            spec.engine.account_start_nonce(0),
-            factories.clone(),
-        )
-        .map_err(EvmTestError::Trie)
     }
 
     fn state_from_pod(

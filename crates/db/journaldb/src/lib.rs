@@ -150,13 +150,16 @@ pub fn new(
     backing: Arc<dyn ethcore_db::KeyValueDB>,
     algorithm: Algorithm,
     col: Option<u32>,
-) -> Box<dyn JournalDB> {
-    match algorithm {
+) -> Box<dyn KeyedHashDB> {
+	return Box::new(archivedb::ArchiveDB::new(backing, col));
+	/*
+	match algorithm {
         Algorithm::Archive => Box::new(archivedb::ArchiveDB::new(backing, col)),
         Algorithm::EarlyMerge => Box::new(earlymergedb::EarlyMergeDB::new(backing, col)),
         Algorithm::OverlayRecent => Box::new(overlayrecentdb::OverlayRecentDB::new(backing, col)),
         Algorithm::RefCounted => Box::new(refcounteddb::RefCountedDB::new(backing, col)),
     }
+	 */
 }
 
 // all keys must be at least 12 bytes

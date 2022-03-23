@@ -68,16 +68,13 @@ pub struct OpenBlock<'x> {
 /// and collected the uncles.
 ///
 /// There is no function available to push a transaction.
-#[derive(Clone)]
 pub struct ClosedBlock {
     block: ExecutedBlock,
-    unclosed_state: State<StateDB>,
 }
 
 /// Just like `ClosedBlock` except that we can't reopen it and it's faster.
 ///
 /// We actually store the post-`Engine::on_close_block` state, unlike in `ClosedBlock` where it's the pre.
-#[derive(Clone)]
 pub struct LockedBlock {
     block: ExecutedBlock,
 }
@@ -90,7 +87,6 @@ pub struct SealedBlock {
 }
 
 /// An internal type for a block's common elements.
-#[derive(Clone)]
 pub struct ExecutedBlock {
     /// Executed block header.
     pub header: Header,
@@ -344,12 +340,10 @@ impl<'x> OpenBlock<'x> {
 
     /// Turn this into a `ClosedBlock`.
     pub fn close(self) -> Result<ClosedBlock, Error> {
-        let unclosed_state = self.block.state.clone();
         let locked = self.close_and_lock()?;
 
         Ok(ClosedBlock {
             block: locked.block,
-            unclosed_state,
         })
     }
 
@@ -432,17 +426,6 @@ impl ClosedBlock {
     /// Turn this into a `LockedBlock`, unable to be reopened again.
     pub fn lock(self) -> LockedBlock {
         LockedBlock { block: self.block }
-    }
-
-    /// Given an engine reference, reopen the `ClosedBlock` into an `OpenBlock`.
-    pub fn reopen(self, engine: &dyn EthEngine) -> OpenBlock {
-        // revert rewards (i.e. set state back at last transaction's state).
-        let mut block = self.block;
-        block.state = self.unclosed_state;
-        OpenBlock {
-            block: block,
-            engine: engine,
-        }
     }
 }
 
@@ -532,18 +515,6 @@ pub(crate) fn enact(
     last_hashes: Arc<LastHashes>,
     factories: Factories,
 ) -> Result<LockedBlock, Error> {
-    // For trace log
-    let trace_state = if log_enabled!(target: "enact", ::log::Level::Trace) {
-        Some(State::from_existing(
-            db.boxed_clone(),
-            parent.state_root().clone(),
-            engine.account_start_nonce(parent.number() + 1),
-            factories.clone(),
-        )?)
-    } else {
-        None
-    };
-
     // t_nb 8.1 Created new OpenBlock
     let mut b = OpenBlock::new(
         engine,
@@ -558,12 +529,6 @@ pub(crate) fn enact(
         (3141562.into(), 31415620.into()),
         vec![],
     )?;
-
-    if let Some(ref s) = trace_state {
-        let author_balance = s.balance(&b.header.author())?;
-        trace!(target: "enact", "num={}, root={}, author={}, author_balance={}\n",
-				b.block.header.number(), s.root(), b.header.author(), author_balance);
-    }
 
     // t_nb 8.2 transfer all field from current header to OpenBlock header that we created
     b.populate_from(&header);
@@ -636,19 +601,6 @@ mod tests {
             .map(|r| r.map_err(Into::into))
             .collect();
         let transactions = transactions?;
-
-        {
-            if ::log::max_level() >= ::log::Level::Trace {
-                let s = State::from_existing(
-                    db.boxed_clone(),
-                    parent.state_root().clone(),
-                    engine.account_start_nonce(parent.number() + 1),
-                    factories.clone(),
-                )?;
-                trace!(target: "enact", "num={}, root={}, author={}, author_balance={}\n",
-					header.number(), s.root(), header.author(), s.balance(&header.author())?);
-            }
-        }
 
         let mut b = OpenBlock::new(
             engine,

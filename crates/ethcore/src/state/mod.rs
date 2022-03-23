@@ -130,16 +130,6 @@ impl AccountEntry {
 
     /// Clone dirty data into new `AccountEntry`. This includes
     /// basic account data and modified storage keys.
-    /// Returns None if clean.
-    fn clone_if_dirty(&self) -> Option<AccountEntry> {
-        match self.is_dirty() {
-            true => Some(self.clone_dirty()),
-            false => None,
-        }
-    }
-
-    /// Clone dirty data into new `AccountEntry`. This includes
-    /// basic account data and modified storage keys.
     fn clone_dirty(&self) -> AccountEntry {
         AccountEntry {
             old_balance: self.old_balance,
@@ -1545,31 +1535,6 @@ impl State<StateDB> {
     }
 }
 
-// TODO: cloning for `State` shouldn't be possible in general; Remove this and use
-// checkpoints where possible.
-impl Clone for State<StateDB> {
-    fn clone(&self) -> State<StateDB> {
-        let cache = {
-            let mut cache: HashMap<Address, AccountEntry> = HashMap::new();
-            for (key, val) in self.cache.borrow().iter() {
-                if let Some(entry) = val.clone_if_dirty() {
-                    cache.insert(key.clone(), entry);
-                }
-            }
-            cache
-        };
-
-        State {
-            db: self.db.boxed_clone(),
-            root: self.root.clone(),
-            cache: RefCell::new(cache),
-            checkpoints: RefCell::new(Vec::new()),
-            account_start_nonce: self.account_start_nonce.clone(),
-            factories: self.factories.clone(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1641,24 +1606,6 @@ mod tests {
         }];
 
         assert_eq!(result.trace, expected_trace);
-    }
-
-    #[test]
-    fn should_work_when_cloned() {
-        let _ = env_logger::try_init();
-
-        let a = Address::zero();
-
-        let mut state = {
-            let mut state = get_temp_state();
-            assert_eq!(state.exists(&a).unwrap(), false);
-            state.inc_nonce(&a).unwrap();
-            state.commit().unwrap();
-            state.clone()
-        };
-
-        state.inc_nonce(&a).unwrap();
-        state.commit().unwrap();
     }
 
     #[test]
@@ -3268,27 +3215,6 @@ mod tests {
     }
 
     #[test]
-    fn should_not_panic_on_state_diff_with_storage() {
-        let mut state = get_temp_state();
-
-        let a: Address = Address::from_low_u64_be(0xa);
-        state.init_code(&a, b"abcdefg".to_vec()).unwrap();
-        state
-            .add_balance(&a, &256.into(), CleanupMode::NoEmpty)
-            .unwrap();
-        state
-            .set_storage(&a, H256::from_low_u64_be(0xb), H256::from_low_u64_be(0xc))
-            .unwrap();
-
-        let mut new_state = state.clone();
-        new_state
-            .set_storage(&a, H256::from_low_u64_be(0xb), H256::from_low_u64_be(0xd))
-            .unwrap();
-
-        new_state.diff_from(state).unwrap();
-    }
-
-    #[test]
     fn should_kill_garbage() {
         let a = Address::from_low_u64_be(10);
         let b = Address::from_low_u64_be(20);
@@ -3352,110 +3278,6 @@ mod tests {
         assert!(state.exists(&c).unwrap());
         assert!(state.exists(&d).unwrap());
         assert!(!state.exists(&e).unwrap());
-    }
-
-    #[test]
-    fn should_trace_diff_suicided_accounts() {
-        use pod_account;
-
-        let a = Address::from_low_u64_be(10);
-        let db = get_temp_state_db();
-        let (root, db) = {
-            let mut state = State::new(db, U256::from(0), Default::default());
-            state
-                .add_balance(&a, &100.into(), CleanupMode::ForceCreate)
-                .unwrap();
-            state.commit().unwrap();
-            state.drop()
-        };
-
-        let mut state =
-            State::from_existing(db, root, U256::from(0u8), Default::default()).unwrap();
-        let original = state.clone();
-        state.kill_account(&a);
-
-        let diff = state.diff_from(original).unwrap();
-        let diff_map = diff.get();
-        assert_eq!(diff_map.len(), 1);
-        assert!(diff_map.get(&a).is_some());
-        assert_eq!(
-            diff_map.get(&a),
-            pod_account::diff_pod(
-                Some(&PodAccount {
-                    balance: U256::from(100),
-                    nonce: U256::zero(),
-                    code: Some(Default::default()),
-                    storage: Default::default()
-                }),
-                None
-            )
-            .as_ref()
-        );
-    }
-
-    #[test]
-    fn should_trace_diff_unmodified_storage() {
-        use pod_account;
-
-        let a = Address::from_low_u64_be(10);
-        let db = get_temp_state_db();
-
-        let (root, db) = {
-            let mut state = State::new(db, U256::from(0), Default::default());
-            state
-                .set_storage(
-                    &a,
-                    BigEndianHash::from_uint(&U256::from(1u64)),
-                    BigEndianHash::from_uint(&U256::from(20u64)),
-                )
-                .unwrap();
-            state.commit().unwrap();
-            state.drop()
-        };
-
-        let mut state =
-            State::from_existing(db, root, U256::from(0u8), Default::default()).unwrap();
-        let original = state.clone();
-        state
-            .set_storage(
-                &a,
-                BigEndianHash::from_uint(&U256::from(1u64)),
-                BigEndianHash::from_uint(&U256::from(100u64)),
-            )
-            .unwrap();
-
-        let diff = state.diff_from(original).unwrap();
-        let diff_map = diff.get();
-        assert_eq!(diff_map.len(), 1);
-        assert!(diff_map.get(&a).is_some());
-        assert_eq!(
-            diff_map.get(&a),
-            pod_account::diff_pod(
-                Some(&PodAccount {
-                    balance: U256::zero(),
-                    nonce: U256::zero(),
-                    code: Some(Default::default()),
-                    storage: vec![(
-                        BigEndianHash::from_uint(&U256::from(1u64)),
-                        BigEndianHash::from_uint(&U256::from(20u64))
-                    )]
-                    .into_iter()
-                    .collect(),
-                }),
-                Some(&PodAccount {
-                    balance: U256::zero(),
-                    nonce: U256::zero(),
-                    code: Some(Default::default()),
-                    storage: vec![(
-                        BigEndianHash::from_uint(&U256::from(1u64)),
-                        BigEndianHash::from_uint(&U256::from(100u64))
-                    )]
-                    .into_iter()
-                    .collect(),
-                })
-            )
-            .as_ref()
-        );
     }
 
     #[cfg(feature = "to-pod-full")]

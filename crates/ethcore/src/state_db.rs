@@ -18,23 +18,19 @@
 
 use std::{
     collections::{HashSet, VecDeque},
-    io,
     sync::Arc,
 };
 
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
-use journaldb::JournalDB;
+use journaldb::{KeyedHashDB};
 use keccak_hasher::KeccakHasher;
-use kvdb::{DBTransaction, DBValue};
+use kvdb::{DBValue};
 use lru_cache::LruCache;
 use memory_cache::MemoryLruCache;
 use parking_lot::Mutex;
-use types::BlockNumber;
 
 use state::{self, Account};
-
-const STATE_CACHE_BLOCKS: usize = 12;
 
 // The percentage of supplied cache size to go to accounts.
 const ACCOUNT_CACHE_RATIO: usize = 90;
@@ -50,22 +46,8 @@ struct AccountCache {
     modifications: VecDeque<BlockChanges>,
 }
 
-/// Buffered account cache item.
-struct CacheQueueItem {
-    /// Account address.
-    address: Address,
-    /// Acccount data or `None` if account does not exist.
-    account: SyncAccount,
-    /// Indicates that the account was modified before being
-    /// added to the cache.
-    modified: bool,
-}
-
-#[derive(Debug)]
 /// Accumulates a list of accounts changed in a block.
 struct BlockChanges {
-    /// Block number.
-    number: BlockNumber,
     /// Block hash.
     hash: H256,
     /// Parent block hash.
@@ -92,21 +74,15 @@ struct BlockChanges {
 /// `StateDB` is propagated into the global cache.
 pub struct StateDB {
     /// Backing database.
-    db: Box<dyn JournalDB>,
+    db: Box<dyn KeyedHashDB>,
     /// Shared canonical state cache.
     account_cache: Arc<Mutex<AccountCache>>,
     /// DB Code cache. Maps code hashes to shared bytes.
     code_cache: Arc<Mutex<MemoryLruCache<H256, Arc<Vec<u8>>>>>,
-    /// Local dirty cache.
-    local_cache: Vec<CacheQueueItem>,
     cache_size: usize,
     /// Hash of the block on top of which this instance was created or
     /// `None` if cache is disabled
     parent_hash: Option<H256>,
-    /// Hash of the committing block or `None` if not committed yet.
-    commit_hash: Option<H256>,
-    /// Number of the committing block or `None` if not committed yet.
-    commit_number: Option<BlockNumber>,
 }
 
 impl StateDB {
@@ -114,7 +90,7 @@ impl StateDB {
     /// of the LRU cache in bytes. Actual used memory may (read: will) be higher due to bookkeeping.
     // TODO: make the cache size actually accurate by moving the account storage cache
     // into the `AccountCache` structure as its own `LruCache<(Address, H256), H256>`.
-    pub fn new(db: Box<dyn JournalDB>, cache_size: usize) -> StateDB {
+    pub fn new(db: Box<dyn KeyedHashDB>, cache_size: usize) -> StateDB {
         let acc_cache_size = cache_size * ACCOUNT_CACHE_RATIO / 100;
         let code_cache_size = cache_size - acc_cache_size;
         let cache_items = acc_cache_size / ::std::mem::size_of::<Option<Account>>();
@@ -126,151 +102,8 @@ impl StateDB {
                 modifications: VecDeque::new(),
             })),
             code_cache: Arc::new(Mutex::new(MemoryLruCache::new(code_cache_size))),
-            local_cache: Vec::new(),
             cache_size: cache_size,
             parent_hash: None,
-            commit_hash: None,
-            commit_number: None,
-        }
-    }
-
-    /// Journal all recent operations under the given era and ID.
-    pub fn journal_under(
-        &mut self,
-        batch: &mut DBTransaction,
-        now: u64,
-        id: &H256,
-    ) -> io::Result<u32> {
-        let records = self.db.journal_under(batch, now, id)?;
-        self.commit_hash = Some(id.clone());
-        self.commit_number = Some(now);
-        Ok(records)
-    }
-
-    // t_nb 9.15
-    /// Mark a given candidate from an ancient era as canonical, enacting its removals from the
-    /// backing database and reverting any non-canonical historical commit's insertions.
-    pub fn mark_canonical(
-        &mut self,
-        batch: &mut DBTransaction,
-        end_era: u64,
-        canon_id: &H256,
-    ) -> io::Result<u32> {
-        self.db.mark_canonical(batch, end_era, canon_id)
-    }
-
-    // t_nb 9.10 Propagate local cache into the global cache and synchonize
-    /// the global cache with the best block state.
-    /// This function updates the global cache by removing entries
-    /// that are invalidated by chain reorganization. `sync_cache`
-    /// should be called after the block has been committed and the
-    /// blockchain route has ben calculated.
-    pub fn sync_cache(&mut self, enacted: &[H256], retracted: &[H256], is_best: bool) {
-        trace!(
-            "sync_cache id = (#{:?}, {:?}), parent={:?}, best={}",
-            self.commit_number,
-            self.commit_hash,
-            self.parent_hash,
-            is_best
-        );
-        let mut cache = self.account_cache.lock();
-        let cache = &mut *cache;
-
-        // Purge changes from re-enacted and retracted blocks.
-        // Filter out commiting block if any.
-        let mut clear = false;
-        for block in enacted
-            .iter()
-            .filter(|h| self.commit_hash.as_ref().map_or(true, |p| *h != p))
-        {
-            clear = clear || {
-                if let Some(ref mut m) = cache.modifications.iter_mut().find(|m| &m.hash == block) {
-                    trace!("Reverting enacted block {:?}", block);
-                    m.is_canon = true;
-                    for a in &m.accounts {
-                        trace!("Reverting enacted address {:?}", a);
-                        cache.accounts.remove(a);
-                    }
-                    false
-                } else {
-                    true
-                }
-            };
-        }
-
-        for block in retracted {
-            clear = clear || {
-                if let Some(ref mut m) = cache.modifications.iter_mut().find(|m| &m.hash == block) {
-                    trace!("Retracting block {:?}", block);
-                    m.is_canon = false;
-                    for a in &m.accounts {
-                        trace!("Retracted address {:?}", a);
-                        cache.accounts.remove(a);
-                    }
-                    false
-                } else {
-                    true
-                }
-            };
-        }
-        if clear {
-            // We don't know anything about the block; clear everything
-            trace!("Wiping cache");
-            cache.accounts.clear();
-            cache.modifications.clear();
-        }
-
-        // Propagate cache only if committing on top of the latest canonical state
-        // blocks are ordered by number and only one block with a given number is marked as canonical
-        // (contributed to canonical state cache)
-        if let (Some(ref number), Some(ref hash), Some(ref parent)) =
-            (self.commit_number, self.commit_hash, self.parent_hash)
-        {
-            if cache.modifications.len() == STATE_CACHE_BLOCKS {
-                cache.modifications.pop_back();
-            }
-            let mut modifications = HashSet::new();
-            trace!("committing {} cache entries", self.local_cache.len());
-            for account in self.local_cache.drain(..) {
-                if account.modified {
-                    modifications.insert(account.address.clone());
-                }
-                if is_best {
-                    let acc = account.account.0;
-                    if let Some(&mut Some(ref mut existing)) =
-                        cache.accounts.get_mut(&account.address)
-                    {
-                        if let Some(new) = acc {
-                            if account.modified {
-                                existing.overwrite_with(new);
-                            }
-                            continue;
-                        }
-                    }
-                    cache.accounts.insert(account.address, acc);
-                }
-            }
-
-            // Save modified accounts. These are ordered by the block number.
-            let block_changes = BlockChanges {
-                accounts: modifications,
-                number: *number,
-                hash: hash.clone(),
-                is_canon: is_best,
-                parent: parent.clone(),
-            };
-            let insert_at = cache
-                .modifications
-                .iter()
-                .enumerate()
-                .find(|&(_, m)| m.number < *number)
-                .map(|(i, _)| i);
-            trace!("inserting modifications at {:?}", insert_at);
-            if let Some(insert_at) = insert_at {
-                cache.modifications.insert(insert_at, block_changes);
-            } else {
-                cache.modifications.push_back(block_changes);
-            }
         }
     }
 
@@ -284,41 +117,8 @@ impl StateDB {
         self.db.as_hash_db_mut()
     }
 
-    /// Clone the database.
-    pub fn boxed_clone(&self) -> StateDB {
-        StateDB {
-            db: self.db.boxed_clone(),
-            account_cache: self.account_cache.clone(),
-            code_cache: self.code_cache.clone(),
-            local_cache: Vec::new(),
-            cache_size: self.cache_size,
-            parent_hash: None,
-            commit_hash: None,
-            commit_number: None,
-        }
-    }
-
-    /// Clone the database for a canonical state.
-    pub fn boxed_clone_canon(&self, parent: &H256) -> StateDB {
-        StateDB {
-            db: self.db.boxed_clone(),
-            account_cache: self.account_cache.clone(),
-            code_cache: self.code_cache.clone(),
-            local_cache: Vec::new(),
-            cache_size: self.cache_size,
-            parent_hash: Some(parent.clone()),
-            commit_hash: None,
-            commit_number: None,
-        }
-    }
-
-    /// Check if pruning is enabled on the database.
-    pub fn is_pruned(&self) -> bool {
-        self.db.is_pruned()
-    }
-
     /// Returns underlying `JournalDB`.
-    pub fn journal_db(&self) -> &dyn JournalDB {
+    pub fn journal_db(&self) -> &dyn KeyedHashDB {
         &*self.db
     }
 
@@ -375,13 +175,7 @@ impl state::Backend for StateDB {
         self.db.as_hash_db_mut()
     }
 
-    fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) {
-        self.local_cache.push(CacheQueueItem {
-            address: addr,
-            account: SyncAccount(data),
-            modified: modified,
-        })
-    }
+    fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) { }
 
     fn cache_code(&self, hash: H256, code: Arc<Vec<u8>>) {
         let mut cache = self.code_cache.lock();
@@ -428,85 +222,3 @@ struct SyncAccount(Option<Account>);
 /// We only need `Sync` here to allow `StateDb` to be kept in a `RwLock`.
 /// `Account` is `!Sync` by default because of `RefCell`s inside it.
 unsafe impl Sync for SyncAccount {}
-
-#[cfg(test)]
-mod tests {
-    use ethereum_types::{Address, H256, U256};
-    use kvdb::DBTransaction;
-    use state::{Account, Backend};
-    use test_helpers::get_temp_state_db;
-
-    #[test]
-    fn state_db_smoke() {
-        let _ = ::env_logger::try_init();
-
-        let state_db = get_temp_state_db();
-        let root_parent = H256::random();
-        let address = Address::random();
-        let h0 = H256::random();
-        let h1a = H256::random();
-        let h1b = H256::random();
-        let h2a = H256::random();
-        let h2b = H256::random();
-        let h3a = H256::random();
-        let h3b = H256::random();
-        let mut batch = DBTransaction::new();
-
-        // blocks  [ 3a(c) 2a(c) 2b 1b 1a(c) 0 ]
-        // balance [ 5     5     4  3  2     2 ]
-        let mut s = state_db.boxed_clone_canon(&root_parent);
-        s.add_to_account_cache(address, Some(Account::new_basic(2.into(), 0.into())), false);
-        s.journal_under(&mut batch, 0, &h0).unwrap();
-        s.sync_cache(&[], &[], true);
-
-        let mut s = state_db.boxed_clone_canon(&h0);
-        s.journal_under(&mut batch, 1, &h1a).unwrap();
-        s.sync_cache(&[], &[], true);
-
-        let mut s = state_db.boxed_clone_canon(&h0);
-        s.add_to_account_cache(address, Some(Account::new_basic(3.into(), 0.into())), true);
-        s.journal_under(&mut batch, 1, &h1b).unwrap();
-        s.sync_cache(&[], &[], false);
-
-        let mut s = state_db.boxed_clone_canon(&h1b);
-        s.add_to_account_cache(address, Some(Account::new_basic(4.into(), 0.into())), true);
-        s.journal_under(&mut batch, 2, &h2b).unwrap();
-        s.sync_cache(&[], &[], false);
-
-        let mut s = state_db.boxed_clone_canon(&h1a);
-        s.add_to_account_cache(address, Some(Account::new_basic(5.into(), 0.into())), true);
-        s.journal_under(&mut batch, 2, &h2a).unwrap();
-        s.sync_cache(&[], &[], true);
-
-        let mut s = state_db.boxed_clone_canon(&h2a);
-        s.journal_under(&mut batch, 3, &h3a).unwrap();
-        s.sync_cache(&[], &[], true);
-
-        let s = state_db.boxed_clone_canon(&h3a);
-        assert_eq!(
-            s.get_cached_account(&address).unwrap().unwrap().balance(),
-            &U256::from(5)
-        );
-
-        let s = state_db.boxed_clone_canon(&h1a);
-        assert!(s.get_cached_account(&address).is_none());
-
-        let s = state_db.boxed_clone_canon(&h2b);
-        assert!(s.get_cached_account(&address).is_none());
-
-        let s = state_db.boxed_clone_canon(&h1b);
-        assert!(s.get_cached_account(&address).is_none());
-
-        // reorg to 3b
-        // blocks  [ 3b(c) 3a 2a 2b(c) 1b 1a 0 ]
-        let mut s = state_db.boxed_clone_canon(&h2b);
-        s.journal_under(&mut batch, 3, &h3b).unwrap();
-        s.sync_cache(
-            &[h1b.clone(), h2b.clone(), h3b.clone()],
-            &[h1a.clone(), h2a.clone(), h3a.clone()],
-            true,
-        );
-        let s = state_db.boxed_clone_canon(&h3a);
-        assert!(s.get_cached_account(&address).is_none());
-    }
-}

@@ -28,7 +28,7 @@ use std::{
 
 use ethereum_types::{Address, H256};
 use hash_db::{AsHashDB, HashDB};
-use journaldb::AsKeyedHashDB;
+use journaldb::{AsKeyedHashDB};
 use keccak_hasher::KeccakHasher;
 use kvdb::DBValue;
 use memory_db::MemoryDB;

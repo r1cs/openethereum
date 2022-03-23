@@ -1,3 +1,4 @@
+use std::cell::{RefCell};
 use std::sync::Arc;
 use bytes::Bytes;
 use ethereum_types::{Address, U256};
@@ -17,7 +18,7 @@ use vm::LastHashes;
 /// Riscv evm execution env.
 pub struct RiscvEnv {
 	engine: Arc<dyn EthEngine>,
-	state_db: StateDB,
+	state_db: RefCell<Option<StateDB>>,
 	last_hashes: Arc<LastHashes>,
 	factories: Factories,
 	parent_block_header: Header,
@@ -47,7 +48,7 @@ impl RiscvEnv {
 
 		Ok(RiscvEnv {
 			engine,
-			state_db,
+			state_db: RefCell::new(Some(state_db)),
 			last_hashes,
 			factories,
 			parent_block_header,
@@ -63,13 +64,11 @@ impl PrepareOpenBlock for RiscvEnv {
 		extra_data: Bytes,
 	) -> Result<OpenBlock, Error> {
 		let engine = &*self.engine;
-		let h = self.parent_block_header.hash();
-
 		let open_block = OpenBlock::new(
 			engine,
 			self.factories.clone(),
 			false,
-			self.state_db.boxed_clone_canon(&h),
+			self.state_db.borrow_mut().take().unwrap(),
 			&self.parent_block_header,
 			self.last_hashes.clone(),
 			author,
