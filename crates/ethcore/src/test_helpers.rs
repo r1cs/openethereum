@@ -18,52 +18,12 @@
 
 use std::sync::Arc;
 
-use blockchain::BlockChainDB;
-use blooms_db;
-use db::KeyValueDB;
 use ethereum_types::U256;
 use evm::Factory as EvmFactory;
-use tempdir::TempDir;
 
 use factory::Factories;
 use state::*;
 use state_db::StateDB;
-
-struct TestBlockChainDB {
-    blooms: blooms_db::Database,
-    trace_blooms: blooms_db::Database,
-    key_value: Arc<dyn KeyValueDB>,
-}
-
-impl BlockChainDB for TestBlockChainDB {
-    fn key_value(&self) -> &Arc<dyn KeyValueDB> {
-        &self.key_value
-    }
-
-    fn blooms(&self) -> &blooms_db::Database {
-        &self.blooms
-    }
-
-    fn trace_blooms(&self) -> &blooms_db::Database {
-        &self.trace_blooms
-    }
-}
-
-/// Creates new test instance of `BlockChainDB`
-pub fn new_db() -> Arc<dyn BlockChainDB> {
-    let blooms_dir = TempDir::new("").unwrap();
-    let trace_blooms_dir = TempDir::new("").unwrap();
-
-    let db = TestBlockChainDB {
-        blooms: blooms_db::Database::open(blooms_dir.path()).unwrap(),
-        trace_blooms: blooms_db::Database::open(trace_blooms_dir.path()).unwrap(),
-        key_value: Arc::new(ethcore_db::InMemory::create(
-            ::db::NUM_COLUMNS.unwrap(),
-        )),
-    };
-
-    Arc::new(db)
-}
 
 /// Returns temp state
 pub fn get_temp_state() -> State<::state_db::StateDB> {
@@ -81,9 +41,11 @@ pub fn get_temp_state_with_factory(factory: EvmFactory) -> State<::state_db::Sta
 
 /// Returns temp state db
 pub fn get_temp_state_db() -> StateDB {
-    let db = new_db();
-    let journal_db = ::journaldb::new(
-        db.key_value().clone(),
+	let key_value = Arc::new(ethcore_db::InMemory::create(
+		::db::NUM_COLUMNS.unwrap(),
+	));
+	let journal_db = ::journaldb::new(
+        key_value,
         ::journaldb::Algorithm::EarlyMerge,
         ::db::COL_STATE,
     );

@@ -688,7 +688,6 @@ name = "ethcore"
 version = "1.12.0"
 dependencies = [
  "ansi_term 0.10.2",
- "blooms-db",
  "common-types",
  "criterion 0.2.11",
  "crossbeam-channel",
