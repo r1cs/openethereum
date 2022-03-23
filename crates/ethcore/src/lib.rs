@@ -20,7 +20,6 @@
 
 extern crate common_types as types;
 extern crate ethash;
-extern crate ethcore_blockchain as blockchain;
 extern crate ethcore_builtin as builtin;
 extern crate ethcore_db as db;
 extern crate ethereum_types;

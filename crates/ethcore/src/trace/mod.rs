@@ -17,7 +17,6 @@
 //! Tracing
 
 mod config;
-mod db;
 mod executive_tracer;
 mod import;
 mod noop_tracer;
@@ -25,7 +24,6 @@ mod types;
 
 pub use self::{
     config::Config,
-    db::TraceDB,
     executive_tracer::{ExecutiveTracer, ExecutiveVMTracer},
     import::ImportRequest,
     localized::LocalizedTrace,
