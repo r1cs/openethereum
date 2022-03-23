@@ -73,12 +73,7 @@ struct BlockChanges {
 /// `StateDB` is propagated into the global cache.
 pub struct StateDB {
     /// Backing database.
-    db: Box<dyn HashDB<KeccakHasher, DBValue>>,
-    /// Shared canonical state cache.
-    account_cache: Arc<Mutex<AccountCache>>,
-    /// DB Code cache. Maps code hashes to shared bytes.
-    code_cache: Arc<Mutex<MemoryLruCache<H256, Arc<Vec<u8>>>>>,
-    cache_size: usize,
+	db: Box<dyn HashDB<KeccakHasher, DBValue>>,
     /// Hash of the block on top of which this instance was created or
     /// `None` if cache is disabled
     parent_hash: Option<H256>,
@@ -96,12 +91,6 @@ impl StateDB {
 
         StateDB {
             db: db,
-            account_cache: Arc::new(Mutex::new(AccountCache {
-                accounts: LruCache::new(cache_items),
-                modifications: VecDeque::new(),
-            })),
-            code_cache: Arc::new(Mutex::new(MemoryLruCache::new(code_cache_size))),
-            cache_size: cache_size,
             parent_hash: None,
         }
     }
@@ -119,11 +108,6 @@ impl StateDB {
     /// Returns underlying `JournalDB`.
     pub fn journal_db(&self) -> &dyn HashDB<KeccakHasher, DBValue> {
         &*self.db
-    }
-
-    /// Query how much memory is set aside for the accounts cache (in bytes).
-    pub fn cache_size(&self) -> usize {
-        self.cache_size
     }
 
     /// Check if the account can be returned from cache by matching current block parent hash against canonical
@@ -174,44 +158,27 @@ impl state::Backend for StateDB {
         self.db.as_hash_db_mut()
     }
 
-    fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) { }
+    fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) {
+        return
+    }
 
     fn cache_code(&self, hash: H256, code: Arc<Vec<u8>>) {
-        let mut cache = self.code_cache.lock();
-
-        cache.insert(hash, code);
+       return
     }
 
     fn get_cached_account(&self, addr: &Address) -> Option<Option<Account>> {
-        self.parent_hash.as_ref().and_then(|parent_hash| {
-            let mut cache = self.account_cache.lock();
-            if !Self::is_allowed(addr, parent_hash, &cache.modifications) {
-                return None;
-            }
-            cache
-                .accounts
-                .get_mut(addr)
-                .map(|a| a.as_ref().map(|a| a.clone_basic()))
-        })
+       None
     }
 
     fn get_cached<F, U>(&self, a: &Address, f: F) -> Option<U>
     where
         F: FnOnce(Option<&mut Account>) -> U,
     {
-        self.parent_hash.as_ref().and_then(|parent_hash| {
-            let mut cache = self.account_cache.lock();
-            if !Self::is_allowed(a, parent_hash, &cache.modifications) {
-                return None;
-            }
-            cache.accounts.get_mut(a).map(|c| f(c.as_mut()))
-        })
+       None
     }
 
     fn get_cached_code(&self, hash: &H256) -> Option<Arc<Vec<u8>>> {
-        let mut cache = self.code_cache.lock();
-
-        cache.get_mut(hash).map(|code| code.clone())
+        None
     }
 }
 
