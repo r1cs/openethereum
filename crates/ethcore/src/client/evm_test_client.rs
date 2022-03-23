@@ -17,13 +17,11 @@
 //! Simple Client used for EVM tests.
 
 use client;
-use db;
 use ethereum_types::{H160, H256, U256};
 use ethtrie;
 use evm::{FinalizationResult, VMType};
 use executive;
 use factory::{self, Factories};
-use journaldb;
 use pod_state;
 use spec;
 use state;
@@ -161,12 +159,8 @@ impl<'a> EvmTestClient<'a> {
         factories: &Factories,
         pod_state: pod_state::PodState,
     ) -> Result<state::State<state_db::StateDB>, EvmTestError> {
-        let db = Arc::new(ethcore_db::InMemory::create(
-            db::NUM_COLUMNS.expect("We use column-based DB; qed"),
-        ));
-        let journal_db =
-            journaldb::new(db.clone(), journaldb::Algorithm::EarlyMerge, db::COL_STATE);
-        let state_db = state_db::StateDB::new(journal_db, 5 * 1024 * 1024);
+		let hashdb = Box::new(memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into()));
+        let state_db = state_db::StateDB::new(hashdb, 5 * 1024 * 1024);
         let mut state = state::State::new(
             state_db,
             spec.engine.account_start_nonce(0),

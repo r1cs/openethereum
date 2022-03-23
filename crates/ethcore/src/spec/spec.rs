@@ -39,10 +39,12 @@ use executive::Executive;
 use factory::Factories;
 use machine::EthereumMachine;
 use maplit::btreeset;
+use keccak_hasher::KeccakHasher;
 use pod_state::PodState;
 use spec::{seal::Generic as GenericSeal, Genesis};
 use state::{backend::Basic as BasicBackend, Backend, State, Substate};
 use trace::{NoopTracer, NoopVMTracer};
+use trie::DBValue;
 
 const MAX_TRANSACTION_SIZE: usize = 300 * 1024;
 
@@ -567,7 +569,7 @@ fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
         None => {
             let _ = s.run_constructors(
                 &Default::default(),
-                BasicBackend(journaldb::new_memory_db()),
+                BasicBackend(new_memory_db()),
             )?;
         }
     }
@@ -588,6 +590,10 @@ macro_rules! load_machine_bundled {
         Spec::load_machine(include_bytes!(concat!("../../res/chainspec/", $e, ".json")) as &[u8])
             .expect(concat!("Chain spec ", $e, " is invalid."))
     };
+}
+
+fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
+	memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
 }
 
 impl Spec {
@@ -879,7 +885,7 @@ impl Spec {
         self.genesis_state = s;
         let _ = self.run_constructors(
             &Default::default(),
-            BasicBackend(journaldb::new_memory_db()),
+            BasicBackend(new_memory_db()),
         )?;
 
         Ok(())

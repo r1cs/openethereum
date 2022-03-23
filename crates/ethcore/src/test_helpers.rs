@@ -16,8 +16,6 @@
 
 //! Set of different helpers for client tests
 
-use std::sync::Arc;
-
 use ethereum_types::U256;
 use evm::Factory as EvmFactory;
 
@@ -41,13 +39,6 @@ pub fn get_temp_state_with_factory(factory: EvmFactory) -> State<::state_db::Sta
 
 /// Returns temp state db
 pub fn get_temp_state_db() -> StateDB {
-	let key_value = Arc::new(ethcore_db::InMemory::create(
-		::db::NUM_COLUMNS.unwrap(),
-	));
-	let journal_db = ::journaldb::new(
-        key_value,
-        ::journaldb::Algorithm::EarlyMerge,
-        ::db::COL_STATE,
-    );
-    StateDB::new(journal_db, 5 * 1024 * 1024)
+	let hashdb = Box::new(memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into()));
+	StateDB::new(hashdb, 5 * 1024 * 1024)
 }

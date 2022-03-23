@@ -42,7 +42,6 @@ pub use self::types::{
 };
 
 use ethereum_types::{Address, H256, U256};
-use kvdb::DBTransaction;
 use types::BlockNumber;
 use vm::{ActionParams, Error as VmError};
 
@@ -123,34 +122,4 @@ pub trait DatabaseExtras {
 
     /// Returns hash of transaction at given position.
     fn transaction_hash(&self, block_number: BlockNumber, tx_position: usize) -> Option<H256>;
-}
-
-/// Db provides an interface to query tracesdb.
-pub trait Database {
-    /// Returns true if tracing is enabled. Otherwise false.
-    fn tracing_enabled(&self) -> bool;
-
-    /// Imports new block traces.
-    fn import(&self, batch: &mut DBTransaction, request: ImportRequest);
-
-    /// Returns localized trace at given position.
-    fn trace(
-        &self,
-        block_number: BlockNumber,
-        tx_position: usize,
-        trace_position: Vec<usize>,
-    ) -> Option<LocalizedTrace>;
-
-    /// Returns localized traces created by a single transaction.
-    fn transaction_traces(
-        &self,
-        block_number: BlockNumber,
-        tx_position: usize,
-    ) -> Option<Vec<LocalizedTrace>>;
-
-    /// Returns localized traces created in given block.
-    fn block_traces(&self, block_number: BlockNumber) -> Option<Vec<LocalizedTrace>>;
-
-    /// Filter traces matching given filter.
-    fn filter(&self, filter: &Filter) -> Vec<LocalizedTrace>;
 }

@@ -24,7 +24,7 @@ use hash::keccak;
 use hash_db::HashDB;
 use itertools::Itertools;
 use keccak_hasher::KeccakHasher;
-use kvdb::DBValue;
+use trie::DBValue;
 use rlp::{self, RlpStream};
 use rustc_hex::ToHex;
 use serde::Serializer;

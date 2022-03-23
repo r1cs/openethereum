@@ -701,7 +701,6 @@ mod tests {
         .seal(engine, vec![])
         .unwrap();
         let orig_bytes = b.rlp_bytes();
-        let orig_db = b.drain().state.drop().1;
 
         let db = spec
             .ensure_db_good(get_temp_state_db(), &Default::default())
@@ -718,18 +717,6 @@ mod tests {
         .unwrap();
 
         assert_eq!(e.rlp_bytes(), orig_bytes);
-
-        let db = e.drain().state.drop().1;
-        assert_eq!(orig_db.journal_db().keys(), db.journal_db().keys());
-        assert!(
-            orig_db
-                .journal_db()
-                .keys()
-                .iter()
-                .filter(|k| orig_db.journal_db().get(k.0) != db.journal_db().get(k.0))
-                .next()
-                == None
-        );
     }
 
     #[test]
@@ -768,7 +755,6 @@ mod tests {
             .unwrap();
 
         let orig_bytes = b.rlp_bytes();
-        let orig_db = b.drain().state.drop().1;
 
         let db = spec
             .ensure_db_good(get_temp_state_db(), &Default::default())
@@ -788,17 +774,5 @@ mod tests {
         assert_eq!(bytes, orig_bytes);
         let uncles = view!(BlockView, &bytes).uncles(engine.params().eip1559_transition);
         assert_eq!(uncles[1].extra_data(), b"uncle2");
-
-        let db = e.drain().state.drop().1;
-        assert_eq!(orig_db.journal_db().keys(), db.journal_db().keys());
-        assert!(
-            orig_db
-                .journal_db()
-                .keys()
-                .iter()
-                .filter(|k| orig_db.journal_db().get(k.0) != db.journal_db().get(k.0))
-                .next()
-                == None
-        );
     }
 }

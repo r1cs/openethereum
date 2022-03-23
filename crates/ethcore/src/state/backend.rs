@@ -22,18 +22,17 @@
 //! merkle trie is strictly necessary.
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashSet},
     sync::Arc,
 };
 
 use ethereum_types::{Address, H256};
 use hash_db::{AsHashDB, HashDB};
-use journaldb::{AsKeyedHashDB};
 use keccak_hasher::KeccakHasher;
-use kvdb::DBValue;
 use memory_db::MemoryDB;
 use parking_lot::Mutex;
 use state::Account;
+use trie::DBValue;
 
 /// State backend. See module docs for more details.
 pub trait Backend: Send {
@@ -79,17 +78,11 @@ pub struct ProofCheck(MemoryDB<KeccakHasher, DBValue>);
 impl ProofCheck {
     /// Create a new `ProofCheck` backend from the given state items.
     pub fn new(proof: &[DBValue]) -> Self {
-        let mut db = journaldb::new_memory_db();
+        let mut db = super::new_memory_db();
         for item in proof {
             db.insert(item);
         }
         ProofCheck(db)
-    }
-}
-
-impl journaldb::KeyedHashDB for ProofCheck {
-    fn keys(&self) -> HashMap<H256, i32> {
-        self.0.keys()
     }
 }
 
@@ -156,12 +149,6 @@ pub struct Proving<H> {
     proof: Mutex<HashSet<DBValue>>,
 }
 
-impl<AH: AsKeyedHashDB + Send + Sync> AsKeyedHashDB for Proving<AH> {
-    fn as_keyed_hash_db(&self) -> &dyn journaldb::KeyedHashDB {
-        self
-    }
-}
-
 impl<AH: AsHashDB<KeccakHasher, DBValue> + Send + Sync> AsHashDB<KeccakHasher, DBValue>
     for Proving<AH>
 {
@@ -170,14 +157,6 @@ impl<AH: AsHashDB<KeccakHasher, DBValue> + Send + Sync> AsHashDB<KeccakHasher, D
     }
     fn as_hash_db_mut(&mut self) -> &mut dyn HashDB<KeccakHasher, DBValue> {
         self
-    }
-}
-
-impl<H: AsKeyedHashDB + Send + Sync> journaldb::KeyedHashDB for Proving<H> {
-    fn keys(&self) -> HashMap<H256, i32> {
-        let mut keys = self.base.as_keyed_hash_db().keys();
-        keys.extend(self.changed.keys());
-        keys
     }
 }
 
@@ -249,7 +228,7 @@ impl<H: AsHashDB<KeccakHasher, DBValue>> Proving<H> {
     pub fn new(base: H) -> Self {
         Proving {
             base: base,
-            changed: journaldb::new_memory_db(),
+            changed: super::new_memory_db(),
             proof: Mutex::new(HashSet::new()),
         }
     }

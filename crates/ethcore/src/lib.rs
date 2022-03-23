@@ -21,15 +21,12 @@
 extern crate common_types as types;
 extern crate ethash;
 extern crate ethcore_builtin as builtin;
-extern crate ethcore_db as db;
 extern crate ethereum_types;
 extern crate ethjson;
 extern crate hash_db;
 extern crate itertools;
-extern crate journaldb;
 extern crate keccak_hash as hash;
 extern crate keccak_hasher;
-extern crate kvdb;
 extern crate lru_cache;
 extern crate maplit;
 extern crate memory_cache;

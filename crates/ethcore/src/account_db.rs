@@ -19,8 +19,8 @@ use ethereum_types::H256;
 use hash::{KECCAK_NULL_RLP};
 use hash_db::{AsHashDB, HashDB};
 use keccak_hasher::KeccakHasher;
-use kvdb::DBValue;
 use rlp::NULL_RLP;
+use trie::DBValue;
 
 /// A factory for different kinds of account dbs.
 #[derive(Debug, Clone)]

@@ -18,7 +18,9 @@ use ethereum_types::H256;
 use ethjson;
 use ethtrie::RlpCodec;
 use std::path::Path;
-use trie::{TrieFactory, TrieSpec};
+use keccak_hasher::KeccakHasher;
+use trie::{DBValue, TrieFactory, TrieSpec};
+type MemoryDB = memory_db::MemoryDB<KeccakHasher, DBValue>;
 
 use super::HookType;
 
@@ -42,8 +44,8 @@ pub fn json_trie_test<H: FnMut(&str, HookType)>(
 
         start_stop_hook(&name, HookType::OnStart);
 
-        let mut memdb = journaldb::new_memory_db();
-        let mut root = H256::zero();
+        let mut memdb= MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into());
+		let mut root = H256::zero();
         let mut t = factory.create(&mut memdb, &mut root);
 
         for (key, value) in test.input.data.into_iter() {

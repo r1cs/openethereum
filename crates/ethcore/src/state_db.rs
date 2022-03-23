@@ -23,14 +23,13 @@ use std::{
 
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
-use journaldb::{KeyedHashDB};
 use keccak_hasher::KeccakHasher;
-use kvdb::{DBValue};
 use lru_cache::LruCache;
 use memory_cache::MemoryLruCache;
 use parking_lot::Mutex;
 
 use state::{self, Account};
+use trie::DBValue;
 
 // The percentage of supplied cache size to go to accounts.
 const ACCOUNT_CACHE_RATIO: usize = 90;
@@ -74,7 +73,7 @@ struct BlockChanges {
 /// `StateDB` is propagated into the global cache.
 pub struct StateDB {
     /// Backing database.
-    db: Box<dyn KeyedHashDB>,
+    db: Box<dyn HashDB<KeccakHasher, DBValue>>,
     /// Shared canonical state cache.
     account_cache: Arc<Mutex<AccountCache>>,
     /// DB Code cache. Maps code hashes to shared bytes.
@@ -90,7 +89,7 @@ impl StateDB {
     /// of the LRU cache in bytes. Actual used memory may (read: will) be higher due to bookkeeping.
     // TODO: make the cache size actually accurate by moving the account storage cache
     // into the `AccountCache` structure as its own `LruCache<(Address, H256), H256>`.
-    pub fn new(db: Box<dyn KeyedHashDB>, cache_size: usize) -> StateDB {
+    pub fn new(db: Box<dyn HashDB<KeccakHasher, DBValue>>, cache_size: usize) -> StateDB {
         let acc_cache_size = cache_size * ACCOUNT_CACHE_RATIO / 100;
         let code_cache_size = cache_size - acc_cache_size;
         let cache_items = acc_cache_size / ::std::mem::size_of::<Option<Account>>();
@@ -118,7 +117,7 @@ impl StateDB {
     }
 
     /// Returns underlying `JournalDB`.
-    pub fn journal_db(&self) -> &dyn KeyedHashDB {
+    pub fn journal_db(&self) -> &dyn HashDB<KeccakHasher, DBValue> {
         &*self.db
     }
 

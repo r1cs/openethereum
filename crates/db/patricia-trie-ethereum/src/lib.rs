@@ -60,7 +60,6 @@ pub type RlpCodec = RlpNodeCodec<KeccakHasher>;
 /// extern crate memory_db;
 /// extern crate ethereum_types;
 /// extern crate elastic_array;
-/// extern crate journaldb;
 ///
 /// use trie::*;
 /// use hash_db::*;
@@ -72,8 +71,11 @@ pub type RlpCodec = RlpNodeCodec<KeccakHasher>;
 ///
 /// type DBValue = ElasticArray128<u8>;
 ///
+/// fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
+///    memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
+/// }
 /// fn main() {
-///   let mut memdb = journaldb::new_memory_db();
+///   let mut memdb = new_memory_db();
 ///   let mut root = H256::default();
 ///   TrieDBMut::new(&mut memdb, &mut root).insert(b"foo", b"bar").unwrap();
 ///   let t = TrieDB::new(&memdb, &root).unwrap();
@@ -105,7 +107,6 @@ pub type FatDB<'db> = trie::FatDB<'db, KeccakHasher, RlpCodec>;
 /// extern crate memory_db;
 /// extern crate ethereum_types;
 /// extern crate elastic_array;
-/// extern crate journaldb;
 ///
 /// use keccak_hash::KECCAK_NULL_RLP;
 /// use ethtrie::{TrieDBMut, trie::TrieMut};
@@ -116,8 +117,11 @@ pub type FatDB<'db> = trie::FatDB<'db, KeccakHasher, RlpCodec>;
 ///
 /// type DBValue = ElasticArray128<u8>;
 ///
+/// fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
+///    memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
+/// }
 /// fn main() {
-///   let mut memdb = journaldb::new_memory_db();
+///   let mut memdb = new_memory_db();
 ///   let mut root = H256::default();
 ///   let mut t = TrieDBMut::new(&mut memdb, &mut root);
 ///   assert!(t.is_empty());

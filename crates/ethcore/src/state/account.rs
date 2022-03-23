@@ -23,7 +23,7 @@ use ethtrie::{Result as TrieResult, SecTrieDB, TrieDB, TrieFactory};
 use hash::{keccak, KECCAK_EMPTY, KECCAK_NULL_RLP};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
-use kvdb::DBValue;
+use trie::DBValue;
 use lru_cache::LruCache;
 use pod_account::*;
 use rlp::{encode, RlpStream};
@@ -691,7 +691,7 @@ mod tests {
     use super::*;
     use bytes::Bytes;
     use ethereum_types::{H256};
-    use journaldb::new_memory_db;
+    use super::super::new_memory_db;
     use rlp_compress::{compress, decompress, snapshot_swapper};
     use std::str::FromStr;
 

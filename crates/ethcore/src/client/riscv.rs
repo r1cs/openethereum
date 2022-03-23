@@ -2,7 +2,6 @@ use std::cell::{RefCell};
 use std::sync::Arc;
 use bytes::Bytes;
 use ethereum_types::{Address, U256};
-use kvdb::KeyValueDB;
 use block::OpenBlock;
 use client::PrepareOpenBlock;
 use engines::EthEngine;
@@ -10,8 +9,10 @@ use error::Error;
 use ethtrie::TrieFactory;
 use evm::VMType;
 use factory::{Factories, VmFactory};
+use hash_db::HashDB;
+use keccak_hasher::KeccakHasher;
 use state_db::StateDB;
-use trie::TrieSpec;
+use trie::{DBValue, TrieSpec};
 use types::header::Header;
 use vm::LastHashes;
 
@@ -30,10 +31,9 @@ impl RiscvEnv {
 		engine: Arc<dyn EthEngine>,
 		last_hashes: Arc<LastHashes>,
 		parent_block_header: Header,
-		db: Arc<dyn KeyValueDB>,
+		db: Box<dyn HashDB<KeccakHasher, DBValue>>,
 	) -> Result<RiscvEnv, Error> {
 		let mb = 1024 * 1024;
-		let pruning =  journaldb::Algorithm::OverlayRecent;
 		let state_cache_size = 1 * mb;
 		let jump_table_size =  1 * mb;
 		let trie_factory = TrieFactory::new(TrieSpec::Secure);
@@ -43,8 +43,7 @@ impl RiscvEnv {
 			accountdb: Default::default(),
 		};
 
-		let journal_db = journaldb::new(db, pruning, ::db::COL_STATE);
-		let state_db = StateDB::new(journal_db, state_cache_size);
+		let state_db = StateDB::new(db, state_cache_size);
 
 		Ok(RiscvEnv {
 			engine,

@@ -49,10 +49,9 @@ use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
 use hash_db::{AsHashDB, HashDB};
 use keccak_hasher::KeccakHasher;
-use kvdb::DBValue;
 
 use ethtrie::{Result as TrieResult, TrieDB};
-use trie::{Recorder, Trie, TrieError};
+use trie::{DBValue, Recorder, Trie, TrieError};
 
 mod account;
 mod substate;
@@ -1533,6 +1532,10 @@ impl State<StateDB> {
     pub fn db(&self) -> &StateDB {
         &self.db
     }
+}
+
+fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
+	memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
 }
 
 #[cfg(test)]

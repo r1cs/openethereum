@@ -9,24 +9,19 @@ authors = ["Parity Technologies <admin@parity.io>"]
 [dependencies]
 ansi_term = "0.10"
 common-types = { path = "types" }
-crossbeam-channel = {version = "0.5.2", optional = true}
 eip-152 = { version = "0.1", path = "../util/EIP-152" }
 env_logger = { version = "0.5", optional = true }
 error-chain = { version = "0.12", default-features = false }
 ethash = { path = "../concensus/ethash" }
 ethcore-builtin = { path = "../vm/builtin" }
-ethcore-db = { path = "../db/db" }
 ethereum-types = "0.9.2"
 ethjson = { path = "../ethjson" }
 evm = { path = "../vm/evm" }
 globset = {version = "0.4", optional = true}
 hash-db = {path = "../db/hash-db-0.12.4"}
 itertools = "0.5"
-journaldb = { path = "../db/journaldb" }
 keccak-hash = {version = "0.5.0", default-features = false}
 keccak-hasher = { path = "../util/keccak-hasher", default-features = false }
-kvdb = "0.1"
-kvdb-memorydb = "0.1"
 log = "0.4"
 lru-cache = "0.1"
 macros = { path = "../util/macros" }
@@ -60,7 +55,6 @@ env_logger = "0.5"
 hex-literal = "0.2.1"
 rlp_compress = { path = "../util/rlp-compress" }
 trie-standardmap = "0.15.2"
-crossbeam-channel = "0.5.2"
 
 [features]
 parity = []
@@ -87,7 +81,7 @@ ci-skip-tests = []
 test-heavy = []
 # Compile test helpers
 test-helpers = ["tempdir", "common-types/test-helpers", "walkdir",
-	"tempfile", "crossbeam-channel"]
+	"tempfile"]
 # Enables slow 'to-pod-full' method for use in tests and evmbin.
 to-pod-full = []
 
