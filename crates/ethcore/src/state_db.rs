@@ -95,6 +95,7 @@ impl StateDB {
         }
     }
 
+
     /// Conversion method to interpret self as `HashDB` reference
     pub fn as_hash_db(&self) -> &dyn HashDB<KeccakHasher, DBValue> {
         self.db.as_hash_db()
