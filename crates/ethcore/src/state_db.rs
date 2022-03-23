@@ -17,7 +17,6 @@
 //! State database abstraction. For more info, see the doc for `StateDB`
 
 use std::{
-    collections::{HashSet, VecDeque},
     sync::Arc,
 };
 
@@ -26,38 +25,9 @@ use hash_db::HashDB;
 use journaldb::{KeyedHashDB};
 use keccak_hasher::KeccakHasher;
 use kvdb::{ DBValue};
-use lru_cache::LruCache;
-use memory_cache::MemoryLruCache;
 use parking_lot::Mutex;
 
 use state::{self, Account};
-
-
-// The percentage of supplied cache size to go to accounts.
-const ACCOUNT_CACHE_RATIO: usize = 90;
-
-/// Shared canonical state cache.
-struct AccountCache {
-    /// DB Account cache. `None` indicates that account is known to be missing.
-    // When changing the type of the values here, be sure to update `mem_used` and
-    // `new`.
-    accounts: LruCache<Address, Option<Account>>,
-    /// Information on the modifications in recently committed blocks; specifically which addresses
-    /// changed in which block. Ordered by block number.
-    modifications: VecDeque<BlockChanges>,
-}
-
-/// Accumulates a list of accounts changed in a block.
-struct BlockChanges {
-    /// Block hash.
-    hash: H256,
-    /// Parent block hash.
-    parent: H256,
-    /// A set of modified account addresses.
-    accounts: HashSet<Address>,
-    /// Block is part of the canonical chain.
-    is_canon: bool,
-}
 
 /// State database abstraction.
 /// Manages shared global state cache which reflects the canonical
@@ -87,10 +57,6 @@ impl StateDB {
     // TODO: make the cache size actually accurate by moving the account storage cache
     // into the `AccountCache` structure as its own `LruCache<(Address, H256), H256>`.
     pub fn new(db: Box<dyn KeyedHashDB>, cache_size: usize) -> StateDB {
-        let acc_cache_size = cache_size * ACCOUNT_CACHE_RATIO / 100;
-        let code_cache_size = cache_size - acc_cache_size;
-        let cache_items = acc_cache_size / ::std::mem::size_of::<Option<Account>>();
-
         StateDB {
             db: db,
             parent_hash: None,
@@ -111,44 +77,6 @@ impl StateDB {
     /// Returns underlying `JournalDB`.
     pub fn journal_db(&self) -> &dyn KeyedHashDB {
         &*self.db
-    }
-
-    /// Check if the account can be returned from cache by matching current block parent hash against canonical
-    /// state and filtering out account modified in later blocks.
-    fn is_allowed(
-        addr: &Address,
-        parent_hash: &H256,
-        modifications: &VecDeque<BlockChanges>,
-    ) -> bool {
-        if modifications.is_empty() {
-            return true;
-        }
-        // Ignore all accounts modified in later blocks
-        // Modifications contains block ordered by the number
-        // We search for our parent in that list first and then for
-        // all its parent until we hit the canonical block,
-        // checking against all the intermediate modifications.
-        let mut parent = parent_hash;
-        for m in modifications {
-            if &m.hash == parent {
-                if m.is_canon {
-                    return true;
-                }
-                parent = &m.parent;
-            }
-            if m.accounts.contains(addr) {
-                trace!(
-                    "Cache lookup skipped for {:?}: modified in a later block",
-                    addr
-                );
-                return false;
-            }
-        }
-        trace!(
-            "Cache lookup skipped for {:?}: parent hash is unknown",
-            addr
-        );
-        false
     }
 }
 
