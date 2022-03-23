@@ -1,5 +1,5 @@
 use ethjson::test::{
-    ChainTests, EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
+    EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
     TestTrieSpec, TransactionTests, TrieTests,
 };
 use globset::Glob;
@@ -85,9 +85,6 @@ impl TestRunner {
         for t in &self.0.local {
             res += Self::run_local_tests(&t);
         }
-        for t in &self.0.chain {
-            res += Self::run_chain_tests(&t);
-        }
         for t in &self.0.state {
             res += Self::run_state_tests(&t);
         }
@@ -153,22 +150,6 @@ impl TestRunner {
         }
     }
 
-    fn run_chain_tests(test: &ChainTests) -> TestResult {
-        Self::run1(
-            test,
-            &test.path,
-            |test: &ChainTests, path: &Path, json: &[u8]| {
-                for skip in &test.skip {
-                    if Self::in_set(&path, &skip.paths) {
-                        println!("   - {} ..SKIPPED", path.to_string_lossy());
-                        return Vec::new();
-                    }
-                }
-                super::chain::json_chain_test(&test, &path, &json, &mut |_, _| {})
-            },
-        )
-    }
-
     fn run_state_tests(test: &StateTests) -> TestResult {
         Self::run1(
             test,
@@ -218,4 +199,25 @@ impl TestRunner {
         }
         acc
     }
+}
+
+#[test]
+fn ethereum_json_tests() {
+    let content =
+        std::fs::read("res/json_tests.json").expect("cannot open ethereum tests spec file");
+    let runner =
+        TestRunner::load(content.as_slice()).expect("cannot load ethereum tests spec file");
+    println!("----------------------------------------------------");
+    let result = match std::env::var_os("TEST_DEBUG") {
+        Some(_) => runner.run_without_par(),
+        _ => runner.run(),
+    };
+    println!("----------------------------------------------------");
+    flushln!(
+        "SUCCESS: {} FAILED: {} {:?}",
+        result.success,
+        result.failed.len(),
+        result.failed
+    );
+    assert!(result.failed.len() == 0);
 }

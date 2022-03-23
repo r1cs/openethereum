@@ -372,13 +372,6 @@ impl TestBlockChainClient {
     pub fn is_disabled(&self) -> bool {
         self.disabled.load(AtomicOrder::SeqCst)
     }
-
-    pub fn set_new_transaction_hashes_producer(
-        &self,
-        new_transaction_hashes: crossbeam_channel::Sender<H256>,
-    ) {
-        *self.new_transaction_hashes.write() = Some(new_transaction_hashes);
-    }
 }
 
 /// Get temporary db state1

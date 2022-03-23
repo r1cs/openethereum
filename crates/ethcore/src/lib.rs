@@ -102,8 +102,6 @@ mod factory;
 pub mod json_tests;
 #[cfg(any(test, feature = "test-helpers"))]
 pub mod test_helpers;
-#[cfg(test)]
-mod tests;
 
 pub use evm::CreateContractAddress;
 pub use executive::contract_address;
