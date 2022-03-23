@@ -29,7 +29,7 @@ pub use self::riscv::RiscvEnv;
 #[cfg(any(test, feature = "test-helpers"))]
 pub use self::evm_test_client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
 #[cfg(any(test, feature = "test-helpers"))]
-pub use self::test_client::{EachBlockWith, TestBlockChainClient};
+use self::test_client::{EachBlockWith,};
 pub use self::{
     client::*,
     config::{BlockChainConfig, ClientConfig, VMType},

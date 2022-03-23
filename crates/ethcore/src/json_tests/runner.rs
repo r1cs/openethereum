@@ -219,24 +219,3 @@ impl TestRunner {
         acc
     }
 }
-
-#[test]
-fn ethereum_json_tests() {
-    let content =
-        std::fs::read("res/json_tests.json").expect("cannot open ethereum tests spec file");
-    let runner =
-        TestRunner::load(content.as_slice()).expect("cannot load ethereum tests spec file");
-    println!("----------------------------------------------------");
-    let result = match std::env::var_os("TEST_DEBUG") {
-        Some(_) => runner.run_without_par(),
-        _ => runner.run(),
-    };
-    println!("----------------------------------------------------");
-    flushln!(
-        "SUCCESS: {} FAILED: {} {:?}",
-        result.success,
-        result.failed.len(),
-        result.failed
-    );
-    assert!(result.failed.len() == 0);
-}
