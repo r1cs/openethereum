@@ -17,7 +17,6 @@
 //! State database abstraction. For more info, see the doc for `StateDB`
 
 use std::{
-    collections::{HashSet, VecDeque},
     sync::Arc,
 };
 
@@ -27,6 +26,7 @@ use keccak_hasher::KeccakHasher;
 use parking_lot::Mutex;
 
 use state::{self, Account};
+
 use trie::DBValue;
 
 /// State database abstraction.
