@@ -16,48 +16,9 @@
 
 //! Block verification utilities.
 
-mod canon_verifier;
-mod noop_verifier;
 pub mod queue;
 mod verification;
-mod verifier;
 
 pub use self::{
-    canon_verifier::CanonVerifier,
-    noop_verifier::NoopVerifier,
-    queue::{BlockVerifier, QueueInfo},
     verification::*,
-    verifier::Verifier,
 };
-
-use client::BlockInfo;
-
-/// Verifier type.
-#[derive(Debug, PartialEq, Clone)]
-pub enum VerifierType {
-    /// Verifies block normally.
-    Canon,
-    /// Verifies block normallly, but skips seal verification.
-    CanonNoSeal,
-    /// Does not verify block at all.
-    /// Used in tests.
-    Noop,
-}
-
-/// Create a new verifier based on type.
-pub fn new<C: BlockInfo>(v: VerifierType) -> Box<dyn Verifier<C>> {
-    match v {
-        VerifierType::Canon | VerifierType::CanonNoSeal => Box::new(CanonVerifier),
-        VerifierType::Noop => Box::new(NoopVerifier),
-    }
-}
-
-impl VerifierType {
-    /// Check if seal verification is enabled for this verifier type.
-    pub fn verifying_seal(&self) -> bool {
-        match *self {
-            VerifierType::Canon => true,
-            VerifierType::Noop | VerifierType::CanonNoSeal => false,
-        }
-    }
-}
