@@ -658,6 +658,7 @@ version = "0.1.0"
 dependencies = [
  "bn",
  "byteorder",
+ "crypto",
  "eip-152",
  "eth_pairings",
  "ethereum-types",
@@ -668,7 +669,6 @@ dependencies = [
  "maplit",
  "num",
  "parity-bytes",
- "parity-crypto",
  "rustc-hex 1.0.0",
 ]
 

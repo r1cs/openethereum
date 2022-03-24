@@ -39,10 +39,8 @@ use keccak_hash::keccak;
 use log::{trace, warn};
 use num::{BigUint, One, Zero};
 use parity_bytes::BytesRef;
-use parity_crypto::{
-    digest,
-    publickey::{recover_allowing_all_zero_message, Signature, ZeroesAllowedMessage},
-};
+use crypto::hash::{sha256, ripemd160};
+use crypto::publickey::{recover, Signature};
 
 /// Native implementation of a built-in contract.
 pub trait Implementation: Send + Sync {
@@ -831,16 +829,9 @@ impl Implementation for EcRecover {
 
         let s = Signature::from_rsv(&r, &s, bit);
         if s.is_valid() {
-            // The builtin allows/requires all-zero messages to be valid to
-            // recover the public key. Use of such messages is disallowed in
-            // `rust-secp256k1` and this is a workaround for that. It is not an
-            // openethereum-level error to fail here; instead we return all
-            // zeroes and let the caller interpret that outcome.
-            let recovery_message = ZeroesAllowedMessage(hash);
-            if let Ok(p) = recover_allowing_all_zero_message(&s, recovery_message) {
-                let r = keccak(p);
+            if let Ok(address) = recover(&s, &hash) {
                 output.write(0, &[0; 12]);
-                output.write(12, &r.as_bytes()[12..]);
+                output.write(12, &address.as_bytes());
             }
         }
 
@@ -850,8 +841,8 @@ impl Implementation for EcRecover {
 
 impl Implementation for Sha256 {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
-        let d = digest::sha256(input);
-        output.write(0, &*d);
+        let d = sha256(input);
+        output.write(0, d.as_bytes());
         Ok(())
     }
 }
@@ -912,9 +903,9 @@ impl Implementation for Blake2F {
 
 impl Implementation for Ripemd160 {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
-        let hash = digest::ripemd160(input);
+        let hash = ripemd160(input);
         output.write(0, &[0; 12][..]);
-        output.write(12, &hash);
+        output.write(12, hash.as_bytes());
         Ok(())
     }
 }
