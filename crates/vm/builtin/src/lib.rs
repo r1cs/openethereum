@@ -40,9 +40,9 @@ use log::{trace, warn};
 use num::{BigUint, One, Zero};
 use parity_bytes::BytesRef;
 use parity_crypto::{
-    digest,
     publickey::{recover_allowing_all_zero_message, Signature, ZeroesAllowedMessage},
 };
+use crypto;
 
 /// Native implementation of a built-in contract.
 pub trait Implementation: Send + Sync {
@@ -850,7 +850,7 @@ impl Implementation for EcRecover {
 
 impl Implementation for Sha256 {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
-        let d = digest::sha256(input);
+        let d = crypto::sha256(input);
         output.write(0, &*d);
         Ok(())
     }
@@ -912,7 +912,7 @@ impl Implementation for Blake2F {
 
 impl Implementation for Ripemd160 {
     fn execute(&self, input: &[u8], output: &mut BytesRef) -> Result<(), &'static str> {
-        let hash = digest::ripemd160(input);
+        let hash = crypto::getRipemd160(input);
         output.write(0, &[0; 12][..]);
         output.write(12, &hash);
         Ok(())

@@ -29,7 +29,7 @@ maplit = "1"
 memory-cache = { path = "../util/memory-cache" }
 memory-db = { path = "../db/memory-db" }
 parity-bytes = "0.1"
-parity-crypto = { version = "0.6.2", features = [ "publickey" ] }
+parity-crypto = { version = "0.6.2", features = [ "publickey" ] ,default-features=false}
 parking_lot = "0.11.1"
 trie-db = {path = "../db/trie-db-0.12.4"}
 patricia-trie-ethereum = { path = "../db/patricia-trie-ethereum" }
