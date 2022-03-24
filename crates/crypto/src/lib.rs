@@ -1,17 +1,32 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 mod signature;
+use sha2;
+use digest::Digest;
+use sha2::Sha256;
+use digest::generic_array::{
+	typenum:: {U32,U20},
+	GenericArray,
+};
+use ripemd160;
 
 pub mod hash {
 	use ethereum_types::{H160, H256};
 	pub use keccak_hash::{keccak, keccak256};
+	use digest::Digest;
 
 	pub fn sha256<T: AsRef<[u8]>>(s: T) -> H256 {
-		todo!("todo")
+		let mut d   =sha2::Sha256::default();
+		let ref mut f=d;
+		f.input(s);
+		return H256::from_slice(d.result().as_slice()) ;
 	}
 
 	pub fn ripemd160<T: AsRef<[u8]>>(data: T) -> H160 {
-		todo!("todo")
+		let mut d = ripemd160::Ripemd160::default();
+		let ref mut f = d;
+		f.input(data);
+		return H160::from_slice(d.result().as_slice()) ;
 	}
 }
 
