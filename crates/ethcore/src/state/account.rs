@@ -36,6 +36,7 @@ use trie::{Recorder, Trie};
 use types::basic_account::BasicAccount;
 
 use core::cell::{Cell, RefCell};
+use core::ops::Deref;
 
 const STORAGE_CACHE_ITEMS: usize = 8192;
 
@@ -613,10 +614,7 @@ impl Account {
     /// Clone account data, dirty storage keys and cached storage keys.
     pub fn clone_all(&self) -> Account {
         let mut account = self.clone_dirty();
-		unsafe {
-			account.storage_cache = RefCell::new(Account::clone_cache(self.storage_cache.as_ptr().as_ref()));
-
-		}
+		account.storage_cache = RefCell::new(Account::clone_cache(self.storage_cache.borrow().deref()));
         account.original_storage_cache =Account::clone_original_storage_cache(self.original_storage_cache.as_ref());
         account
     }
@@ -674,9 +672,9 @@ impl Account {
         ))
     }
 
-	pub fn clone_cache(oldCache: Option<&LruCache<H256,H256>>)->LruCache<H256,H256>{
+	pub fn clone_cache(oldCache: &LruCache<H256,H256>)->LruCache<H256,H256>{
 			let mut  newCache = LruCache::new(STORAGE_CACHE_ITEMS);
-			for (k,v ) in oldCache.unwrap().iter(){
+			for (k,v ) in oldCache.iter(){
 				newCache.put(k.clone(),v.clone());
 			}
 			newCache
@@ -685,9 +683,7 @@ impl Account {
 	pub fn clone_original_storage_cache(oldCache: Option<&(H256, RefCell<LruCache<H256, H256>>)>)-> Option<(H256, RefCell<LruCache<H256, H256>>)>{
 		match oldCache{
 			Some(c)=>{
-				unsafe {
-					return Some((c.0,RefCell::new(Account::clone_cache(c.1.as_ptr().as_ref()))));
-				}
+					return Some((c.0,RefCell::new(Account::clone_cache(c.1.borrow().deref()))));
 			},
 			None=>None,
 		}
