@@ -439,10 +439,13 @@ checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
 name = "crypto"
 version = "0.1.0"
 dependencies = [
+ "digest",
  "ethereum-types",
  "keccak-hash",
  "parity-crypto",
+ "ripemd160",
  "rustc-hex 2.1.0",
+ "sha2",
 ]
 
 [[package]]
