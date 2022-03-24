@@ -75,3 +75,5 @@ pub mod verification_queue_info;
 
 /// Type for block number.
 pub type BlockNumber = u64;
+
+extern crate alloc;

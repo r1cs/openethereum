@@ -16,7 +16,7 @@
 
 //! Blockhain info type definition
 
-use std::fmt;
+use core::fmt;
 
 use crate::{security_level::SecurityLevel, BlockNumber};
 use ethereum_types::{H256, U256};

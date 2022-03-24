@@ -10,7 +10,7 @@ authors = [
 
 [dependencies]
 ethereum-types = {version = "0.9.2", default-features = false}
-keccak-hash = "0.5.0"
+keccak-hash = {version="0.5.0",default-features = false}
 parity-bytes = {version = "0.1", default-features = false}
 parity-crypto = { version = "0.6.2", features = [ "publickey" ] }
 rlp = { version = "0.4.6", default-features = false }

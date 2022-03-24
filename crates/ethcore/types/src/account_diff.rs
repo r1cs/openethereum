@@ -18,7 +18,8 @@
 
 use crate::bytes::Bytes;
 use ethereum_types::{H256, U256};
-use std::{cmp::*, collections::BTreeMap, fmt};
+use core::{cmp::*, fmt};
+use alloc::collections::BTreeMap;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 /// Diff type for specifying a change (or not).
