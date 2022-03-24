@@ -185,17 +185,22 @@ impl Pricer for ModexpPricer {
 }
 
 impl ModexpPricer {
+	fn readToSlice(src: &[u8],dest: &mut [u8],defaultV: u8){
+		let maxCap = dest.len();
+		for i in 0..maxCap  {
+			if i <src.len(){
+				dest[i]=src[i];
+			}else{
+				dest[i]=defaultV;
+			}
+		}
+	}
     pub fn parse_input(input: &[u8]) -> (U256, U256, U256, U256) {
-        let mut reader = input.chain(io::repeat(0));
-        let mut buf = [0; 32];
+		let mut buf = [0; 32];
+
 
         // read lengths as U256 here for accurate gas calculation.
-        let mut read_len = || {
-            reader
-                .read_exact(&mut buf[..])
-                .expect("reading from zero-extended memory cannot fail; qed");
-            U256::from_big_endian(&buf[..])
-        };
+        let mut read_len = ||{Self::readToSlice(input,&mut buf,0);U256::from_big_endian(&buf[..])} ;
         let base_len_u256 = read_len();
         let exp_len_u256 = read_len();
         let mod_len_u256 = read_len();
@@ -206,15 +211,12 @@ impl ModexpPricer {
         let exp_low = if base_len.wrapping_add(96) >= input.len() as u64 {
             U256::zero()
         } else {
-            buf.iter_mut().for_each(|b| *b = 0);
-            let mut reader = input[(base_len as usize).wrapping_add(96)..].chain(io::repeat(0));
-            let len = min(exp_len, 32) as usize;
-            reader
-                .read_exact(&mut buf[(32 - len)..])
-                .expect("reading from zero-extended memory cannot fail; qed");
-            U256::from_big_endian(&buf[..])
-        };
-
+			buf.iter_mut().for_each(|b| *b = 0);
+			// let mut reader = input[(base_len as usize).wrapping_add(96)..].chain(io::repeat(0));
+			let len = min(exp_len, 32) as usize;
+			Self::readToSlice(&input[(base_len as usize).wrapping_add(96)..], &mut buf[(32 - len)..], 0);
+			U256::from_big_endian(&buf[..])
+		};
         (base_len_u256, exp_len_u256, exp_low, mod_len_u256)
     }
 
