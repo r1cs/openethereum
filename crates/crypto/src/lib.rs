@@ -2,12 +2,6 @@
 
 mod signature;
 use sha2;
-use digest::Digest;
-use sha2::Sha256;
-use digest::generic_array::{
-	typenum:: {U32,U20},
-	GenericArray,
-};
 use ripemd160;
 
 pub mod hash {
