@@ -45,7 +45,7 @@ extern crate triehash_ethereum as triehash;
 extern crate unexpected;
 extern crate vm;
 
-#[cfg(any(test, feature = "env_logger"))]
+#[cfg(any(test))]
 extern crate env_logger;
 #[cfg(feature = "json-tests")]
 extern crate globset;
