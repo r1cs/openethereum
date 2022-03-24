@@ -22,7 +22,6 @@
 
 use std::{error, fmt};
 
-use crypto::publickey::Error as EthkeyError;
 use ethereum_types::{Address, Bloom, H256, U256};
 use ethtrie::TrieError;
 use rlp;
@@ -246,7 +245,6 @@ error_chain! {
         Block(BlockError) #[doc = "Error concerning block processing."];
         Transaction(TransactionError) #[doc = "Error concerning transaction processing."];
         Engine(EngineError) #[doc = "Consensus vote error."];
-        Ethkey(EthkeyError) #[doc = "Ethkey error."];
         Decoder(rlp::DecoderError) #[doc = "RLP decoding errors"];
     }
 

@@ -314,10 +314,10 @@ dependencies = [
 name = "common-types"
 version = "0.1.0"
 dependencies = [
+ "crypto",
  "ethereum-types",
  "keccak-hash",
  "parity-bytes",
- "parity-crypto",
  "rlp",
  "rlp_derive",
  "rustc-hex 1.0.0",
@@ -434,6 +434,16 @@ name = "crunchy"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
+
+[[package]]
+name = "crypto"
+version = "0.1.0"
+dependencies = [
+ "ethereum-types",
+ "keccak-hash",
+ "parity-crypto",
+ "rustc-hex 2.1.0",
+]
 
 [[package]]
 name = "crypto-mac"
@@ -598,6 +608,7 @@ dependencies = [
  "ansi_term",
  "common-types",
  "criterion",
+ "crypto",
  "eip-152",
  "env_logger 0.5.13",
  "error-chain",
@@ -619,7 +630,6 @@ dependencies = [
  "memory-cache",
  "memory-db 0.11.0",
  "parity-bytes",
- "parity-crypto",
  "parking_lot 0.11.1",
  "patricia-trie-ethereum",
  "rand 0.7.3",

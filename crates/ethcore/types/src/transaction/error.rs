@@ -16,7 +16,6 @@
 
 use std::{error, fmt};
 
-use crate::crypto;
 use ethereum_types::U256;
 use rlp;
 use unexpected::OutOfBounds;
@@ -86,7 +85,7 @@ pub enum Error {
     /// Not enough permissions given by permission contract.
     NotAllowed,
     /// Signature error
-    InvalidSignature(String),
+    InvalidSignature,
     /// Transaction too big
     TooBig,
     /// Invalid RLP encoding
@@ -95,12 +94,6 @@ pub enum Error {
     TransactionTypeNotEnabled,
     /// Transaction sender is not an EOA (see EIP-3607)
     SenderIsNotEOA,
-}
-
-impl From<crypto::publickey::Error> for Error {
-    fn from(err: crypto::publickey::Error) -> Self {
-        Error::InvalidSignature(format!("{}", err))
-    }
 }
 
 impl From<rlp::DecoderError> for Error {
@@ -147,7 +140,7 @@ impl fmt::Display for Error {
             RecipientBanned => "Recipient is temporarily banned.".into(),
             CodeBanned => "Contract code is temporarily banned.".into(),
             InvalidChainId => "Transaction of this chain ID is not allowed on this chain.".into(),
-            InvalidSignature(ref err) => format!("Transaction has invalid signature: {}.", err),
+            InvalidSignature => "Transaction has invalid signature.".into(),
             NotAllowed => {
                 "Sender does not have permissions to execute this type of transaction".into()
             }

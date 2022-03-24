@@ -16,12 +16,13 @@
 
 //! Transaction data structure.
 
-use crate::{
-    crypto::publickey::{self, public_to_address, recover, Public, Secret, Signature},
-    hash::keccak,
-    transaction::error,
-};
+use crypto::publickey::{recover, Signature};
+use crypto::hash::keccak;
+use crate::transaction::{error, Error};
 use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
+
+#[cfg(feature = "std")]
+use crypto::publickey::{self, Secret};
 
 use rlp::{self, DecoderError, Rlp, RlpStream};
 use std::{cmp::min, ops::Deref};
@@ -527,6 +528,7 @@ impl TypedTransaction {
     }
 
     /// Signs the transaction as coming from `sender`.
+	#[cfg(feature = "std")]
     pub fn sign(self, secret: &Secret, chain_id: Option<u64>) -> SignedTransaction {
         let sig = publickey::sign(secret, &self.signature_hash(chain_id))
             .expect("data is valid and context has signing capabilities; qed");
@@ -564,7 +566,6 @@ impl TypedTransaction {
             }
             .compute_hash(),
             sender: from,
-            public: None,
         }
     }
 
@@ -585,7 +586,6 @@ impl TypedTransaction {
             }
             .compute_hash(),
             sender: UNSIGNED_SENDER,
-            public: None,
         }
     }
 
@@ -883,9 +883,9 @@ impl UnverifiedTransaction {
     }
 
     /// Checks whether the signature has a low 's' value.
-    pub fn check_low_s(&self) -> Result<(), publickey::Error> {
+    pub fn check_low_s(&self) -> Result<(), error::Error> {
         if !self.signature().is_low_s() {
-            Err(publickey::Error::InvalidSignature.into())
+            Err(Error::InvalidSignature)
         } else {
             Ok(())
         }
@@ -897,11 +897,11 @@ impl UnverifiedTransaction {
     }
 
     /// Recovers the public key of the sender.
-    pub fn recover_public(&self) -> Result<Public, publickey::Error> {
-        Ok(recover(
+    pub fn recover_sender(&self) -> Option<Address> {
+        recover(
             &self.signature(),
             &self.unsigned.signature_hash(self.chain_id()),
-        )?)
+		)
     }
 
     /// Verify basic signature params. Does not attempt sender recovery.
@@ -911,7 +911,7 @@ impl UnverifiedTransaction {
         chain_id: Option<u64>,
     ) -> Result<(), error::Error> {
         if self.is_unsigned() {
-            return Err(publickey::Error::InvalidSignature.into());
+            return Err(Error::InvalidSignature);
         }
         if check_low_s {
             self.check_low_s()?;
@@ -930,7 +930,6 @@ impl UnverifiedTransaction {
 pub struct SignedTransaction {
     transaction: UnverifiedTransaction,
     sender: Address,
-    public: Option<Public>,
 }
 
 impl Deref for SignedTransaction {
@@ -948,16 +947,14 @@ impl From<SignedTransaction> for UnverifiedTransaction {
 
 impl SignedTransaction {
     // t_nb 5.3.1 Try to verify transaction and recover sender.
-    pub fn new(transaction: UnverifiedTransaction) -> Result<Self, publickey::Error> {
+    pub fn new(transaction: UnverifiedTransaction) -> Result<Self, Error> {
         if transaction.is_unsigned() {
-            return Err(publickey::Error::InvalidSignature);
+            return Err(Error::InvalidSignature);
         }
-        let public = transaction.recover_public()?;
-        let sender = public_to_address(&public);
+        let sender = transaction.recover_sender().ok_or(Error::InvalidSignature)?;
         Ok(SignedTransaction {
             transaction,
             sender,
-            public: Some(public),
         })
     }
 
@@ -966,19 +963,9 @@ impl SignedTransaction {
         self.sender
     }
 
-    /// Returns a public key of the sender.
-    pub fn public_key(&self) -> Option<Public> {
-        self.public
-    }
-
     /// Checks is signature is empty.
     pub fn is_unsigned(&self) -> bool {
         self.transaction.is_unsigned()
-    }
-
-    /// Deconstructs this transaction back into `UnverifiedTransaction`
-    pub fn deconstruct(self) -> (UnverifiedTransaction, Address, Option<Public>) {
-        (self.transaction, self.sender, self.public)
     }
 
     pub fn rlp_append_list(s: &mut RlpStream, tx_list: &[SignedTransaction]) {
@@ -1014,8 +1001,8 @@ impl LocalizedTransaction {
         if self.is_unsigned() {
             return UNSIGNED_SENDER.clone();
         }
-        let sender = public_to_address(&self.recover_public()
-			.expect("LocalizedTransaction is always constructed from transaction from blockchain; Blockchain only stores verified transactions; qed"));
+        let sender = self.recover_sender()
+			.expect("LocalizedTransaction is always constructed from blockchain; qed");
         self.cached_sender = Some(sender);
         sender
     }
@@ -1071,8 +1058,9 @@ mod tests {
     use crate::hash::keccak;
     use ethereum_types::{H160, U256};
     use std::str::FromStr;
+	use crypto::publickey::{self, Generator, Random};
 
-    #[test]
+	#[test]
     fn sender_test() {
         let bytes = ::rustc_hex::FromHex::from_hex("f85f800182520894095e7baea6a6c7c4c2dfeb977efac326af552d870a801ba048b55bfa915ac795c431978d8a6a992b628d557da5ff759b307d495a36649353a0efffd310ac743f371de3b9f7f9cb56c0b28ad43601b4ab949f53faa07bd2c804").unwrap();
         let t = TypedTransaction::decode(&bytes).expect("decoding UnverifiedTransaction failed");
@@ -1090,8 +1078,8 @@ mod tests {
         }
         assert_eq!(t.tx().value, U256::from(0x0au64));
         assert_eq!(
-            public_to_address(&t.recover_public().unwrap()),
-            H160::from_str("0f65fe9276bc9a24ae7083ae28e2660ef72df99e").unwrap()
+			&t.recover_sender().unwrap(),
+			H160::from_str("0f65fe9276bc9a24ae7083ae28e2660ef72df99e").unwrap()
         );
         assert_eq!(t.chain_id(), None);
     }
@@ -1112,8 +1100,6 @@ mod tests {
 
     #[test]
     fn signing_eip155_zero_chainid() {
-        use self::publickey::{Generator, Random};
-
         let key = Random.generate();
         let t = TypedTransaction::Legacy(Transaction {
             action: Action::Create,
@@ -1133,8 +1119,6 @@ mod tests {
 
     #[test]
     fn signing() {
-        use self::publickey::{Generator, Random};
-
         let key = Random.generate();
         let t = TypedTransaction::Legacy(Transaction {
             action: Action::Create,
@@ -1185,14 +1169,13 @@ mod tests {
 
         let res = SignedTransaction::new(t.transaction);
         match res {
-            Err(publickey::Error::InvalidSignature) => {}
+            Err(Error::InvalidSignature) => {}
             _ => panic!("null signature should be rejected"),
         }
     }
 
     #[test]
     fn should_recover_from_chain_specific_signing() {
-        use self::publickey::{Generator, Random};
         let key = Random.generate();
         let t = TypedTransaction::Legacy(Transaction {
             action: Action::Create,
@@ -1209,7 +1192,6 @@ mod tests {
 
     #[test]
     fn should_encode_decode_access_list_tx() {
-        use self::publickey::{Generator, Random};
         let key = Random.generate();
         let t = TypedTransaction::AccessList(AccessListTx::new(
             Transaction {
@@ -1240,7 +1222,6 @@ mod tests {
 
     #[test]
     fn should_encode_decode_eip1559_tx() {
-        use self::publickey::{Generator, Random};
         let key = Random.generate();
         let t = TypedTransaction::EIP1559Transaction(EIP1559TransactionTx {
             transaction: AccessListTx::new(
@@ -1345,7 +1326,6 @@ mod tests {
 
     #[test]
     fn should_not_panic_on_effective_gas_price_overflow() {
-        use self::publickey::{Generator, Random};
         let key = Random.generate();
         let gas_price /* 2**256 - 1 */ = U256::from(340282366920938463463374607431768211455u128)
             * U256::from(340282366920938463463374607431768211455u128)
