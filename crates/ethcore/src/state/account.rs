@@ -24,7 +24,7 @@ use hash::{keccak, KECCAK_EMPTY, KECCAK_NULL_RLP};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
 use trie::DBValue;
-use lru_cache::LruCache;
+use lru::LruCache;
 use pod_account::*;
 use rlp::{encode, RlpStream};
 use std::{
@@ -35,7 +35,8 @@ use std::{
 use trie::{Recorder, Trie};
 use types::basic_account::BasicAccount;
 
-use std::cell::{Cell, RefCell};
+use core::cell::{Cell, RefCell};
+use core::ops::Deref;
 
 const STORAGE_CACHE_ITEMS: usize = 8192;
 
@@ -282,7 +283,7 @@ impl Account {
             .get_with(key.as_bytes(), panicky_decoder)?
             .unwrap_or_else(U256::zero);
         let value: H256 = BigEndianHash::from_uint(&item);
-        storage_cache.insert(key.clone(), value.clone());
+        storage_cache.put(key.clone(), value.clone());
         Ok(value)
     }
 
@@ -542,7 +543,7 @@ impl Account {
                 false => t.insert(k.as_bytes(), &encode(&v.into_uint()))?,
             };
 
-            self.storage_cache.borrow_mut().insert(k, v);
+            self.storage_cache.borrow_mut().put(k, v);
         }
         self.original_storage_cache = None;
         Ok(())
@@ -613,8 +614,8 @@ impl Account {
     /// Clone account data, dirty storage keys and cached storage keys.
     pub fn clone_all(&self) -> Account {
         let mut account = self.clone_dirty();
-        account.storage_cache = self.storage_cache.clone();
-        account.original_storage_cache = self.original_storage_cache.clone();
+		account.storage_cache = RefCell::new(Account::clone_cache(self.storage_cache.borrow().deref()));
+        account.original_storage_cache =Account::clone_original_storage_cache(self.original_storage_cache.as_ref());
         account
     }
 
@@ -631,8 +632,8 @@ impl Account {
         self.address_hash = other.address_hash;
         if self.storage_root == other.storage_root {
             let mut cache = self.storage_cache.borrow_mut();
-            for (k, v) in other.storage_cache.into_inner() {
-                cache.insert(k, v);
+            for (k, v) in other.storage_cache.into_inner().iter() {
+                cache.put(k.clone(), v.clone());
             }
         } else {
             self.storage_cache = other.storage_cache;
@@ -670,6 +671,23 @@ impl Account {
             BigEndianHash::from_uint(&item),
         ))
     }
+
+	pub fn clone_cache(oldCache: &LruCache<H256,H256>)->LruCache<H256,H256>{
+			let mut  newCache = LruCache::new(STORAGE_CACHE_ITEMS);
+			for (k,v ) in oldCache.iter(){
+				newCache.put(k.clone(),v.clone());
+			}
+			newCache
+}
+
+	pub fn clone_original_storage_cache(oldCache: Option<&(H256, RefCell<LruCache<H256, H256>>)>)-> Option<(H256, RefCell<LruCache<H256, H256>>)>{
+		match oldCache{
+			Some(c)=>{
+					return Some((c.0,RefCell::new(Account::clone_cache(c.1.borrow().deref()))));
+			},
+			None=>None,
+		}
+	}
 }
 
 impl fmt::Debug for Account {

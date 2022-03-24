@@ -27,7 +27,7 @@ extern crate hash_db;
 extern crate itertools;
 extern crate keccak_hash as hash;
 extern crate keccak_hasher;
-extern crate lru_cache;
+extern crate lru;
 extern crate maplit;
 extern crate memory_cache;
 extern crate memory_db;
@@ -44,6 +44,7 @@ extern crate trie_db as trie;
 extern crate triehash_ethereum as triehash;
 extern crate unexpected;
 extern crate vm;
+extern crate core;
 
 #[cfg(any(test, feature = "env_logger"))]
 extern crate env_logger;

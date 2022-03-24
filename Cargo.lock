@@ -613,7 +613,7 @@ dependencies = [
  "keccak-hash",
  "keccak-hasher 0.1.1",
  "log",
- "lru-cache",
+ "lru 0.7.3",
  "macros",
  "maplit",
  "memory-cache",
@@ -1148,6 +1148,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lru"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcb87f3080f6d1d69e8c564c0fcfde1d7aa8cc451ce40cae89479111f03bc0eb"
+
+[[package]]
 name = "lru-cache"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1398,7 +1404,7 @@ dependencies = [
  "ethereum-types",
  "hashbrown 0.8.2",
  "impl-trait-for-tuples",
- "lru",
+ "lru 0.5.3",
  "parity-util-mem-derive",
  "parking_lot 0.10.2",
  "primitive-types",

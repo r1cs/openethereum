@@ -23,7 +23,7 @@ itertools = "0.5"
 keccak-hash = {version = "0.5.0", default-features = false}
 keccak-hasher = { path = "../util/keccak-hasher", default-features = false }
 log = "0.4"
-lru-cache = "0.1"
+lru = {version= "0.7.3", default-features = false }
 macros = { path = "../util/macros" }
 maplit = "1"
 memory-cache = { path = "../util/memory-cache" }
