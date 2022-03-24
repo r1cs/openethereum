@@ -19,16 +19,16 @@ impl TestResult {
     /// Creates a new TestResult without results
     pub fn zero() -> Self {
         TestResult { success: 0, failed: Vec::new() }
-    }
+        }
     /// Creates a new success TestResult
     pub fn success() -> Self {
         TestResult { success: 1, failed: Vec::new() }
-    }
+        }
     /// Creates a new failed TestResult
     pub fn failed(name: &str) -> Self {
         TestResult { success: 0, failed: vec![name.to_string()] }
+        }
     }
-}
 
 impl std::ops::Add for TestResult {
     type Output = Self;
@@ -137,25 +137,25 @@ impl TestRunner {
 
     fn run_state_tests(test: &StateTests) -> TestResult {
         Self::run1(test, &test.path, |test: &StateTests, path: &Path, json: &[u8]| {
-            for skip in &test.skip {
-                if Self::in_set(&path, &skip.paths) {
-                    println!("   - {} ..SKIPPED", path.to_string_lossy());
-                    return Vec::new();
+                for skip in &test.skip {
+                    if Self::in_set(&path, &skip.paths) {
+                        println!("   - {} ..SKIPPED", path.to_string_lossy());
+                        return Vec::new();
+                    }
                 }
-            }
-            super::state::json_state_test(&test, &path, &json, &mut |_, _| {})
+                super::state::json_state_test(&test, &path, &json, &mut |_, _| {})
         })
     }
 
     fn run_executive_tests(test: &ExecutiveTests) -> TestResult {
         Self::run1(test, &test.path, |_: &ExecutiveTests, path: &Path, json: &[u8]| {
-            super::executive::json_executive_test(&path, &json, &mut |_, _| {})
+                super::executive::json_executive_test(&path, &json, &mut |_, _| {})
         })
     }
 
     fn run_transaction_tests(test: &TransactionTests) -> TestResult {
         Self::run1(test, &test.path, |_: &TransactionTests, path: &Path, json: &[u8]| {
-            super::transaction::json_transaction_test(&path, &json, &mut |_, _| {})
+                super::transaction::json_transaction_test(&path, &json, &mut |_, _| {})
         })
     }
 
@@ -177,7 +177,8 @@ impl TestRunner {
 #[test]
 fn ethereum_json_tests() {
     use super::flushln;
-    let content =
+	let _ = ::env_logger::try_init();
+	let content =
         std::fs::read("res/json_tests.json").expect("cannot open ethereum tests spec file");
     let runner =
         TestRunner::load(content.as_slice()).expect("cannot load ethereum tests spec file");

@@ -42,7 +42,6 @@ fn skip_test(
 pub fn json_state_test<H: FnMut(&str, HookType)>(
     state_test: &ethjson::test::StateTests, path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {
-    let _ = ::env_logger::try_init();
     let tests = ethjson::state::test::Test::load(json_data)
         .expect(&format!("Could not parse JSON state test data from {}", path.display()));
     let mut failed = Vec::new();
