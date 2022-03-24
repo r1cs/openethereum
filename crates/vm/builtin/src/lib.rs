@@ -185,10 +185,10 @@ impl Pricer for ModexpPricer {
 }
 
 impl ModexpPricer {
-	fn readToSlice(src: &[u8],dest: &mut [u8],defaultV: u8){
-		let maxCap = dest.len();
-		for i in 0..maxCap  {
-			if i <src.len(){
+	fn readToSlice(src: &[u8],dest: &mut [u8],offset: u8,defaultV: u8){
+		let max_cap = dest.len();
+		for i in 0..max_cap  {
+			if i+offset <src.len(){
 				dest[i]=src[i];
 			}else{
 				dest[i]=defaultV;
@@ -199,8 +199,14 @@ impl ModexpPricer {
 		let mut buf = [0; 32];
 
 
+		let mut offset=0;
         // read lengths as U256 here for accurate gas calculation.
-        let mut read_len = ||{Self::readToSlice(input,&mut buf,0);U256::from_big_endian(&buf[..])} ;
+        let mut read_len = ||{
+
+			Self::readToSlice(tmp_input,&mut buf,offset,0);
+			offset+=buf.len();
+			U256::from_big_endian(&buf[..])
+		} ;
         let base_len_u256 = read_len();
         let exp_len_u256 = read_len();
         let mod_len_u256 = read_len();
@@ -214,7 +220,7 @@ impl ModexpPricer {
 			buf.iter_mut().for_each(|b| *b = 0);
 			// let mut reader = input[(base_len as usize).wrapping_add(96)..].chain(io::repeat(0));
 			let len = min(exp_len, 32) as usize;
-			Self::readToSlice(&input[(base_len as usize).wrapping_add(96)..], &mut buf[(32 - len)..], 0);
+			Self::readToSlice(&input[(base_len as usize).wrapping_add(96)..], &mut buf[(32 - len)..], 0,0);
 			U256::from_big_endian(&buf[..])
 		};
         (base_len_u256, exp_len_u256, exp_low, mod_len_u256)
