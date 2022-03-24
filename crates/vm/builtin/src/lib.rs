@@ -185,7 +185,7 @@ impl Pricer for ModexpPricer {
 }
 
 impl ModexpPricer {
-	fn readToSlice(src: &[u8],dest: &mut [u8],offset: u8,defaultV: u8){
+	fn readToSlice(src: &[u8],dest: &mut [u8],offset: usize,defaultV: u8){
 		let max_cap = dest.len();
 		for i in 0..max_cap  {
 			if i+offset <src.len(){
@@ -203,7 +203,7 @@ impl ModexpPricer {
         // read lengths as U256 here for accurate gas calculation.
         let mut read_len = ||{
 
-			Self::readToSlice(tmp_input,&mut buf,offset,0);
+			Self::readToSlice(input,&mut buf,offset,0);
 			offset+=buf.len();
 			U256::from_big_endian(&buf[..])
 		} ;
