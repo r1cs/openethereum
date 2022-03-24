@@ -16,7 +16,7 @@
 
 //! Blockhain info type definition
 
-use std::fmt;
+use core::fmt;
 
 use crate::security_level::SecurityLevel;
 use crate::BlockNumber;
