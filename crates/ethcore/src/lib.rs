@@ -29,10 +29,8 @@ extern crate keccak_hash as hash;
 extern crate keccak_hasher;
 extern crate lru;
 extern crate maplit;
-extern crate memory_cache;
 extern crate memory_db;
 extern crate parity_bytes as bytes;
-extern crate parity_crypto as crypto;
 extern crate parking_lot;
 extern crate patricia_trie_ethereum as ethtrie;
 #[cfg(feature = "json-tests")]
@@ -45,6 +43,7 @@ extern crate triehash_ethereum as triehash;
 extern crate unexpected;
 extern crate vm;
 extern crate core;
+extern crate crypto;
 
 #[cfg(any(test, feature = "env_logger"))]
 extern crate env_logger;

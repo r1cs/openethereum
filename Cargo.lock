@@ -314,10 +314,10 @@ dependencies = [
 name = "common-types"
 version = "0.1.0"
 dependencies = [
+ "crypto",
  "ethereum-types",
  "keccak-hash",
  "parity-bytes",
- "parity-crypto",
  "rlp",
  "rlp_derive",
  "rustc-hex 1.0.0",
@@ -434,6 +434,19 @@ name = "crunchy"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
+
+[[package]]
+name = "crypto"
+version = "0.1.0"
+dependencies = [
+ "digest",
+ "ethereum-types",
+ "keccak-hash",
+ "parity-crypto",
+ "ripemd160",
+ "rustc-hex 2.1.0",
+ "sha2",
+]
 
 [[package]]
 name = "crypto-mac"
@@ -598,6 +611,7 @@ dependencies = [
  "ansi_term",
  "common-types",
  "criterion",
+ "crypto",
  "eip-152",
  "env_logger 0.5.13",
  "error-chain",
@@ -619,7 +633,6 @@ dependencies = [
  "memory-cache",
  "memory-db 0.11.0",
  "parity-bytes",
- "parity-crypto",
  "parking_lot 0.11.1",
  "patricia-trie-ethereum",
  "rand 0.7.3",
@@ -648,17 +661,17 @@ version = "0.1.0"
 dependencies = [
  "bn",
  "byteorder",
+ "crypto",
  "eip-152",
  "eth_pairings",
  "ethereum-types",
  "ethjson",
  "hex-literal 0.2.1",
- "keccak-hash",
- "log",
+ "macros",
  "maplit",
- "num",
+ "num-bigint 0.4.3",
+ "num-traits",
  "parity-bytes",
- "parity-crypto",
  "rustc-hex 1.0.0",
 ]
 
@@ -1246,30 +1259,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 
 [[package]]
-name = "num"
-version = "0.1.42"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4703ad64153382334aa8db57c637364c322d3372e097840c72000dabdcf6156e"
-dependencies = [
- "num-bigint 0.1.44",
- "num-integer",
- "num-iter",
- "num-traits",
-]
-
-[[package]]
-name = "num-bigint"
-version = "0.1.44"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e63899ad0da84ce718c14936262a41cee2c79c981fc0a0e7c7beb47d5a07e8c1"
-dependencies = [
- "num-integer",
- "num-traits",
- "rand 0.4.6",
- "rustc-serialize",
-]
-
-[[package]]
 name = "num-bigint"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1281,33 +1270,33 @@ dependencies = [
 ]
 
 [[package]]
-name = "num-integer"
-version = "0.1.41"
+name = "num-bigint"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b85e541ef8255f6cf42bbfe4ef361305c6c135d10919ecc26126c4e5ae94bc09"
+checksum = "f93ab6289c7b344a8a9f60f88d80aa20032336fe78da341afc91c8a2341fc75f"
 dependencies = [
- "autocfg 0.1.7",
- "num-traits",
-]
-
-[[package]]
-name = "num-iter"
-version = "0.1.39"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76bd5272412d173d6bf9afdf98db8612bbabc9a7a830b7bfc9c188911716132e"
-dependencies = [
- "autocfg 0.1.7",
+ "autocfg 1.0.0",
  "num-integer",
  "num-traits",
 ]
 
 [[package]]
-name = "num-traits"
-version = "0.2.8"
+name = "num-integer"
+version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ba9a427cfca2be13aa6f6403b0b7e7368fe982bfa16fccc450ce74c46cd9b32"
+checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
 dependencies = [
- "autocfg 0.1.7",
+ "autocfg 1.0.0",
+ "num-traits",
+]
+
+[[package]]
+name = "num-traits"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
+dependencies = [
+ "autocfg 1.0.0",
 ]
 
 [[package]]
@@ -1916,12 +1905,6 @@ name = "rustc-hex"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e75f6a532d0fd9f7f13144f392b6ad56a32696bfcd9c78f797f16bbb6f072d6"
-
-[[package]]
-name = "rustc-serialize"
-version = "0.3.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 
 [[package]]
 name = "rustc_version"

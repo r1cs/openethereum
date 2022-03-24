@@ -473,9 +473,7 @@ mod tests {
         let res = machine.verify_transaction_basic(&transaction, &header);
         assert_eq!(
             res,
-            Err(transaction::Error::InvalidSignature(
-                "invalid EC signature".into()
-            ))
+            Err(transaction::Error::InvalidSignature)
         );
     }
 

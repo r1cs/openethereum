@@ -27,4 +27,5 @@ lto = true
 # in the dependency tree in any other way
 # (i.e. pretty much only standalone CLI tools)
 members = [
+	"crates/crypto"
 ]

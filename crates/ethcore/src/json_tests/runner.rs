@@ -1,3 +1,4 @@
+use std::fmt::format;
 use ethjson::test::{
     EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
     TestTrieSpec, TransactionTests, TrieTests,
@@ -7,6 +8,7 @@ use log::info;
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 use trie::TrieSpec;
+use super::flushln;
 
 /// Result of tests execution
 pub struct TestResult {
@@ -213,11 +215,11 @@ fn ethereum_json_tests() {
         _ => runner.run(),
     };
     println!("----------------------------------------------------");
-    flushln!(
+    flushln(format!(
         "SUCCESS: {} FAILED: {} {:?}",
         result.success,
         result.failed.len(),
         result.failed
-    );
+    ));
     assert!(result.failed.len() == 0);
 }

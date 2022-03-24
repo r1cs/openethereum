@@ -23,8 +23,6 @@ use std::{
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
-use parking_lot::Mutex;
-
 use state::{self, Account};
 
 use trie::DBValue;

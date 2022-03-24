@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
+use std::fmt::format;
 use super::{test_common::*, HookType};
 use client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
 use ethjson::{self, spec::ForkSpec};
@@ -21,6 +22,7 @@ use pod_state::PodState;
 use std::path::Path;
 use trace;
 use vm::EnvInfo;
+use super::flushln;
 
 fn skip_test(
     test: &ethjson::test::StateTests,
@@ -81,7 +83,7 @@ pub fn json_state_test<H: FnMut(&str, HookType)>(
                 let mut test_env = env.clone();
                 if spec_name >= ForkSpec::London {
                     if test_env.base_fee.is_none() {
-                        test_env.base_fee = Some(0x0a.into());
+                        test_env.base_fee = Some(0x0au64.into());
                     }
                 }
 
@@ -111,7 +113,7 @@ pub fn json_state_test<H: FnMut(&str, HookType)>(
                     match result() {
                         Err(err) => {
                             println!("{} !!! Unexpected internal error: {:?}", info, err);
-                            flushln!("{} fail", info);
+                            flushln(format!("{} fail", info));
                             failed.push(name.clone());
                         }
                         Ok(Ok(TransactSuccess { state_root, .. })) if state_root != post_root => {
@@ -119,7 +121,7 @@ pub fn json_state_test<H: FnMut(&str, HookType)>(
                                 "{}: post state root mismatch: got {:?}, want {:?}",
                                 info, state_root, post_root
                             );
-                            flushln!("{} fail", info);
+                            flushln(format!("{} fail", info));
                             failed.push(name.clone());
                         }
                         Ok(Err(TransactErr {
@@ -132,14 +134,14 @@ pub fn json_state_test<H: FnMut(&str, HookType)>(
                                 info, state_root, post_root
                             );
                             println!("{} !!! Execution error: {:?}", info, error);
-                            flushln!("{} fail", info);
+                            flushln(format!("{} fail", info));
                             failed.push(name.clone());
                         }
                         Ok(Err(TransactErr { error, .. })) => {
-                            flushln!("{} ok ({:?})", info, error);
+                            flushln(format!("{} ok ({:?})", info, error));
                         }
                         Ok(_) => {
-                            flushln!("{} ok", info);
+                            flushln(format!("{} ok", info));
                         }
                     }
                 }
