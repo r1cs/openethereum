@@ -18,7 +18,7 @@
 
 use crate::ids::BlockId;
 use ethereum_types::Address;
-use std::ops::Range;
+use core::ops::Range;
 
 /// Easy to use trace filter.
 pub struct Filter {

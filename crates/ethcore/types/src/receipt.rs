@@ -19,7 +19,7 @@
 use super::transaction::TypedTxId;
 use ethereum_types::{Address, Bloom, H160, H256, U256};
 use rlp::{DecoderError, Rlp, RlpStream};
-use std::ops::{Deref, DerefMut};
+use core::ops::{Deref, DerefMut};
 
 use crate::{
     log_entry::{LocalizedLogEntry, LogEntry},
