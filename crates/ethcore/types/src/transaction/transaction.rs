@@ -592,7 +592,7 @@ impl TypedTransaction {
                 if overflow {
                     self.tx().gas_price
                 } else {
-                    min(self.tx().gas_price, v2)
+					if self.tx().gas_price<=v2 {self.tx().gas_price}else{v2}
                 }
             }
             Self::AccessList(_) => self.tx().gas_price,
