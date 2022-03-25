@@ -16,7 +16,7 @@
 
 //! View onto transaction rlp
 
-use std::cmp::min;
+use core::cmp::min;
 
 use crate::bytes::Bytes;
 use crate::hash::keccak;
