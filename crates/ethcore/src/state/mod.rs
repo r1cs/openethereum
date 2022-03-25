@@ -19,12 +19,13 @@
 //! Unconfirmed sub-states are managed with `checkpoint`s which may be canonicalized
 //! or rolled back.
 
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::sync::Arc;
+use core::cell::{RefCell, RefMut};
+use core::fmt;
 use hash::{KECCAK_EMPTY, KECCAK_NULL_RLP};
-use std::cell::{RefCell, RefMut};
-use std::collections::hash_map::Entry;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fmt;
-use std::sync::Arc;
+use hashbrown::hash_map::Entry;
+use hashbrown::{HashMap, HashSet};
 
 use error::Error;
 use executed::{Executed, ExecutionError};
@@ -1407,6 +1408,8 @@ fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::sync::Arc;
+    use core::str::FromStr;
     use crypto::publickey::Secret;
     use ethereum_types::{Address, BigEndianHash, H256, U256};
     use evm::CallType;
@@ -1414,8 +1417,6 @@ mod tests {
     use machine::EthereumMachine;
     use rustc_hex::FromHex;
     use spec::*;
-    use std::str::FromStr;
-    use std::sync::Arc;
     use test_helpers::{get_temp_state, get_temp_state_db};
     use trace::{trace, FlatTrace, TraceError};
     use types::transaction::*;

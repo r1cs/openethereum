@@ -16,19 +16,20 @@
 
 //! Single account in the system.
 
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
 use bytes::{Bytes, ToPretty};
+use core::fmt;
 use error::Error;
 use ethereum_types::{Address, BigEndianHash, H256, U256};
 use ethtrie::{Result as TrieResult, SecTrieDB, TrieDB, TrieFactory};
 use hash::{keccak, KECCAK_EMPTY, KECCAK_NULL_RLP};
 use hash_db::HashDB;
+use hashbrown::HashMap;
 use keccak_hasher::KeccakHasher;
 use lru::LruCache;
 use pod_account::*;
 use rlp::{encode, RlpStream};
-use std::collections::{BTreeMap, HashMap};
-use std::fmt;
-use std::sync::Arc;
 use trie::{DBValue, Recorder, Trie};
 use types::basic_account::BasicAccount;
 
@@ -685,9 +686,9 @@ mod tests {
     use super::super::new_memory_db;
     use super::*;
     use bytes::Bytes;
+    use core::str::FromStr;
     use ethereum_types::H256;
     use rlp_compress::{compress, decompress, snapshot_swapper};
-    use std::str::FromStr;
 
     #[test]
     fn account_compress() {

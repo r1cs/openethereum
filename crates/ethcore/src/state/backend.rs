@@ -21,9 +21,9 @@
 //! should become general over time to the point where not even a
 //! merkle trie is strictly necessary.
 
-use std::cell::RefCell;
-use std::collections::HashSet;
-use std::sync::Arc;
+use alloc::sync::Arc;
+use core::cell::RefCell;
+use hashbrown::HashSet;
 
 use ethereum_types::{Address, H256};
 use hash_db::{AsHashDB, HashDB};
