@@ -25,8 +25,7 @@ use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
 use crypto::publickey::{self, Secret};
 
 use rlp::{self, DecoderError, Rlp, RlpStream};
-use std::cmp::min;
-use std::ops::Deref;
+use core::ops::Deref;
 
 pub type AccessListItem = (H160, Vec<H256>);
 pub type AccessList = Vec<AccessListItem>;
