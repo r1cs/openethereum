@@ -16,7 +16,6 @@
 
 //! `NodeCodec` implementation for Rlp
 
-
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
 

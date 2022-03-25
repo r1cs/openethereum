@@ -24,8 +24,8 @@ use std::{cmp, sync::Arc};
 use trace::{Tracer, VMTracer};
 use types::transaction::UNSIGNED_SENDER;
 use vm::{
-    self, ActionParams, ActionValue, CallType, ContractCreateResult,
-    CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind,
+    self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress,
+    EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind,
 };
 
 /// Policy for handling output data on `RETURN` opcode.
@@ -170,22 +170,22 @@ where
         self.state.balance(address).map_err(Into::into)
     }
 
-	fn blockhash(&mut self, number: &U256) -> H256 {
-		match *number < U256::from(self.env_info.number)
-			&& number.low_u64() >= cmp::max(256, self.env_info.number) - 256
-		{
-			true => {
-				let index = self.env_info.number - number.low_u64() - 1;
-				assert!(
-					index < self.env_info.last_hashes.len() as u64,
-					"Inconsistent env_info, should contain at least {:?} last hashes",
-					index + 1
-				);
-				self.env_info.last_hashes[index as usize].clone()
-			}
-			false => H256::zero(),
-		}
-	}
+    fn blockhash(&mut self, number: &U256) -> H256 {
+        match *number < U256::from(self.env_info.number)
+            && number.low_u64() >= cmp::max(256, self.env_info.number) - 256
+        {
+            true => {
+                let index = self.env_info.number - number.low_u64() - 1;
+                assert!(
+                    index < self.env_info.last_hashes.len() as u64,
+                    "Inconsistent env_info, should contain at least {:?} last hashes",
+                    index + 1
+                );
+                self.env_info.last_hashes[index as usize].clone()
+            }
+            false => H256::zero(),
+        }
+    }
 
     fn create(
         &mut self,

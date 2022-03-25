@@ -21,14 +21,14 @@ use core as core_;
 #[cfg(feature = "std")]
 use std as core_;
 
+use core_::fmt;
 use ethereum_types::Address;
 use ethtrie;
-use core_::fmt;
 extern crate alloc;
+use crate::{ActionParams, ResumeCall, ResumeCreate};
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
-use crate::{ActionParams, ResumeCall, ResumeCreate};
 
 #[derive(Debug)]
 pub enum TrapKind {

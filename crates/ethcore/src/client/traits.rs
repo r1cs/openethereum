@@ -18,13 +18,7 @@
 
 use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
-use types::{
-    blockchain_info::BlockChainInfo,
-    encoded,
-    header::Header,
-    ids::*,
-    BlockNumber,
-};
+use types::{blockchain_info::BlockChainInfo, encoded, header::Header, ids::*, BlockNumber};
 
 use block::OpenBlock;
 use engines::EthEngine;

@@ -103,7 +103,12 @@ impl<M: Machine> Engine<M> for InstantSeal<M> {
     }
 
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {
-		parent_timestamp + if self.params.millisecond_timestamp { 1000 } else { 1 }
+        parent_timestamp
+            + if self.params.millisecond_timestamp {
+                1000
+            } else {
+                1
+            }
     }
 
     fn is_timestamp_valid(&self, header_timestamp: u64, parent_timestamp: u64) -> bool {

@@ -31,7 +31,7 @@ use machine::EthereumMachine;
 
 /// Load chain spec from `SpecParams` and JSON.
 pub fn load(b: &[u8]) -> Spec {
-	Spec::load(b).expect("chain spec is invalid")
+    Spec::load(b).expect("chain spec is invalid")
 }
 
 fn load_machine(b: &[u8]) -> EthereumMachine {
@@ -123,7 +123,9 @@ pub fn new_yolo3() -> Spec {
 
 /// Create a new Foundation Frontier-era chain spec as though it never changes to Homestead.
 pub fn new_frontier_test() -> Spec {
-    load(include_bytes!("../../res/chainspec/test/frontier_test.json"))
+    load(include_bytes!(
+        "../../res/chainspec/test/frontier_test.json"
+    ))
 }
 
 /// Create a new Ropsten chain spec.
@@ -132,7 +134,9 @@ pub fn new_ropsten_test() -> Spec {
 }
 /// Create a new Foundation Homestead-era chain spec as though it never changed from Frontier.
 pub fn new_homestead_test() -> Spec {
-    load(include_bytes!("../../res/chainspec/test/homestead_test.json"))
+    load(include_bytes!(
+        "../../res/chainspec/test/homestead_test.json"
+    ))
 }
 
 /// Create a new Foundation Homestead-EIP150-era chain spec as though it never changed from Homestead/Frontier.
@@ -147,77 +151,73 @@ pub fn new_eip161_test() -> Spec {
 
 /// Create a new Foundation Frontier/Homestead/DAO chain spec with transition points at #5 and #8.
 pub fn new_transition_test() -> Spec {
-    load(include_bytes!("../../res/chainspec/test/transition_test.json"))
+    load(include_bytes!(
+        "../../res/chainspec/test/transition_test.json"
+    ))
 }
 
 /// Create a new Foundation Mainnet chain spec without genesis accounts.
 pub fn new_mainnet_like() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/frontier_like_test.json"),
-    )
+    load(include_bytes!(
+        "../../res/chainspec/test/frontier_like_test.json"
+    ))
 }
 
 /// Create a new Foundation Byzantium era spec.
 pub fn new_byzantium_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/byzantium_test.json"),
-    )
+    load(include_bytes!(
+        "../../res/chainspec/test/byzantium_test.json"
+    ))
 }
 
 /// Create a new Foundation Constantinople era spec.
 pub fn new_constantinople_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/constantinople_test.json"),
-    )
+    load(include_bytes!(
+        "../../res/chainspec/test/constantinople_test.json"
+    ))
 }
 
 /// Create a new Foundation St. Peter's (Contantinople Fix) era spec.
 pub fn new_constantinople_fix_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/st_peters_test.json"),
-    )
+    load(include_bytes!(
+        "../../res/chainspec/test/st_peters_test.json"
+    ))
 }
 
 /// Create a new Foundation Istanbul era spec.
 pub fn new_istanbul_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/istanbul_test.json"),
-    )
+    load(include_bytes!(
+        "../../res/chainspec/test/istanbul_test.json"
+    ))
 }
 
 /// Create a new BizantiumToConstaninopleFixAt5 era spec.
 pub fn new_byzantium_to_constantinoplefixat5_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/byzantium_to_constantinoplefixat5_test.json"),
-    )
+    load(include_bytes!(
+        "../../res/chainspec/test/byzantium_to_constantinoplefixat5_test.json"
+    ))
 }
 
 /// Create a new Foundation Berlin era spec.
 pub fn new_berlin_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/berlin_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/berlin_test.json"))
 }
 
 /// Create a new Foundation London era spec.
 pub fn new_london_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/london_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/london_test.json"))
 }
 
 /// Create a new BerlinToLondonAt5 era spec.
 pub fn new_berlin_to_london_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/berlin_to_londonat5_test.json"),
-    )
+    load(include_bytes!(
+        "../../res/chainspec/test/berlin_to_londonat5_test.json"
+    ))
 }
 
 /// Create a new Musicoin-MCIP3-era spec.
 pub fn new_mcip3_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/mcip3_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/mcip3_test.json"))
 }
 
 // For tests

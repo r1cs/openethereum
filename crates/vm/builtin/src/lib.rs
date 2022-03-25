@@ -22,26 +22,26 @@
 
 extern crate alloc;
 
-use core::{
-    cmp::{max, min},
-	fmt,
-    convert::TryInto,
-    mem::size_of,
-};
 use alloc::collections::BTreeMap;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::{
+    cmp::{max, min},
+    convert::TryInto,
+    fmt,
+    mem::size_of,
+};
 #[cfg(feature = "std")]
 use core::{convert::TryFrom, str::FromStr};
 
-use byteorder::{ByteOrder, BigEndian, LittleEndian};
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use crypto::hash::{ripemd160, sha256};
+use crypto::publickey::{recover, Signature};
 use eip_152::compress;
 use ethereum_types::{H256, U256};
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
 use parity_bytes::BytesRef;
-use crypto::hash::{sha256, ripemd160};
-use crypto::publickey::{recover, Signature};
 
 #[cfg(feature = "std")]
 use eth_pairings::public_interface::eip2537::{
@@ -83,44 +83,44 @@ impl Pricer for Blake2FPricer {
 /// Pricing model
 #[derive(Debug)]
 enum Pricing {
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     AltBn128Pairing(AltBn128PairingPricer),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     AltBn128ConstOperations(AltBn128ConstOperations),
     Blake2F(Blake2FPricer),
     Linear(Linear),
     Modexp(ModexpPricer),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Modexp2565(Modexp2565Pricer),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Bls12Pairing(Bls12PairingPricer),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Bls12ConstOperations(Bls12ConstOperations),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Bls12MultiexpG1(Bls12MultiexpPricerG1),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Bls12MultiexpG2(Bls12MultiexpPricerG2),
 }
 
 impl Pricer for Pricing {
     fn cost(&self, input: &[u8]) -> U256 {
         match self {
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::AltBn128Pairing(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::AltBn128ConstOperations(inner) => inner.cost(input),
             Pricing::Blake2F(inner) => inner.cost(input),
             Pricing::Linear(inner) => inner.cost(input),
             Pricing::Modexp(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Modexp2565(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Bls12Pairing(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Bls12ConstOperations(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Bls12MultiexpG1(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Bls12MultiexpG2(inner) => inner.cost(input),
         }
     }
@@ -204,42 +204,40 @@ impl Pricer for ModexpPricer {
 }
 
 struct FillZeroReader<'a> {
-	buf: &'a [u8],
+    buf: &'a [u8],
 }
 
 impl<'a> FillZeroReader<'a> {
-	pub fn new(buf: &'a [u8]) -> Self {
-		Self {
-			buf,
-		}
-	}
+    pub fn new(buf: &'a [u8]) -> Self {
+        Self { buf }
+    }
 
-	pub fn read_exact(&mut self, buf: &mut [u8]) {
-		let (have, want) = (self.buf.len(), buf.len());
-		if have > want {
-			buf.copy_from_slice(&self.buf[..want]);
-			self.buf = &self.buf[want..];
-			return
-		}
-		if have > 0 {
-			buf[..have].copy_from_slice(self.buf);
-			self.buf = &[];
-		}
+    pub fn read_exact(&mut self, buf: &mut [u8]) {
+        let (have, want) = (self.buf.len(), buf.len());
+        if have > want {
+            buf.copy_from_slice(&self.buf[..want]);
+            self.buf = &self.buf[want..];
+            return;
+        }
+        if have > 0 {
+            buf[..have].copy_from_slice(self.buf);
+            self.buf = &[];
+        }
 
-		buf[have..].fill(0);
-	}
+        buf[have..].fill(0);
+    }
 }
 
 impl ModexpPricer {
     pub fn parse_input(input: &[u8]) -> (U256, U256, U256, U256) {
-		let mut reader = FillZeroReader::new(input);
-		let mut buf = [0; 32];
+        let mut reader = FillZeroReader::new(input);
+        let mut buf = [0; 32];
 
-		// read lengths as U256 here for accurate gas calculation.
-		let mut read_len = || {
-			reader.read_exact(&mut buf[..]);
-			U256::from_big_endian(&buf[..])
-		};
+        // read lengths as U256 here for accurate gas calculation.
+        let mut read_len = || {
+            reader.read_exact(&mut buf[..]);
+            U256::from_big_endian(&buf[..])
+        };
 
         let base_len_u256 = read_len();
         let exp_len_u256 = read_len();
@@ -251,12 +249,12 @@ impl ModexpPricer {
         let exp_low = if base_len.wrapping_add(96) >= input.len() as u64 {
             U256::zero()
         } else {
-			buf.iter_mut().for_each(|b| *b = 0);
-			let mut reader = FillZeroReader::new(&input[(base_len as usize).wrapping_add(96)..]);
-			let len = min(exp_len, 32) as usize;
-			reader.read_exact(&mut buf[(32 - len)..]);
-			U256::from_big_endian(&buf[..])
-		};
+            buf.iter_mut().for_each(|b| *b = 0);
+            let mut reader = FillZeroReader::new(&input[(base_len as usize).wrapping_add(96)..]);
+            let len = min(exp_len, 32) as usize;
+            reader.read_exact(&mut buf[(32 - len)..]);
+            U256::from_big_endian(&buf[..])
+        };
         (base_len_u256, exp_len_u256, exp_low, mod_len_u256)
     }
 
@@ -652,11 +650,7 @@ impl From<ethjson::spec::builtin::Pricing> for Pricing {
                 word: linear.word,
             }),
             ethjson::spec::builtin::Pricing::Modexp(exp) => Pricing::Modexp(ModexpPricer {
-                divisor: if exp.divisor == 0 {
-                    10
-                } else {
-                    exp.divisor
-                },
+                divisor: if exp.divisor == 0 { 10 } else { exp.divisor },
             }),
             ethjson::spec::builtin::Pricing::Modexp2565(_) => {
                 Pricing::Modexp2565(Modexp2565Pricer {})
@@ -715,44 +709,44 @@ enum EthereumBuiltin {
     Ripemd160(Ripemd160),
     /// modexp (EIP 198)
     Modexp(Modexp),
-	#[cfg(feature = "std")]
-	/// alt_bn128_add
-	Bn128Add(Bn128Add),
-	#[cfg(feature = "std")]
-	/// alt_bn128_mul
-	Bn128Mul(Bn128Mul),
-	#[cfg(feature = "std")]
-	/// alt_bn128_pairing
-	Bn128Pairing(Bn128Pairing),
-	/// blake2_f (The Blake2 compression function F, EIP-152)
+    #[cfg(feature = "std")]
+    /// alt_bn128_add
+    Bn128Add(Bn128Add),
+    #[cfg(feature = "std")]
+    /// alt_bn128_mul
+    Bn128Mul(Bn128Mul),
+    #[cfg(feature = "std")]
+    /// alt_bn128_pairing
+    Bn128Pairing(Bn128Pairing),
+    /// blake2_f (The Blake2 compression function F, EIP-152)
     Blake2F(Blake2F),
-	#[cfg(feature = "std")]
-	/// bls12_381 addition in g1
-	Bls12G1Add(Bls12G1Add),
-	#[cfg(feature = "std")]
-	/// bls12_381 multiplication in g1
-	Bls12G1Mul(Bls12G1Mul),
-	#[cfg(feature = "std")]
-	/// bls12_381 multiexponentiation in g1
-	Bls12G1MultiExp(Bls12G1MultiExp),
-	#[cfg(feature = "std")]
-	/// bls12_381 addition in g2
-	Bls12G2Add(Bls12G2Add),
-	#[cfg(feature = "std")]
-	/// bls12_381 multiplication in g2
-	Bls12G2Mul(Bls12G2Mul),
-	#[cfg(feature = "std")]
-	/// bls12_381 multiexponentiation in g2
-	Bls12G2MultiExp(Bls12G2MultiExp),
-	#[cfg(feature = "std")]
-	/// bls12_381 pairing
-	Bls12Pairing(Bls12Pairing),
-	#[cfg(feature = "std")]
-	/// bls12_381 fp to g1 mapping
-	Bls12MapFpToG1(Bls12MapFpToG1),
-	#[cfg(feature = "std")]
-	/// bls12_381 fp2 to g2 mapping
-	Bls12MapFp2ToG2(Bls12MapFp2ToG2),
+    #[cfg(feature = "std")]
+    /// bls12_381 addition in g1
+    Bls12G1Add(Bls12G1Add),
+    #[cfg(feature = "std")]
+    /// bls12_381 multiplication in g1
+    Bls12G1Mul(Bls12G1Mul),
+    #[cfg(feature = "std")]
+    /// bls12_381 multiexponentiation in g1
+    Bls12G1MultiExp(Bls12G1MultiExp),
+    #[cfg(feature = "std")]
+    /// bls12_381 addition in g2
+    Bls12G2Add(Bls12G2Add),
+    #[cfg(feature = "std")]
+    /// bls12_381 multiplication in g2
+    Bls12G2Mul(Bls12G2Mul),
+    #[cfg(feature = "std")]
+    /// bls12_381 multiexponentiation in g2
+    Bls12G2MultiExp(Bls12G2MultiExp),
+    #[cfg(feature = "std")]
+    /// bls12_381 pairing
+    Bls12Pairing(Bls12Pairing),
+    #[cfg(feature = "std")]
+    /// bls12_381 fp to g1 mapping
+    Bls12MapFpToG1(Bls12MapFpToG1),
+    #[cfg(feature = "std")]
+    /// bls12_381 fp2 to g2 mapping
+    Bls12MapFp2ToG2(Bls12MapFp2ToG2),
 }
 
 #[cfg(feature = "std")]
@@ -792,30 +786,30 @@ impl Implementation for EthereumBuiltin {
             EthereumBuiltin::Sha256(inner) => inner.execute(input, output),
             EthereumBuiltin::Ripemd160(inner) => inner.execute(input, output),
             EthereumBuiltin::Modexp(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bn128Add(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bn128Mul(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bn128Pairing(inner) => inner.execute(input, output),
             EthereumBuiltin::Blake2F(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1Add(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1Mul(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1MultiExp(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2Add(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2Mul(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2MultiExp(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12Pairing(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12MapFpToG1(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12MapFp2ToG2(inner) => inner.execute(input, output),
         }
     }
@@ -943,19 +937,19 @@ impl Implementation for Blake2F {
         // state vector, h
         let mut h = [0u64; 8];
         for (i, state_word) in h.iter_mut().enumerate() {
-            *state_word = LittleEndian::read_u64(&input[4+8*i..]);
+            *state_word = LittleEndian::read_u64(&input[4 + 8 * i..]);
         }
 
         // message block vector, m
         let mut m = [0u64; 16];
         for (i, msg_word) in m.iter_mut().enumerate() {
-            *msg_word = LittleEndian::read_u64(&input[68+8*i..]);
+            *msg_word = LittleEndian::read_u64(&input[68 + 8 * i..]);
         }
 
         // 2w-bit offset counter, t
         let t = [
-			LittleEndian::read_u64(&input[196..]),
-			LittleEndian::read_u64(&input[204..]),
+            LittleEndian::read_u64(&input[196..]),
+            LittleEndian::read_u64(&input[204..]),
         ];
 
         // final block indicator flag, "f"
@@ -1102,9 +1096,7 @@ impl Implementation for Bls12G1Add {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G1Add error")
-            }
+            Err(_e) => Err("Bls12G1Add error"),
         }
     }
 }
@@ -1120,9 +1112,7 @@ impl Implementation for Bls12G1Mul {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G1Mul error")
-            }
+            Err(_e) => Err("Bls12G1Mul error"),
         }
     }
 }
@@ -1138,9 +1128,7 @@ impl Implementation for Bls12G1MultiExp {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G1MultiExp error")
-            }
+            Err(_e) => Err("Bls12G1MultiExp error"),
         }
     }
 }
@@ -1156,9 +1144,7 @@ impl Implementation for Bls12G2Add {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G2Add error")
-            }
+            Err(_e) => Err("Bls12G2Add error"),
         }
     }
 }
@@ -1174,9 +1160,7 @@ impl Implementation for Bls12G2Mul {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G2Mul error")
-            }
+            Err(_e) => Err("Bls12G2Mul error"),
         }
     }
 }
@@ -1192,9 +1176,7 @@ impl Implementation for Bls12G2MultiExp {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G2MultiExp error")
-            }
+            Err(_e) => Err("Bls12G2MultiExp error"),
         }
     }
 }
@@ -1210,9 +1192,7 @@ impl Implementation for Bls12Pairing {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12Pairing error")
-            }
+            Err(_e) => Err("Bls12Pairing error"),
         }
     }
 }
@@ -1228,9 +1208,7 @@ impl Implementation for Bls12MapFpToG1 {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12MapFpToG1 error")
-            }
+            Err(_e) => Err("Bls12MapFpToG1 error"),
         }
     }
 }
@@ -1246,9 +1224,7 @@ impl Implementation for Bls12MapFp2ToG2 {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12MapFp2ToG2 error")
-            }
+            Err(_e) => Err("Bls12MapFp2ToG2 error"),
         }
     }
 }
@@ -1434,12 +1410,12 @@ mod tests {
     use macros::map;
     use maplit::btreemap;
     use num_bigint::BigUint;
+    use num_traits::{One, Zero};
     use parity_bytes::BytesRef;
     use rustc_hex::FromHex;
     use std::convert::TryFrom;
-	use num_traits::{One, Zero};
 
-	#[test]
+    #[test]
     fn blake2f_cost() {
         let f = Builtin {
             pricer: map![0 => Pricing::Blake2F(123)],

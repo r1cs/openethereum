@@ -5,15 +5,15 @@ use std as core_;
 
 extern crate alloc;
 
-use hashbrown::HashMap;
-use ethereum_types::{Address, H256};
 use core_::{
     borrow::Borrow,
     hash::{Hash, Hasher},
 };
+use ethereum_types::{Address, H256};
+use hashbrown::HashMap;
 
-use core_::cell::RefCell;
 use alloc::rc::Rc;
+use core_::cell::RefCell;
 
 // Implementation of a hasheable borrowed pair
 trait KeyPair<A, B> {

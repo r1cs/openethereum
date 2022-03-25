@@ -21,12 +21,12 @@ use core as core_;
 #[cfg(feature = "std")]
 use std as core_;
 
-use bytes::Bytes;
-use crate::{CallType, Schedule};
-use crate::EnvInfo;
 use crate::error::{Result, TrapKind};
-use ethereum_types::{Address, H256, U256};
+use crate::EnvInfo;
 use crate::ReturnData;
+use crate::{CallType, Schedule};
+use bytes::Bytes;
+use ethereum_types::{Address, H256, U256};
 extern crate alloc;
 use alloc::sync::Arc;
 use alloc::vec::Vec;

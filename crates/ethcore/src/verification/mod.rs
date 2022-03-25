@@ -19,6 +19,4 @@
 pub mod queue;
 mod verification;
 
-pub use self::{
-    verification::*,
-};
+pub use self::verification::*;

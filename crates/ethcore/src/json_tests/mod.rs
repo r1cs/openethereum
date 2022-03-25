@@ -34,7 +34,7 @@ pub use self::{
 use std::io;
 
 fn flushln(s: String) {
-	let _ = io::Write::write(&mut io::stdout(), s.as_bytes());
-	let _ = io::Write::write(&mut io::stdout(), b"\n");
-	let _ = io::Write::flush(&mut io::stdout());
+    let _ = io::Write::write(&mut io::stdout(), s.as_bytes());
+    let _ = io::Write::write(&mut io::stdout(), b"\n");
+    let _ = io::Write::flush(&mut io::stdout());
 }

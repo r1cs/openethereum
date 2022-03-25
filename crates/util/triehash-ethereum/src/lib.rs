@@ -51,12 +51,12 @@ where
 
 #[cfg(test)]
 mod tests {
-	extern crate std;
+    extern crate std;
     use super::{ordered_trie_root, sec_trie_root, trie_root};
     use ethereum_types::H256;
     use keccak_hasher::KeccakHasher;
     use std::str::FromStr;
-	use std::vec;
+    use std::vec;
     use triehash;
 
     #[test]

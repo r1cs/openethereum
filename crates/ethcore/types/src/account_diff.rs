@@ -17,9 +17,9 @@
 //! Diff between two accounts.
 
 use crate::bytes::Bytes;
-use ethereum_types::{H256, U256};
-use core::{cmp::*, fmt};
 use alloc::collections::BTreeMap;
+use core::{cmp::*, fmt};
+use ethereum_types::{H256, U256};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 /// Diff type for specifying a change (or not).

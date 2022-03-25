@@ -23,7 +23,6 @@ use ethtrie::{Result as TrieResult, SecTrieDB, TrieDB, TrieFactory};
 use hash::{keccak, KECCAK_EMPTY, KECCAK_NULL_RLP};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
-use trie::DBValue;
 use lru::LruCache;
 use pod_account::*;
 use rlp::{encode, RlpStream};
@@ -32,6 +31,7 @@ use std::{
     fmt,
     sync::Arc,
 };
+use trie::DBValue;
 use trie::{Recorder, Trie};
 use types::basic_account::BasicAccount;
 
@@ -614,8 +614,10 @@ impl Account {
     /// Clone account data, dirty storage keys and cached storage keys.
     pub fn clone_all(&self) -> Account {
         let mut account = self.clone_dirty();
-		account.storage_cache = RefCell::new(Account::clone_cache(self.storage_cache.borrow().deref()));
-        account.original_storage_cache =Account::clone_original_storage_cache(self.original_storage_cache.as_ref());
+        account.storage_cache =
+            RefCell::new(Account::clone_cache(self.storage_cache.borrow().deref()));
+        account.original_storage_cache =
+            Account::clone_original_storage_cache(self.original_storage_cache.as_ref());
         account
     }
 
@@ -672,22 +674,27 @@ impl Account {
         ))
     }
 
-	pub fn clone_cache(oldCache: &LruCache<H256,H256>)->LruCache<H256,H256>{
-			let mut  newCache = LruCache::new(STORAGE_CACHE_ITEMS);
-			for (k,v ) in oldCache.iter(){
-				newCache.put(k.clone(),v.clone());
-			}
-			newCache
-}
+    pub fn clone_cache(oldCache: &LruCache<H256, H256>) -> LruCache<H256, H256> {
+        let mut newCache = LruCache::new(STORAGE_CACHE_ITEMS);
+        for (k, v) in oldCache.iter() {
+            newCache.put(k.clone(), v.clone());
+        }
+        newCache
+    }
 
-	pub fn clone_original_storage_cache(oldCache: Option<&(H256, RefCell<LruCache<H256, H256>>)>)-> Option<(H256, RefCell<LruCache<H256, H256>>)>{
-		match oldCache{
-			Some(c)=>{
-					return Some((c.0,RefCell::new(Account::clone_cache(c.1.borrow().deref()))));
-			},
-			None=>None,
-		}
-	}
+    pub fn clone_original_storage_cache(
+        oldCache: Option<&(H256, RefCell<LruCache<H256, H256>>)>,
+    ) -> Option<(H256, RefCell<LruCache<H256, H256>>)> {
+        match oldCache {
+            Some(c) => {
+                return Some((
+                    c.0,
+                    RefCell::new(Account::clone_cache(c.1.borrow().deref())),
+                ));
+            }
+            None => None,
+        }
+    }
 }
 
 impl fmt::Debug for Account {
@@ -706,10 +713,10 @@ impl fmt::Debug for Account {
 
 #[cfg(test)]
 mod tests {
+    use super::super::new_memory_db;
     use super::*;
     use bytes::Bytes;
-    use ethereum_types::{H256};
-    use super::super::new_memory_db;
+    use ethereum_types::H256;
     use rlp_compress::{compress, decompress, snapshot_swapper};
     use std::str::FromStr;
 
@@ -744,13 +751,11 @@ mod tests {
                 .unwrap()
         );
         assert_eq!(
-            a.storage_at(&db, &H256::from_low_u64_be(0x00u64))
-                .unwrap(),
+            a.storage_at(&db, &H256::from_low_u64_be(0x00u64)).unwrap(),
             H256::from_low_u64_be(0x1234u64)
         );
         assert_eq!(
-            a.storage_at(&db, &H256::from_low_u64_be(0x01u64))
-                .unwrap(),
+            a.storage_at(&db, &H256::from_low_u64_be(0x01u64)).unwrap(),
             H256::default()
         );
     }

@@ -1,14 +1,14 @@
-use std::fmt::format;
+use super::flushln;
 use ethjson::test::{
-    EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
-    TestTrieSpec, TransactionTests, TrieTests,
+    EthereumTestSuite, ExecutiveTests, LocalTests, StateTests, TestTrieSpec, TransactionTests,
+    TrieTests,
 };
 use globset::Glob;
 use log::info;
 use rayon::prelude::*;
+use std::fmt::format;
 use std::path::{Path, PathBuf};
 use trie::TrieSpec;
-use super::flushln;
 
 /// Result of tests execution
 pub struct TestResult {

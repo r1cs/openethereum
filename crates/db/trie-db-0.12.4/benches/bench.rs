@@ -14,31 +14,35 @@
 
 #[macro_use]
 extern crate criterion;
-use criterion::{Criterion, black_box};
+use criterion::{black_box, Criterion};
 criterion_group!(benches, nibble_common_prefix);
 criterion_main!(benches);
 
-extern crate trie_standardmap;
 extern crate trie_db;
+extern crate trie_standardmap;
 
-use trie_standardmap::{Alphabet, StandardMap, ValueMode};
 use trie_db::NibbleSlice;
+use trie_standardmap::{Alphabet, StandardMap, ValueMode};
 
 fn nibble_common_prefix(b: &mut Criterion) {
-	let st = StandardMap {
-		alphabet: Alphabet::Custom(b"abcd".to_vec()),
-		min_key: 32,
-		journal_key: 0,
-		value_mode: ValueMode::Mirror,
-		count: 255,
-	};
-	let (keys, values): (Vec<_>, Vec<_>) = st.make().iter().cloned().unzip();
-	let mixed: Vec<_> = keys.iter().zip(values.iter().rev()).map(|pair| {
-		(NibbleSlice::new(pair.0), NibbleSlice::new(pair.1))
-	}).collect();
-	b.bench_function("nibble_common_prefix", |b| b.iter(&mut ||{
-		for (left, right) in mixed.iter() {
-			let _ = black_box(left.common_prefix(&right));
-		}
-	}));
+    let st = StandardMap {
+        alphabet: Alphabet::Custom(b"abcd".to_vec()),
+        min_key: 32,
+        journal_key: 0,
+        value_mode: ValueMode::Mirror,
+        count: 255,
+    };
+    let (keys, values): (Vec<_>, Vec<_>) = st.make().iter().cloned().unzip();
+    let mixed: Vec<_> = keys
+        .iter()
+        .zip(values.iter().rev())
+        .map(|pair| (NibbleSlice::new(pair.0), NibbleSlice::new(pair.1)))
+        .collect();
+    b.bench_function("nibble_common_prefix", |b| {
+        b.iter(&mut || {
+            for (left, right) in mixed.iter() {
+                let _ = black_box(left.common_prefix(&right));
+            }
+        })
+    });
 }

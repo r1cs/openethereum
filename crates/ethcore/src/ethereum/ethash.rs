@@ -229,7 +229,8 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
         let author = *block.header.author();
         let number = block.header.number();
 
-        let rewards = {
+        let rewards =
+            {
                 let mut rewards = Vec::new();
 
                 let (_, reward) = self.ethash_params.block_reward.iter()
@@ -267,7 +268,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
                 }
 
                 rewards
-        };
+            };
 
         block_reward::apply_block_rewards(&rewards, block, &self.machine)
     }
@@ -317,7 +318,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
     }
 
     fn verify_block_unordered(&self, _header: &Header) -> Result<(), Error> {
-		return Ok(());
+        return Ok(());
     }
 
     fn verify_block_family(&self, header: &Header, parent: &Header) -> Result<(), Error> {
@@ -348,7 +349,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
 }
 
 impl Ethash {
-	fn calculate_difficulty(&self, header: &Header, parent: &Header) -> U256 {
+    fn calculate_difficulty(&self, header: &Header, parent: &Header) -> U256 {
         const EXP_DIFF_PERIOD: u64 = 100_000;
         if header.number() == 0 {
             panic!("Can't calculate genesis block difficulty");
@@ -741,9 +742,9 @@ mod tests {
     fn difficulty_homestead() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-		let ethash = Ethash::new(ethparams, machine);
+        let ethash = Ethash::new(ethparams, machine);
 
-		let mut parent_header = Header::default();
+        let mut parent_header = Header::default();
         parent_header.set_number(1500000);
         parent_header.set_difficulty(U256::from_str("1fd0fd70792b").unwrap());
         parent_header.set_timestamp(1463003133);
@@ -759,7 +760,7 @@ mod tests {
     fn difficulty_max_timestamp() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-		let ethash = Ethash::new(ethparams, machine);
+        let ethash = Ethash::new(ethparams, machine);
 
         let mut parent_header = Header::default();
         parent_header.set_number(1000000);
@@ -777,8 +778,8 @@ mod tests {
     fn test_extra_info() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-		let ethash = Ethash::new(ethparams, machine);
-		let mut header = Header::default();
+        let ethash = Ethash::new(ethparams, machine);
+        let mut header = Header::default();
         header.set_seal(vec![
             rlp::encode(
                 &H256::from_str("b251bd2e0283d0658f2cadfdc8ca619b5de94eca5742725e2e757dd13ed7503d")

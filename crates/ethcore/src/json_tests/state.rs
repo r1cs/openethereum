@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::fmt::format;
+use super::flushln;
 use super::{test_common::*, HookType};
 use client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
 use ethjson::{self, spec::ForkSpec};
 use pod_state::PodState;
+use std::fmt::format;
 use std::path::Path;
 use trace;
 use vm::EnvInfo;
-use super::flushln;
 
 fn skip_test(
     test: &ethjson::test::StateTests,

@@ -37,9 +37,9 @@ use engines::{EthEngine, InstantSeal, InstantSealParams, NullEngine};
 use error::Error;
 use executive::Executive;
 use factory::Factories;
+use keccak_hasher::KeccakHasher;
 use machine::EthereumMachine;
 use maplit::btreeset;
-use keccak_hasher::KeccakHasher;
 use pod_state::PodState;
 use spec::{seal::Generic as GenericSeal, Genesis};
 use state::{backend::Basic as BasicBackend, Backend, State, Substate};
@@ -567,10 +567,7 @@ fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
     match g.state_root {
         Some(root) => *s.state_root_memo.get_mut() = root,
         None => {
-            let _ = s.run_constructors(
-                &Default::default(),
-                BasicBackend(new_memory_db()),
-            )?;
+            let _ = s.run_constructors(&Default::default(), BasicBackend(new_memory_db()))?;
         }
     }
 
@@ -580,7 +577,7 @@ fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
 macro_rules! load_bundled {
     ($e:expr) => {
         Spec::load(include_bytes!(concat!("../../res/chainspec/", $e, ".json")) as &[u8])
-        .expect(concat!("Chain spec ", $e, " is invalid."))
+            .expect(concat!("Chain spec ", $e, " is invalid."))
     };
 }
 
@@ -593,7 +590,7 @@ macro_rules! load_machine_bundled {
 }
 
 fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
-	memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
+    memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
 }
 
 impl Spec {
@@ -683,10 +680,7 @@ impl Spec {
                     }
                 }
 
-                Arc::new(::ethereum::Ethash::new(
-                    ethash.params.into(),
-                    machine,
-                ))
+                Arc::new(::ethereum::Ethash::new(ethash.params.into(), machine))
             }
             ethjson::spec::Engine::InstantSeal(Some(instant_seal)) => {
                 Arc::new(InstantSeal::new(instant_seal.params.into(), machine))
@@ -883,10 +877,7 @@ impl Spec {
     /// Alter the value of the genesis state.
     pub fn set_genesis_state(&mut self, s: PodState) -> Result<(), Error> {
         self.genesis_state = s;
-        let _ = self.run_constructors(
-            &Default::default(),
-            BasicBackend(new_memory_db()),
-        )?;
+        let _ = self.run_constructors(&Default::default(), BasicBackend(new_memory_db()))?;
 
         Ok(())
     }

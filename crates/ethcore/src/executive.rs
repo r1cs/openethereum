@@ -1626,6 +1626,7 @@ impl<'a, B: 'a + StateBackend> Executive<'a, B> {
 #[allow(dead_code)]
 mod tests {
     use super::*;
+    use bytes::Bytes;
     use crypto::publickey::{Generator, Random};
     use error::ExecutionError;
     use ethereum_types::{Address, BigEndianHash, H160, H256, U256, U512};
@@ -1634,8 +1635,7 @@ mod tests {
     use rustc_hex::FromHex;
     use state::{CleanupMode, Substate};
     use std::{str::FromStr, sync::Arc};
-	use bytes::Bytes;
-	use test_helpers::{get_temp_state, get_temp_state_with_factory};
+    use test_helpers::{get_temp_state, get_temp_state_with_factory};
     use trace::{
         trace, ExecutiveTracer, ExecutiveVMTracer, FlatTrace, MemoryDiff, NoopTracer, NoopVMTracer,
         StorageDiff, Tracer, VMExecutedOperation, VMOperation, VMTrace, VMTracer,
@@ -2413,9 +2413,10 @@ mod tests {
         // 58 - get PC
         // 55 - sstore
 
-        let code_a : Vec<u8> = "6000600060006000601873945304eb96065b2a98b57a48a06ae28d285a71b56103e8f15855"
-            .from_hex()
-            .unwrap();
+        let code_a: Vec<u8> =
+            "6000600060006000601873945304eb96065b2a98b57a48a06ae28d285a71b56103e8f15855"
+                .from_hex()
+                .unwrap();
 
         // 60 00 - push 0
         // 60 00 - push 0
@@ -2429,7 +2430,7 @@ mod tests {
         // 01 - add
         // 58 - get PC
         // 55 - sstore
-        let code_b : Vec<u8> =
+        let code_b: Vec<u8> =
             "60006000600060006017730f572e5295c57f15886f9b263e2f6d2d6c7b5ec66101f4f16001015855"
                 .from_hex()
                 .unwrap();

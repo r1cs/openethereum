@@ -26,11 +26,11 @@ use alloc::boxed::Box;
 
 extern crate ethereum_types;
 
+extern crate hashbrown;
 extern crate keccak_hash as hash;
 extern crate parity_bytes as bytes;
 extern crate patricia_trie_ethereum as ethtrie;
 extern crate rlp;
-extern crate hashbrown;
 
 pub mod access_list;
 mod action_params;

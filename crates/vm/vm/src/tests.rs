@@ -19,18 +19,20 @@ use core as core_;
 #[cfg(feature = "std")]
 use std as core_;
 
-use hashbrown::{HashSet, HashMap};
+use hashbrown::{HashMap, HashSet};
 extern crate alloc;
 
 use alloc::{sync::Arc, vec::Vec};
 
 use crate::access_list::AccessList;
+use crate::Result;
+use crate::{
+    CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, GasLeft,
+    MessageCallResult, ReturnData, Schedule, TrapKind,
+};
 use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
 use hash::keccak;
-use crate::Result;
-use crate::{CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, GasLeft,
-	 MessageCallResult, ReturnData, Schedule, TrapKind};
 
 pub struct FakeLogEntry {
     pub topics: Vec<H256>,

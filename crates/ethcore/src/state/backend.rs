@@ -21,10 +21,7 @@
 //! should become general over time to the point where not even a
 //! merkle trie is strictly necessary.
 
-use std::{
-    collections::{HashSet},
-    sync::Arc,
-};
+use std::{collections::HashSet, sync::Arc};
 
 use ethereum_types::{Address, H256};
 use hash_db::{AsHashDB, HashDB};

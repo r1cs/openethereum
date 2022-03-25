@@ -159,7 +159,10 @@ impl<'a> EvmTestClient<'a> {
         factories: &Factories,
         pod_state: pod_state::PodState,
     ) -> Result<state::State<state_db::StateDB>, EvmTestError> {
-		let hashdb = Box::new(memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into()));
+        let hashdb = Box::new(memory_db::MemoryDB::from_null_node(
+            &rlp::NULL_RLP,
+            rlp::NULL_RLP.as_ref().into(),
+        ));
         let state_db = state_db::StateDB::new(hashdb, 5 * 1024 * 1024);
         let mut state = state::State::new(
             state_db,

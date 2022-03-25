@@ -1535,7 +1535,7 @@ impl State<StateDB> {
 }
 
 fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
-	memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
+    memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
 }
 
 #[cfg(test)]

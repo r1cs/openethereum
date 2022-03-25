@@ -17,8 +17,8 @@
 //! Log entry type definition.
 
 use crate::{bytes::Bytes, BlockNumber};
-use ethereum_types::{Address, Bloom, BloomInput, H256};
 use core::ops::Deref;
+use ethereum_types::{Address, Bloom, BloomInput, H256};
 
 /// A record of execution for a `LOG` operation.
 #[derive(Default, Debug, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]
