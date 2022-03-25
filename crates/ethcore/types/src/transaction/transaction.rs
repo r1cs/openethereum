@@ -21,7 +21,6 @@ use core::cmp::min;
 use crypto::hash::keccak;
 use crypto::publickey::{recover, Signature};
 use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
-use core::cmp::min;
 
 #[cfg(feature = "std")]
 use crypto::publickey::{self, Secret};
