@@ -94,6 +94,7 @@ pub mod json_tests;
 #[cfg(any(test, feature = "test-helpers"))]
 pub mod test_helpers;
 
+pub use alloc;
 pub use evm::CreateContractAddress;
 pub use executive::contract_address;
 pub use trie::TrieSpec;
