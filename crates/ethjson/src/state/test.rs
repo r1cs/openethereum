@@ -25,7 +25,7 @@ use crate::state::{AccountState, Env};
 use crate::uint::Uint;
 
 use common_types::transaction::{
-    AccessListTx, Action, EIP1559TransactionTx, SignedTransaction, Transaction, TypedTransaction
+    AccessListTx, Action, EIP1559TransactionTx, SignedTransaction, Transaction, TypedTransaction,
 };
 
 use serde_json::{self, Error};

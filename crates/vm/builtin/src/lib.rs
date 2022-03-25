@@ -43,7 +43,8 @@ use parity_bytes::BytesRef;
 
 #[cfg(feature = "std")]
 use eth_pairings::public_interface::eip2537::{
-    EIP2537Executor, SCALAR_BYTE_LENGTH, SERIALIZED_G1_POINT_BYTE_LENGTH, SERIALIZED_G2_POINT_BYTE_LENGTH
+    EIP2537Executor, SCALAR_BYTE_LENGTH, SERIALIZED_G1_POINT_BYTE_LENGTH,
+    SERIALIZED_G2_POINT_BYTE_LENGTH,
 };
 
 /// Native implementation of a built-in contract.
@@ -1372,11 +1373,14 @@ impl Bn128Pairing {
 #[cfg(test)]
 mod tests {
     use super::{
-        modexp as me, BTreeMap, Bls12ConstOperations, Bls12PairingPrice, Bls12PairingPricer, Builtin, EthereumBuiltin, FromStr, Implementation, Linear, Modexp2565Pricer, ModexpPricer, Pricer, Pricing
+        modexp as me, BTreeMap, Bls12ConstOperations, Bls12PairingPrice, Bls12PairingPricer,
+        Builtin, EthereumBuiltin, FromStr, Implementation, Linear, Modexp2565Pricer, ModexpPricer,
+        Pricer, Pricing,
     };
     use ethereum_types::U256;
     use ethjson::spec::builtin::{
-        AltBn128Pairing as JsonAltBn128PairingPricing, Builtin as JsonBuiltin, Linear as JsonLinearPricing, Pricing as JsonPricing, PricingAt
+        AltBn128Pairing as JsonAltBn128PairingPricing, Builtin as JsonBuiltin,
+        Linear as JsonLinearPricing, Pricing as JsonPricing, PricingAt,
     };
     use hex_literal::hex;
     use macros::map;

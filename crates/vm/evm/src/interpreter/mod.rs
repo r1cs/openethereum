@@ -32,7 +32,8 @@ use std::sync::Arc;
 use std::{cmp, mem};
 
 use vm::{
-    self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress, GasLeft, MessageCallResult, ReturnData, Schedule, TrapError, TrapKind
+    self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress,
+    GasLeft, MessageCallResult, ReturnData, Schedule, TrapError, TrapKind,
 };
 
 use evm::CostType;

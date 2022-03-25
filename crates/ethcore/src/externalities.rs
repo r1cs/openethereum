@@ -25,7 +25,8 @@ use std::sync::Arc;
 use trace::{Tracer, VMTracer};
 use types::transaction::UNSIGNED_SENDER;
 use vm::{
-    self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind
+    self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress,
+    EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind,
 };
 
 /// Policy for handling output data on `RETURN` opcode.
