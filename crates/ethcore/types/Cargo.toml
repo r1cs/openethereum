@@ -20,7 +20,7 @@ serde = {version="1.0",default-features=false}
 
 
 [dev-dependencies]
-rustc-hex = "1.0"
+rustc-hex = {version = "2.1", default-features = false }
 
 [features]
 std = ["crypto/std"]
