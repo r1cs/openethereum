@@ -16,6 +16,7 @@
 
 //! Parameters for a block chain.
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryFrom;
 use std::io::Read;
@@ -25,7 +26,6 @@ use bytes::Bytes;
 use ethereum_types::{Address, Bloom, H256, U256};
 use ethjson;
 use hash::{keccak, KECCAK_NULL_RLP};
-use parking_lot::RwLock;
 use rlp::{Rlp, RlpStream};
 use types::header::Header;
 use types::BlockNumber;
@@ -443,7 +443,7 @@ pub struct Spec {
     constructors: Vec<(Address, Bytes)>,
 
     /// May be prepopulated if we know this in advance.
-    state_root_memo: RwLock<H256>,
+    state_root_memo: RefCell<H256>,
 
     /// Genesis state as plain old data.
     genesis_state: PodState,
@@ -469,7 +469,7 @@ impl Clone for Spec {
             seal_rlp: self.seal_rlp.clone(),
             hard_forks: self.hard_forks.clone(),
             constructors: self.constructors.clone(),
-            state_root_memo: RwLock::new(*self.state_root_memo.read()),
+            state_root_memo: RefCell::new(*self.state_root_memo.borrow()),
             genesis_state: self.genesis_state.clone(),
             base_fee: self.base_fee.clone(),
         }
@@ -529,7 +529,7 @@ fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
             .into_iter()
             .map(|(a, c)| (a.into(), c.into()))
             .collect(),
-        state_root_memo: RwLock::new(Default::default()), // will be overwritten right after.
+        state_root_memo: RefCell::new(Default::default()), // will be overwritten right after.
         genesis_state: s.accounts.into(),
     };
 
@@ -748,13 +748,13 @@ impl Spec {
             state.drop()
         };
 
-        *self.state_root_memo.write() = root;
+        *self.state_root_memo.borrow_mut() = root;
         Ok(db)
     }
 
     /// Return the state root for the genesis state, memoising accordingly.
     pub fn state_root(&self) -> H256 {
-        self.state_root_memo.read().clone()
+        self.state_root_memo.borrow().clone()
     }
 
     /// Get common blockchain parameters.
@@ -857,7 +857,7 @@ impl Spec {
         // TODO: get rid of this function and ensure state root always is valid.
         // we're mostly there, but `self.genesis_state.root()` doesn't encompass
         // post-constructor state.
-        *self.state_root_memo.read() == self.genesis_state.root()
+        *self.state_root_memo.borrow() == self.genesis_state.root()
     }
 
     /// Ensure that the given state DB has the trie nodes in for the genesis state.

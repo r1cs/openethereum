@@ -95,7 +95,7 @@ impl<'a, K, V> PlainDBRef<K, V> for &'a mut dyn PlainDB<K, V> {
 }
 
 /// Trait modelling datastore keyed by a hash defined by the `Hasher`.
-pub trait HashDB<H: Hasher, T>: Send + Sync + AsHashDB<H, T> {
+pub trait HashDB<H: Hasher, T>: AsHashDB<H, T> {
     /// Look up a given hash into the bytes that hash to it, returning None if the
     /// hash is not known.
     fn get(&self, key: &H::Out) -> Option<T>;
