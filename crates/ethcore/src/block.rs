@@ -31,9 +31,9 @@
 //! `ExecutedBlock` is an underlaying data structure used by all structs above to store block
 //! related info.
 
-use std::collections::HashSet;
-use std::sync::Arc;
-use std::{cmp, ops};
+use alloc::sync::Arc;
+use core::{cmp, ops};
+use hashbrown::HashSet;
 
 use bytes::Bytes;
 use ethereum_types::{Address, Bloom, H256, U256};
@@ -269,6 +269,7 @@ impl<'x> OpenBlock<'x> {
 
     /// Push transactions onto the block.
     #[cfg(feature = "slow-blocks")]
+    #[cfg(feature = "std")]
     fn push_transactions(&mut self, transactions: Vec<SignedTransaction>) -> Result<(), Error> {
         use std::time;
 
@@ -523,12 +524,12 @@ pub fn enact_verified(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::sync::Arc;
     use engines::EthEngine;
     use error::Error;
     use ethereum_types::Address;
     use factory::Factories;
     use state_db::StateDB;
-    use std::sync::Arc;
     use test_helpers::get_temp_state_db;
     use types::header::Header;
     use types::transaction::SignedTransaction;

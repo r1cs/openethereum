@@ -16,12 +16,12 @@
 
 //! State of all accounts in the system expressed in Plain Old Data.
 
+use alloc::collections::BTreeMap;
+use core::fmt;
 use ethereum_types::{Address, H256};
 use ethjson;
 use itertools::Itertools;
 use pod_account::{self, PodAccount};
-use std::collections::BTreeMap;
-use std::fmt;
 use triehash::sec_trie_root;
 use types::state_diff::StateDiff;
 
@@ -101,9 +101,9 @@ pub fn diff_pod(pre: &PodState, post: &PodState) -> StateDiff {
 #[cfg(test)]
 mod test {
     use super::PodState;
+    use alloc::collections::BTreeMap;
     use ethereum_types::H160;
     use pod_account::PodAccount;
-    use std::collections::BTreeMap;
     use types::account_diff::*;
     use types::state_diff::*;
 
