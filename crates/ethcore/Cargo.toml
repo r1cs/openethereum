@@ -7,19 +7,15 @@ version = "1.12.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 
 [dependencies]
-ansi_term = "0.10"
 common-types = { path = "types" }
-eip-152 = { version = "0.1", path = "../util/EIP-152" }
+eip-152 = { version = "0.1", path = "../util/EIP-152", default-features = false }
 #env_logger = { version = "0.5", optional = true }
-error-chain = { version = "0.12", default-features = false }
-ethash = { path = "../concensus/ethash" }
+ethash = { path = "../concensus/ethash", default-features = false }
 ethcore-builtin = { path = "../vm/builtin" }
-ethereum-types = "0.9.2"
-ethjson = { path = "../ethjson" }
-evm = { path = "../vm/evm" }
-globset = {version = "0.4", optional = true}
-hash-db = {path = "../db/hash-db-0.12.4"}
-itertools = "0.5"
+ethereum-types = {version = "0.9.2", default-features = false }
+evm = { path = "../vm/evm", default-features = false }
+hash-db = {path = "../db/hash-db-0.12.4", default-features = false}
+itertools = {version  = "0.8", default-features = false }
 keccak-hash = {version = "0.5.0", default-features = false}
 keccak-hasher = { path = "../util/keccak-hasher", default-features = false }
 crypto = {path = "../crypto", default-features = false}
@@ -28,19 +24,21 @@ lru = {version= "0.7.3", default-features = false }
 macros = { path = "../util/macros" }
 maplit = "1"
 memory-db = { path = "../db/memory-db" }
-parity-bytes = "0.1"
+parity-bytes = {version = "0.1", default-features = false}
 parking_lot = "0.11.1"
-trie-db = {path = "../db/trie-db-0.12.4"}
-patricia-trie-ethereum = { path = "../db/patricia-trie-ethereum" }
+trie-db = {path = "../db/trie-db-0.12.4", default-features = false}
+patricia-trie-ethereum = { path = "../db/patricia-trie-ethereum", default-features = false }
 rlp = { version = "0.4.6" }
 rlp_derive = { path = "../util/rlp-derive" }
 rustc-hex = {version = "2.1", default-features = false }
+triehash-ethereum = { version = "0.2",  path = "../util/triehash-ethereum", default-features = false }
+unexpected = { path = "../util/unexpected", default-features = false }
+vm = { path = "../vm/vm", default-features = false }
+ethjson = { path = "../ethjson" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-triehash-ethereum = { version = "0.2",  path = "../util/triehash-ethereum" }
-unexpected = { path = "../util/unexpected", default-features = false }
-vm = { path = "../vm/vm" }
+globset = {version = "0.4", optional = true}
 tempdir = {version="0.3", optional = true}
 tempfile = {version = "3.1.0", optional = true}
 walkdir = {version = "2.3", optional = true}
@@ -56,8 +54,8 @@ rlp_compress = { path = "../util/rlp-compress" }
 trie-standardmap = "0.15.2"
 
 [features]
-parity = []
-
+default = ["trie-db/std"]
+std = ["trie-db/std"]
 # Disables seal verification for mined blocks.
 # This allows you to submit any seal via RPC to test and benchmark
 # how fast pending block get's created while running on the mainnet.
@@ -74,10 +72,6 @@ slow-blocks = []
 # Run JSON consensus tests.
 json-tests = ["test-helpers", "to-pod-full", "globset", "rayon",
 	"regex", "vm/std"]
-# Skip JSON consensus tests with pending issues.
-ci-skip-tests = []
-# Run memory/cpu heavy tests.
-test-heavy = []
 # Compile test helpers
 test-helpers = ["tempdir", "common-types/test-helpers", "walkdir",
 	"tempfile"]

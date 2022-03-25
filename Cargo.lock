@@ -55,7 +55,7 @@ checksum = "43bb833f0bf979d8475d38fbf09ed3b8a55e1885fe93ad3f93239fc6a4f17b98"
 dependencies = [
  "getrandom 0.2.2",
  "once_cell",
- "version_check 0.9.4",
+ "version_check",
 ]
 
 [[package]]
@@ -66,12 +66,6 @@ checksum = "58fb5e95d83b38284460a5fda7d6470aa0b8844d283a0b614b8535e880800d2d"
 dependencies = [
  "memchr",
 ]
-
-[[package]]
-name = "ansi_term"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b3568b48b7cefa6b8ce125f9bb4989e52fbcc29ebea88df04cc7c5f12f70455"
 
 [[package]]
 name = "arrayvec"
@@ -322,7 +316,7 @@ dependencies = [
  "clap",
  "criterion-plot",
  "csv",
- "itertools 0.8.1",
+ "itertools",
  "lazy_static",
  "libc",
  "num-traits",
@@ -346,7 +340,7 @@ checksum = "76f9212ddf2f4a9eb2d401635190600656a1f88a932ef53d06e7fa4c7e02fb8e"
 dependencies = [
  "byteorder",
  "cast",
- "itertools 0.8.1",
+ "itertools",
 ]
 
 [[package]]
@@ -511,15 +505,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "error-chain"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ab49e9dcb602294bc42f9a7dfc9bc6e936fca4418ea300dbfb84fe16de0b7d9"
-dependencies = [
- "version_check 0.1.5",
-]
-
-[[package]]
 name = "eth_pairings"
 version = "0.6.0"
 source = "git+https://github.com/matter-labs/eip1962.git?rev=ece6cbabc41948db4200e41f0bfdab7ab94c7af8#ece6cbabc41948db4200e41f0bfdab7ab94c7af8"
@@ -571,13 +556,11 @@ dependencies = [
 name = "ethcore"
 version = "1.12.0"
 dependencies = [
- "ansi_term",
  "common-types",
  "criterion",
  "crypto",
  "eip-152",
  "env_logger 0.5.13",
- "error-chain",
  "ethash",
  "ethcore-builtin",
  "ethereum-types",
@@ -586,7 +569,7 @@ dependencies = [
  "globset",
  "hash-db 0.12.4",
  "hex-literal 0.2.1",
- "itertools 0.5.10",
+ "itertools",
  "keccak-hash",
  "keccak-hasher 0.1.1",
  "log",
@@ -947,15 +930,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61124eeebbd69b8190558df225adf7e4caafce0d743919e5d6b19652314ec5ec"
 dependencies = [
  "cfg-if 1.0.0",
-]
-
-[[package]]
-name = "itertools"
-version = "0.5.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4833d6978da405305126af4ac88569b5d71ff758581ce5a987dbfa3755f694fc"
-dependencies = [
- "either",
 ]
 
 [[package]]
@@ -2109,12 +2083,6 @@ name = "unicode-xid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
-
-[[package]]
-name = "version_check"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
 
 [[package]]
 name = "version_check"
