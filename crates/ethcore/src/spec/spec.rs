@@ -16,11 +16,12 @@
 
 //! Parameters for a block chain.
 
-use std::cell::RefCell;
-use std::collections::{BTreeMap, BTreeSet};
-use std::convert::TryFrom;
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::sync::Arc;
+use core::cell::RefCell;
+use core::convert::TryFrom;
+#[cfg(feature = "std")]
 use std::io::Read;
-use std::sync::Arc;
 
 use bytes::Bytes;
 use ethereum_types::{Address, Bloom, H256, U256};
@@ -50,7 +51,7 @@ use trie::DBValue;
 const MAX_TRANSACTION_SIZE: usize = 300 * 1024;
 
 // helper for formatting errors.
-fn fmt_err<F: ::std::fmt::Display>(f: F) -> String {
+fn fmt_err<F: ::core::fmt::Display>(f: F) -> String {
     format!("Spec json is invalid: {}", f)
 }
 
@@ -872,11 +873,13 @@ impl Spec {
         Ok(db)
     }
 
+    #[cfg(feature = "std")]
     /// Loads just the state machine from a json file.
     pub fn load_machine<R: Read>(reader: R) -> Result<EthereumMachine, String> {
         ethjson::spec::Spec::load(reader).map_err(fmt_err).map(load_machine_from)
     }
 
+    #[cfg(feature = "std")]
     /// Loads spec from json file. Provide factories for executing contracts and ensuring
     /// storage goes to the right place.
     pub fn load<'a, R>(reader: R) -> Result<Self, String>
@@ -973,9 +976,9 @@ impl Spec {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::str::FromStr;
     use ethereum_types::{H160, H256};
     use state::State;
-    use std::str::FromStr;
     use test_helpers::get_temp_state_db;
     use types::view;
     use types::views::BlockView;
