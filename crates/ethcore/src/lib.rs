@@ -32,7 +32,6 @@ extern crate lru;
 extern crate maplit;
 extern crate memory_db;
 extern crate parity_bytes as bytes;
-extern crate parking_lot;
 extern crate patricia_trie_ethereum as ethtrie;
 #[cfg(feature = "json-tests")]
 extern crate rayon;

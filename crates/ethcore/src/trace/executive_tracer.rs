@@ -314,7 +314,7 @@ mod tests {
         tracer.done_trace_call(U256::zero(), &[]);
 
         let drained = tracer.drain();
-        assert!(drained[0].trace_address.len() == 0);
+        assert_eq!(drained[0].trace_address.len(), 0);
         assert_eq!(&drained[1].trace_address, &[0]);
         assert_eq!(&drained[2].trace_address, &[0, 0]);
         assert_eq!(&drained[3].trace_address, &[0, 1]);
