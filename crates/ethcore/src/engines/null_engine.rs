@@ -70,7 +70,7 @@ impl<M: Machine> Engine<M> for NullEngine<M> {
     }
 
     fn on_close_block(&self, block: &mut ExecutedBlock) -> Result<(), M::Error> {
-        use std::ops::Shr;
+        use core::ops::Shr;
 
         let author = *block.header.author();
         let number = block.header.number();

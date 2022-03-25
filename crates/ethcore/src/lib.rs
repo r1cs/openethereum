@@ -17,6 +17,7 @@
 #![warn(missing_docs, unused_extern_crates)]
 //! Ethcore library
 
+extern crate alloc;
 extern crate common_types as types;
 extern crate core;
 extern crate crypto;
@@ -25,6 +26,7 @@ extern crate ethcore_builtin as builtin;
 extern crate ethereum_types;
 extern crate ethjson;
 extern crate hash_db;
+extern crate hashbrown;
 extern crate itertools;
 extern crate keccak_hash as hash;
 extern crate keccak_hasher;
@@ -91,7 +93,6 @@ pub mod json_tests;
 #[cfg(any(test, feature = "test-helpers"))]
 pub mod test_helpers;
 
-pub use alloc;
 pub use evm::CreateContractAddress;
 pub use executive::contract_address;
 pub use trie::TrieSpec;

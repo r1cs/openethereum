@@ -15,9 +15,9 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use block::ExecutedBlock;
+use core::sync::atomic::{AtomicU64, Ordering};
 use engines::{Engine, Seal, SealingState};
 use machine::Machine;
-use std::sync::atomic::{AtomicU64, Ordering};
 use types::header::{ExtendedHeader, Header};
 
 /// `InstantSeal` params.
@@ -111,11 +111,11 @@ impl<M: Machine> Engine<M> for InstantSeal<M> {
 
 #[cfg(test)]
 mod tests {
+    use alloc::sync::Arc;
     use block::*;
     use engines::Seal;
     use ethereum_types::{Address, H520};
     use spec::Spec;
-    use std::sync::Arc;
     use test_helpers::get_temp_state_db;
     use types::header::Header;
 

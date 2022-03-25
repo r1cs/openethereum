@@ -26,8 +26,10 @@ pub use self::null_engine::NullEngine;
 
 pub use types::engines::ForkChoice;
 
-use std::collections::{BTreeMap, HashMap};
-use std::sync::{Arc, Weak};
+use alloc::collections::BTreeMap;
+use alloc::sync::{Arc, Weak};
+use hashbrown::HashMap;
+#[cfg(feature = "std")]
 use std::{error, fmt};
 
 use builtin::Builtin;
@@ -147,6 +149,7 @@ impl fmt::Display for EngineError {
     }
 }
 
+#[cfg(feature = "std")]
 impl error::Error for EngineError {
     fn description(&self) -> &str {
         "Engine error"
@@ -325,7 +328,7 @@ pub trait Engine<M: Machine>: Sync + Send {
 
     /// Return a new open block header timestamp based on the parent timestamp.
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {
-        use std::{cmp, time};
+        use core::{cmp, time};
 
         let now = time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap_or_default();
         cmp::max(now.as_secs() as u64, parent_timestamp + 1)

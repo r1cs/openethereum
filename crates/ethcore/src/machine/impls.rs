@@ -16,9 +16,10 @@
 
 //! Ethereum-like state machine definition.
 
-use std::cmp::{self, max};
-use std::collections::{BTreeMap, HashMap};
-use std::sync::Arc;
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
+use core::cmp::{self, max};
+use hashbrown::HashMap;
 
 use ethereum_types::{Address, U256};
 use types::header::Header;
