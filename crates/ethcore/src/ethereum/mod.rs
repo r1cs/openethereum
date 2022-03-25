@@ -251,9 +251,9 @@ pub fn new_mcip3_test_machine() -> EthereumMachine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::str::FromStr;
     use ethereum_types::{H160, H256, U256};
     use state::*;
-    use std::str::FromStr;
     use test_helpers::get_temp_state_db;
     use types::view;
     use types::views::BlockView;

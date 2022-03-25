@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::cmp::{self};
-use std::collections::BTreeMap;
-use std::sync::Arc;
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
+use core::cmp::{self};
 
 use ethereum_types::{H256, H64, U256};
 use ethjson;
@@ -209,7 +209,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
     /// Apply the block reward on finalisation of the block.
     /// This assumes that all uncles are valid uncles (i.e. of at least one generation before the current).
     fn on_close_block(&self, block: &mut ExecutedBlock) -> Result<(), Error> {
-        use std::ops::Shr;
+        use core::ops::Shr;
 
         let author = *block.header.author();
         let number = block.header.number();
@@ -427,15 +427,15 @@ fn ecip1017_eras_block_reward(era_rounds: u64, mut reward: U256, block_number: u
 mod tests {
     use super::super::{new_homestead_test_machine, new_morden};
     use super::{ecip1017_eras_block_reward, Ethash, EthashParams};
+    use alloc::collections::BTreeMap;
+    use alloc::sync::Arc;
     use block::*;
+    use core::str::FromStr;
     use engines::Engine;
     use error::{BlockError, Error};
     use ethereum_types::{Address, H256, H64, U256};
     use rlp;
     use spec::Spec;
-    use std::collections::BTreeMap;
-    use std::str::FromStr;
-    use std::sync::Arc;
     use test_helpers::get_temp_state_db;
     use types::header::Header;
 
