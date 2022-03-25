@@ -404,8 +404,8 @@ impl super::Machine for EthereumMachine {
 mod tests {
     use super::*;
     use crate::ethereum::new_london_test_machine;
+    use core::str::FromStr;
     use ethereum_types::H160;
-    use std::str::FromStr;
 
     fn get_default_ethash_extensions() -> EthashExtensions {
         EthashExtensions {
