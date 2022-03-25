@@ -53,7 +53,7 @@ trie-standardmap = "0.15.2"
 
 [features]
 default = ["std"]
-std = ["trie-db/std", "trie-db/std", "ethcore-builtin/std"]
+std = ["common-types/std", "trie-db/std", "ethcore-builtin/std"]
 # Disables seal verification for mined blocks.
 # This allows you to submit any seal via RPC to test and benchmark
 # how fast pending block get's created while running on the mainnet.
