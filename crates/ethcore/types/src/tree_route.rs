@@ -16,6 +16,7 @@
 
 //! Tree route info type definition
 
+use alloc::vec::Vec;
 use ethereum_types::H256;
 
 /// Represents a tree route between `from` block and `to` block:

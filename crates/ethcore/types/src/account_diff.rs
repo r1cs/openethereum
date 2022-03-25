@@ -17,10 +17,12 @@
 //! Diff between two accounts.
 
 use crate::bytes::Bytes;
+use alloc::collections::BTreeMap;
+use alloc::format;
+use alloc::string::String;
+use core::cmp::*;
+use core::fmt;
 use ethereum_types::{H256, U256};
-use std::cmp::*;
-use std::collections::BTreeMap;
-use std::fmt;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 /// Diff type for specifying a change (or not).

@@ -17,9 +17,8 @@
 //! Transaction Id.
 
 use ethereum_types::U64;
-use serde_repr::*;
 
-#[derive(Serialize_repr, Eq, Hash, Deserialize_repr, Debug, Copy, Clone, PartialEq)]
+#[derive(Eq, Hash, Debug, Copy, Clone, PartialEq)]
 #[repr(u8)]
 pub enum TypedTxId {
     EIP1559Transaction = 0x02,

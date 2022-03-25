@@ -18,6 +18,8 @@
 
 use crate::ids::BlockId;
 use crate::log_entry::LogEntry;
+use alloc::vec;
+use alloc::vec::Vec;
 use ethereum_types::{Address, Bloom, BloomInput, H256};
 
 /// Blockchain Filter.

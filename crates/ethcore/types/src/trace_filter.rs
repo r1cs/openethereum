@@ -17,8 +17,9 @@
 //! Trace filter related types
 
 use crate::ids::BlockId;
+use alloc::vec::Vec;
+use core::ops::Range;
 use ethereum_types::Address;
-use std::ops::Range;
 
 /// Easy to use trace filter.
 pub struct Filter {

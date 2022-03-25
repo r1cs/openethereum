@@ -18,8 +18,9 @@
 
 use crate::bytes::Bytes;
 use crate::BlockNumber;
+use alloc::vec::Vec;
+use core::ops::Deref;
 use ethereum_types::{Address, Bloom, BloomInput, H256};
-use std::ops::Deref;
 
 /// A record of execution for a `LOG` operation.
 #[derive(Default, Debug, Clone, PartialEq, Eq, RlpEncodable, RlpDecodable)]

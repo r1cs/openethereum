@@ -15,7 +15,9 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Data format for importing/exporting blocks from disk
-use std::str::FromStr;
+use alloc::format;
+use alloc::string::String;
+use core::str::FromStr;
 
 /// Format for importing/exporting blocks
 #[derive(Debug, PartialEq)]

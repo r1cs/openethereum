@@ -17,6 +17,7 @@
 //! Unique identifiers.
 
 use crate::BlockNumber;
+use alloc::vec::Vec;
 use ethereum_types::H256;
 
 /// Uniquely identifies block.

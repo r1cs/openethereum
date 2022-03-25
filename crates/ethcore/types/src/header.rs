@@ -19,6 +19,9 @@
 use crate::bytes::Bytes;
 use crate::hash::{keccak, KECCAK_EMPTY_LIST_RLP, KECCAK_NULL_RLP};
 use crate::BlockNumber;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::iter::FromIterator;
 use ethereum_types::{Address, Bloom, H256, U256};
 use rlp::{DecoderError, Encodable, Rlp, RlpStream};
 
@@ -225,9 +228,7 @@ impl Header {
     }
 
     /// Get the seal field with RLP-decoded values as bytes.
-    pub fn decode_seal<'a, T: ::std::iter::FromIterator<&'a [u8]>>(
-        &'a self,
-    ) -> Result<T, DecoderError> {
+    pub fn decode_seal<'a, T: FromIterator<&'a [u8]>>(&'a self) -> Result<T, DecoderError> {
         self.seal.iter().map(|rlp| Rlp::new(rlp).data()).collect()
     }
 
@@ -487,9 +488,9 @@ mod tests {
             Header::decode_rlp(&rlp, BlockNumber::default()).expect("error decoding header");
 
         assert_eq!(header.seal().len(), 2);
-        assert_eq!(header.base_fee().unwrap(), U256::from(100));
+        assert_eq!(header.base_fee().unwrap(), U256::from(100u32));
 
-        let new_base_fee = U256::from(200);
+        let new_base_fee = U256::from(200u32);
         header.set_base_fee(Some(new_base_fee));
         assert_eq!(header.base_fee().unwrap(), new_base_fee);
 
@@ -545,7 +546,7 @@ mod tests {
         let header_legacy = Header::new();
         let mut header_1559 = Header::new();
 
-        header_1559.set_base_fee(Some(U256::from(100)));
+        header_1559.set_base_fee(Some(U256::from(100u32)));
 
         let hash_legacy = header_legacy.hash();
         let hash_1559 = header_1559.hash();

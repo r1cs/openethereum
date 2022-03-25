@@ -14,7 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{error, fmt};
+use alloc::format;
+use alloc::string::String;
+use core::fmt;
+#[cfg(feature = "std")]
+use std::error;
 
 use ethereum_types::U256;
 use rlp;
@@ -152,6 +156,7 @@ impl fmt::Display for Error {
     }
 }
 
+#[cfg(feature = "std")]
 impl error::Error for Error {
     fn description(&self) -> &str {
         "Transaction error"

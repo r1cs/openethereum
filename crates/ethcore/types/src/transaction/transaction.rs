@@ -24,9 +24,10 @@ use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
 #[cfg(feature = "std")]
 use crypto::publickey::{self, Secret};
 
+use alloc::vec::Vec;
+use core::cmp::min;
+use core::ops::Deref;
 use rlp::{self, DecoderError, Rlp, RlpStream};
-use std::cmp::min;
-use std::ops::Deref;
 
 pub type AccessListItem = (H160, Vec<H256>);
 pub type AccessList = Vec<AccessListItem>;
@@ -992,15 +993,15 @@ mod tests {
         let bytes = ::rustc_hex::FromHex::from_hex("f85f800182520894095e7baea6a6c7c4c2dfeb977efac326af552d870a801ba048b55bfa915ac795c431978d8a6a992b628d557da5ff759b307d495a36649353a0efffd310ac743f371de3b9f7f9cb56c0b28ad43601b4ab949f53faa07bd2c804").unwrap();
         let t = TypedTransaction::decode(&bytes).expect("decoding UnverifiedTransaction failed");
         assert_eq!(t.tx().data, b"");
-        assert_eq!(t.tx().gas, U256::from(0x5208u64));
-        assert_eq!(t.tx().gas_price, U256::from(0x01u64));
-        assert_eq!(t.tx().nonce, U256::from(0x00u64));
+        assert_eq!(t.tx().gas, U256::from(0x5208u32));
+        assert_eq!(t.tx().gas_price, U256::from(0x01u32));
+        assert_eq!(t.tx().nonce, U256::from(0x00u32));
         if let Action::Call(ref to) = t.tx().action {
             assert_eq!(*to, H160::from_str("095e7baea6a6c7c4c2dfeb977efac326af552d87").unwrap());
         } else {
             panic!();
         }
-        assert_eq!(t.tx().value, U256::from(0x0au64));
+        assert_eq!(t.tx().value, U256::from(0x0au32));
         assert_eq!(
             t.recover_sender().unwrap(),
             H160::from_str("0f65fe9276bc9a24ae7083ae28e2660ef72df99e").unwrap()
@@ -1027,10 +1028,10 @@ mod tests {
         let key = Random.generate();
         let t = TypedTransaction::Legacy(Transaction {
             action: Action::Create,
-            nonce: U256::from(42),
-            gas_price: U256::from(3000),
-            gas: U256::from(50_000),
-            value: U256::from(1),
+            nonce: U256::from(42u32),
+            gas_price: U256::from(3000u32),
+            gas: U256::from(50_000u32),
+            value: U256::from(1u32),
             data: b"Hello!".to_vec(),
         });
 
@@ -1046,10 +1047,10 @@ mod tests {
         let key = Random.generate();
         let t = TypedTransaction::Legacy(Transaction {
             action: Action::Create,
-            nonce: U256::from(42),
-            gas_price: U256::from(3000),
-            gas: U256::from(50_000),
-            value: U256::from(1),
+            nonce: U256::from(42u32),
+            gas_price: U256::from(3000u32),
+            gas: U256::from(50_000u32),
+            value: U256::from(1u32),
             data: b"Hello!".to_vec(),
         })
         .sign(&key.secret(), None);
@@ -1061,10 +1062,10 @@ mod tests {
     fn fake_signing() {
         let t = TypedTransaction::Legacy(Transaction {
             action: Action::Create,
-            nonce: U256::from(42),
-            gas_price: U256::from(3000),
-            gas: U256::from(50_000),
-            value: U256::from(1),
+            nonce: U256::from(42u32),
+            gas_price: U256::from(3000u32),
+            gas: U256::from(50_000u32),
+            value: U256::from(1u32),
             data: b"Hello!".to_vec(),
         })
         .fake_sign(Address::from_low_u64_be(0x69));
@@ -1081,12 +1082,12 @@ mod tests {
         use std::str::FromStr;
         let t = TypedTransaction::Legacy(Transaction {
             nonce: U256::zero(),
-            gas_price: U256::from(10000000000u64),
-            gas: U256::from(21000),
+            gas_price: U256::from(10000000000u32),
+            gas: U256::from(21000u32),
             action: Action::Call(
                 Address::from_str("d46e8dd67c5d32be8058bb8eb970870f07244567").unwrap(),
             ),
-            value: U256::from(1),
+            value: U256::from(1u32),
             data: vec![],
         })
         .null_sign(1);
@@ -1103,9 +1104,9 @@ mod tests {
         let key = Random.generate();
         let t = TypedTransaction::Legacy(Transaction {
             action: Action::Create,
-            nonce: U256::from(42),
-            gas_price: U256::from(3000),
-            gas: U256::from(50_000),
+            nonce: U256::from(42u32),
+            gas_price: U256::from(3000u32),
+            gas: U256::from(50_000u32),
             value: U256::from(1),
             data: b"Hello!".to_vec(),
         })
@@ -1120,10 +1121,10 @@ mod tests {
         let t = TypedTransaction::AccessList(AccessListTx::new(
             Transaction {
                 action: Action::Create,
-                nonce: U256::from(42),
-                gas_price: U256::from(3000),
-                gas: U256::from(50_000),
-                value: U256::from(1),
+                nonce: U256::from(42u32),
+                gas_price: U256::from(3000u32),
+                gas: U256::from(50_000u32),
+                value: U256::from(1u32),
                 data: b"Hello!".to_vec(),
             },
             vec![
@@ -1151,10 +1152,10 @@ mod tests {
             transaction: AccessListTx::new(
                 Transaction {
                     action: Action::Create,
-                    nonce: U256::from(42),
-                    gas_price: U256::from(3000),
-                    gas: U256::from(50_000),
-                    value: U256::from(1),
+                    nonce: U256::from(42u32),
+                    gas_price: U256::from(3000u32),
+                    gas: U256::from(50_000u32),
+                    value: U256::from(1u32),
                     data: b"Hello!".to_vec(),
                 },
                 vec![
@@ -1165,7 +1166,7 @@ mod tests {
                     (H160::from_low_u64_be(400), vec![]),
                 ],
             ),
-            max_priority_fee_per_gas: U256::from(100),
+            max_priority_fee_per_gas: U256::from(100u32),
         })
         .sign(&key.secret(), Some(69));
         let encoded = t.encode();
@@ -1259,10 +1260,10 @@ mod tests {
             transaction: AccessListTx::new(
                 Transaction {
                     action: Action::Create,
-                    nonce: U256::from(42),
+                    nonce: U256::from(42u32),
                     gas_price,
-                    gas: U256::from(50_000),
-                    value: U256::from(1),
+                    gas: U256::from(50_000u32),
+                    value: U256::from(1u32),
                     data: b"Hello!".to_vec(),
                 },
                 vec![

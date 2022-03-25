@@ -8,7 +8,7 @@ authors = ["Parity Technologies <admin@parity.io>"]
 
 [dependencies]
 ansi_term = "0.10"
-common-types = { path = "types" }
+common-types = { path = "types",optional = true }
 eip-152 = { version = "0.1", path = "../util/EIP-152" }
 env_logger = { version = "0.5", optional = true }
 error-chain = { version = "0.12", default-features = false }
@@ -56,6 +56,8 @@ rlp_compress = { path = "../util/rlp-compress" }
 trie-standardmap = "0.15.2"
 
 [features]
+default=["std"]
+std =["common-types/std"]
 parity = []
 
 # Disables seal verification for mined blocks.
