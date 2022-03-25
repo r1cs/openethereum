@@ -25,7 +25,7 @@ use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
 use crypto::publickey::{self, Secret};
 
 use rlp::{self, DecoderError, Rlp, RlpStream};
-use std::{cmp::min, ops::Deref};
+use core::ops::Deref;
 
 pub type AccessListItem = (H160, Vec<H256>);
 pub type AccessList = Vec<AccessListItem>;
@@ -640,7 +640,7 @@ impl TypedTransaction {
                 if overflow {
                     self.tx().gas_price
                 } else {
-                    min(self.tx().gas_price, v2)
+					if self.tx().gas_price<=v2 {self.tx().gas_price}else{v2}
                 }
             }
             Self::AccessList(_) => self.tx().gas_price,
