@@ -58,7 +58,7 @@ trie-standardmap = "0.15.2"
 
 [features]
 default=["std"]
-std =["common-types"]
+std =["common-types/std"]
 parity = []
 
 # Disables seal verification for mined blocks.
