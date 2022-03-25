@@ -16,16 +16,17 @@
 
 //! Transaction data structure.
 
-use crypto::publickey::{recover, Signature};
-use crypto::hash::keccak;
 use crate::transaction::{error, Error};
+use crypto::hash::keccak;
+use crypto::publickey::{recover, Signature};
 use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
+use core::cmp::min;
 
 #[cfg(feature = "std")]
 use crypto::publickey::{self, Secret};
 
-use rlp::{self, DecoderError, Rlp, RlpStream};
 use core::ops::Deref;
+use rlp::{self, DecoderError, Rlp, RlpStream};
 
 pub type AccessListItem = (H160, Vec<H256>);
 pub type AccessList = Vec<AccessListItem>;
@@ -528,7 +529,7 @@ impl TypedTransaction {
     }
 
     /// Signs the transaction as coming from `sender`.
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     pub fn sign(self, secret: &Secret, chain_id: Option<u64>) -> SignedTransaction {
         let sig = publickey::sign(secret, &self.signature_hash(chain_id))
             .expect("data is valid and context has signing capabilities; qed");
@@ -640,7 +641,7 @@ impl TypedTransaction {
                 if overflow {
                     self.tx().gas_price
                 } else {
-					if self.tx().gas_price<=v2 {self.tx().gas_price}else{v2}
+					min(self.tx().gas_price,v2)
                 }
             }
             Self::AccessList(_) => self.tx().gas_price,
@@ -901,7 +902,7 @@ impl UnverifiedTransaction {
         recover(
             &self.signature(),
             &self.unsigned.signature_hash(self.chain_id()),
-		)
+        )
     }
 
     /// Verify basic signature params. Does not attempt sender recovery.
@@ -951,7 +952,9 @@ impl SignedTransaction {
         if transaction.is_unsigned() {
             return Err(Error::InvalidSignature);
         }
-        let sender = transaction.recover_sender().ok_or(Error::InvalidSignature)?;
+        let sender = transaction
+            .recover_sender()
+            .ok_or(Error::InvalidSignature)?;
         Ok(SignedTransaction {
             transaction,
             sender,
@@ -1001,8 +1004,9 @@ impl LocalizedTransaction {
         if self.is_unsigned() {
             return UNSIGNED_SENDER.clone();
         }
-        let sender = self.recover_sender()
-			.expect("LocalizedTransaction is always constructed from blockchain; qed");
+        let sender = self
+            .recover_sender()
+            .expect("LocalizedTransaction is always constructed from blockchain; qed");
         self.cached_sender = Some(sender);
         sender
     }
@@ -1056,11 +1060,11 @@ impl From<SignedTransaction> for PendingTransaction {
 mod tests {
     use super::*;
     use crate::hash::keccak;
+    use crypto::publickey::{self, Generator, Random};
     use ethereum_types::{H160, U256};
     use std::str::FromStr;
-	use crypto::publickey::{self, Generator, Random};
 
-	#[test]
+    #[test]
     fn sender_test() {
         let bytes = ::rustc_hex::FromHex::from_hex("f85f800182520894095e7baea6a6c7c4c2dfeb977efac326af552d870a801ba048b55bfa915ac795c431978d8a6a992b628d557da5ff759b307d495a36649353a0efffd310ac743f371de3b9f7f9cb56c0b28ad43601b4ab949f53faa07bd2c804").unwrap();
         let t = TypedTransaction::decode(&bytes).expect("decoding UnverifiedTransaction failed");
@@ -1078,8 +1082,8 @@ mod tests {
         }
         assert_eq!(t.tx().value, U256::from(0x0au64));
         assert_eq!(
-			&t.recover_sender().unwrap(),
-			H160::from_str("0f65fe9276bc9a24ae7083ae28e2660ef72df99e").unwrap()
+            &t.recover_sender().unwrap(),
+            H160::from_str("0f65fe9276bc9a24ae7083ae28e2660ef72df99e").unwrap()
         );
         assert_eq!(t.chain_id(), None);
     }

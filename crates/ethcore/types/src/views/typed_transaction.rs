@@ -25,16 +25,7 @@ use crate::{
 
 use ethereum_types::{H256, U256};
 use rlp::Rlp;
-
-mod no_std{
-	use ethereum_types::U256;
-
-	pub fn min(a:U256,b: U256)->U256{
-		if a<=b{
-			a
-		}else { b }
-	}
-}
+use core::cmp::min;
 
 /// View onto transaction rlp. Assumption is this is part of block.
 /// Typed Transaction View. It handles raw bytes to search for particular field.
@@ -136,7 +127,7 @@ impl<'a> TypedTransactionView<'a> {
                     view!(Self, &self.rlp.rlp.data().unwrap()[1..])
                         .rlp
                         .val_at(2);
-                no_std::min(
+                min(
                     self.gas_price(),
                     max_priority_fee_per_gas + block_base_fee.unwrap_or_default(),
                 )
@@ -158,7 +149,7 @@ impl<'a> TypedTransactionView<'a> {
                     view!(Self, &self.rlp.rlp.data().unwrap()[1..])
                         .rlp
                         .val_at(2);
-                no_std::min(
+               min(
                     max_priority_fee_per_gas,
                     self.gas_price()
                         .saturating_sub(block_base_fee.unwrap_or_default()),
