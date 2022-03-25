@@ -33,6 +33,7 @@
 
 #![allow(missing_docs)]
 #![warn(unused_extern_crates)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 pub use {keccak_hash as hash, parity_bytes as bytes};
 
