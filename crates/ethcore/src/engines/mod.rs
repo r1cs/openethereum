@@ -329,7 +329,7 @@ pub trait Engine<M: Machine>: Sync + Send {
     #[cfg(feature = "std")]
     /// Return a new open block header timestamp based on the parent timestamp.
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {
-        use std::{cmp, time};
+        use core::{cmp, time};
 
         let now = time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap_or_default();
         cmp::max(now.as_secs() as u64, parent_timestamp + 1)
