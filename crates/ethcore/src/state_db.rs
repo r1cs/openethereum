@@ -16,7 +16,7 @@
 
 //! State database abstraction. For more info, see the doc for `StateDB`
 
-use std::sync::Arc;
+use alloc::sync::Arc;
 
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;

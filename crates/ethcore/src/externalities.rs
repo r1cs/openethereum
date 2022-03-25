@@ -15,13 +15,13 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Transaction Execution environment.
+use alloc::sync::Arc;
 use bytes::Bytes;
+use core::cmp;
 use ethereum_types::{Address, H256, U256};
 use executive::*;
 use machine::EthereumMachine as Machine;
 use state::{Backend as StateBackend, CleanupMode, State, Substate};
-use std::cmp;
-use std::sync::Arc;
 use trace::{Tracer, VMTracer};
 use types::transaction::UNSIGNED_SENDER;
 use vm::{
@@ -175,7 +175,7 @@ where
     fn create(
         &mut self, gas: &U256, value: &U256, code: &[u8], address_scheme: CreateContractAddress,
         trap: bool,
-    ) -> ::std::result::Result<ContractCreateResult, TrapKind> {
+    ) -> ::core::result::Result<ContractCreateResult, TrapKind> {
         // create new contract address
         let (address, code_hash) = match self.state.nonce(&self.origin_info.address) {
             Ok(nonce) => contract_address(address_scheme, &self.origin_info.address, &nonce, &code),
@@ -246,7 +246,7 @@ where
     fn call(
         &mut self, gas: &U256, sender_address: &Address, receive_address: &Address,
         value: Option<U256>, data: &[u8], code_address: &Address, call_type: CallType, trap: bool,
-    ) -> ::std::result::Result<MessageCallResult, TrapKind> {
+    ) -> ::core::result::Result<MessageCallResult, TrapKind> {
         trace!(target: "externalities", "call");
 
         let code_res = self
@@ -451,10 +451,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::str::FromStr;
     use ethereum_types::{Address, U256};
     use evm::{CallType, EnvInfo, Ext};
     use state::{State, Substate};
-    use std::str::FromStr;
     use test_helpers::get_temp_state;
     use trace::{NoopTracer, NoopVMTracer};
 
@@ -724,7 +724,7 @@ mod tests {
 
     #[test]
     fn can_create() {
-        use std::str::FromStr;
+        use core::str::FromStr;
 
         let mut setup = TestSetup::new();
         let state = &mut setup.state;
@@ -764,7 +764,7 @@ mod tests {
 
     #[test]
     fn can_create2() {
-        use std::str::FromStr;
+        use core::str::FromStr;
 
         let mut setup = TestSetup::new();
         let state = &mut setup.state;

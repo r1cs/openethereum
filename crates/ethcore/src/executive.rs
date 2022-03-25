@@ -15,7 +15,10 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Transaction Execution environment.
+use alloc::sync::Arc;
 use bytes::{Bytes, BytesRef};
+use core::cmp;
+use core::convert::TryFrom;
 use ethereum_types::{Address, H256, U256, U512};
 use evm::{CallType, FinalizationResult, Finalize};
 use executed::ExecutionError;
@@ -25,9 +28,6 @@ use factory::VmFactory;
 use hash::keccak;
 use machine::EthereumMachine as Machine;
 use state::{Backend as StateBackend, CleanupMode, State, Substate};
-use std::cmp;
-use std::convert::TryFrom;
-use std::sync::Arc;
 use trace::{self, Tracer, VMTracer};
 use transaction_ext::Transaction;
 use types::transaction::{Action, SignedTransaction, TypedTransaction};
@@ -1480,7 +1480,9 @@ impl<'a, B: 'a + StateBackend> Executive<'a, B> {
 #[allow(dead_code)]
 mod tests {
     use super::*;
+    use alloc::sync::Arc;
     use bytes::Bytes;
+    use core::str::FromStr;
     use crypto::publickey::{Generator, Random};
     use error::ExecutionError;
     use ethereum_types::{Address, BigEndianHash, H160, H256, U256, U512};
@@ -1488,8 +1490,6 @@ mod tests {
     use machine::EthereumMachine;
     use rustc_hex::FromHex;
     use state::{CleanupMode, Substate};
-    use std::str::FromStr;
-    use std::sync::Arc;
     use test_helpers::{get_temp_state, get_temp_state_with_factory};
     use trace::{
         trace, ExecutiveTracer, ExecutiveVMTracer, FlatTrace, MemoryDiff, NoopTracer, NoopVMTracer, StorageDiff, Tracer, VMExecutedOperation, VMOperation, VMTrace, VMTracer
