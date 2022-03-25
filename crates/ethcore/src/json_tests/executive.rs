@@ -29,8 +29,7 @@ use std::sync::Arc;
 use test_helpers::get_temp_state;
 use trace::{NoopTracer, NoopVMTracer, Tracer, VMTracer};
 use vm::{
-    self, ActionParams, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext,
-    MessageCallResult, ReturnData, Schedule,
+    self, ActionParams, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule
 };
 use {ethjson, ethtrie};
 

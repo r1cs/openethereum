@@ -17,7 +17,7 @@
 //! Lenient hash json deserialization for test json files.
 
 use ethereum_types::{
-    Bloom as Hash2048, H160 as Hash160, H256 as Hash256, H520 as Hash520, H64 as Hash64,
+    Bloom as Hash2048, H160 as Hash160, H256 as Hash256, H520 as Hash520, H64 as Hash64
 };
 use serde::de::{Error, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};

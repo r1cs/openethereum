@@ -32,7 +32,7 @@ pub use self::types::error::Error as TraceError;
 pub use self::types::filter::{AddressesFilter, Filter};
 pub use self::types::flat::{FlatBlockTraces, FlatTrace, FlatTransactionTraces};
 pub use self::types::trace::{
-    MemoryDiff, RewardType, StorageDiff, VMExecutedOperation, VMOperation, VMTrace,
+    MemoryDiff, RewardType, StorageDiff, VMExecutedOperation, VMOperation, VMTrace
 };
 pub use self::types::{filter, flat, localized, trace, Tracing};
 

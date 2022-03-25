@@ -18,7 +18,8 @@
 
 use crate::bytes::Bytes;
 use alloc::collections::BTreeMap;
-use core::{cmp::*, fmt};
+use core::cmp::*;
+use core::fmt;
 use ethereum_types::{H256, U256};
 
 #[derive(Debug, PartialEq, Eq, Clone)]

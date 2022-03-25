@@ -187,8 +187,7 @@ pub struct PricingAt {
 #[cfg(test)]
 mod tests {
     use super::{
-        AltBn128ConstOperations, BTreeMap, Bls12G1Multiexp, Bls12G2Multiexp, Builtin,
-        BuiltinCompat, Linear, Modexp, Modexp2565, Pricing, PricingAt,
+        AltBn128ConstOperations, BTreeMap, Bls12G1Multiexp, Bls12G2Multiexp, Builtin, BuiltinCompat, Linear, Modexp, Modexp2565, Pricing, PricingAt
     };
     use macros::map;
     use serde_json;

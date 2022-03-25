@@ -27,8 +27,7 @@ use alloc::vec::Vec;
 
 use crate::access_list::AccessList;
 use crate::{
-    CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, GasLeft,
-    MessageCallResult, Result, ReturnData, Schedule, TrapKind,
+    CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, GasLeft, MessageCallResult, Result, ReturnData, Schedule, TrapKind
 };
 use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};

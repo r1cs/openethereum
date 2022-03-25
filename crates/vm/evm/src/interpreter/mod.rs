@@ -35,8 +35,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 
 use vm::{
-    self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress,
-    GasLeft, MessageCallResult, ReturnData, Schedule, TrapError, TrapKind,
+    self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress, GasLeft, MessageCallResult, ReturnData, Schedule, TrapError, TrapKind
 };
 
 use crate::evm::CostType;

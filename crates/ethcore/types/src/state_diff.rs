@@ -18,7 +18,8 @@
 
 use crate::account_diff::*;
 use alloc::collections::BTreeMap;
-use core::{fmt, ops::*};
+use core::fmt;
+use core::ops::*;
 use ethereum_types::Address;
 
 /// Expression for the delta between two system states. Encoded the
