@@ -20,6 +20,7 @@ use crate::ids::BlockId;
 use crate::log_entry::LogEntry;
 use ethereum_types::{Address, Bloom, BloomInput, H256};
 use alloc::vec::Vec;
+use alloc::vec;
 
 /// Blockchain Filter.
 #[derive(Debug, PartialEq)]

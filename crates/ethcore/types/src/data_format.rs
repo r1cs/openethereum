@@ -17,6 +17,7 @@
 //! Data format for importing/exporting blocks from disk
 use core::str::FromStr;
 use alloc::string::String;
+use alloc::format;
 
 /// Format for importing/exporting blocks
 #[derive(Debug, PartialEq)]
