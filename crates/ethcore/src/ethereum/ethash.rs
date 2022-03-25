@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use alloc::collections::BTreeMap;
-use alloc::sync::Arc;
-use core::cmp::{self};
+use std::cmp::{self};
+use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use ethereum_types::{H256, H64, U256};
 use ethjson;
@@ -209,7 +209,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
     /// Apply the block reward on finalisation of the block.
     /// This assumes that all uncles are valid uncles (i.e. of at least one generation before the current).
     fn on_close_block(&self, block: &mut ExecutedBlock) -> Result<(), Error> {
-        use core::ops::Shr;
+        use std::ops::Shr;
 
         let author = *block.header.author();
         let number = block.header.number();
@@ -427,15 +427,15 @@ fn ecip1017_eras_block_reward(era_rounds: u64, mut reward: U256, block_number: u
 mod tests {
     use super::super::{new_homestead_test_machine, new_morden};
     use super::{ecip1017_eras_block_reward, Ethash, EthashParams};
-    use alloc::collections::BTreeMap;
-    use alloc::sync::Arc;
     use block::*;
-    use core::str::FromStr;
     use engines::Engine;
-    use error::{BlockError, Error};
+    use error::{BlockError, Error, Error};
     use ethereum_types::{Address, H256, H64, U256};
     use rlp;
     use spec::Spec;
+    use std::collections::BTreeMap;
+    use std::str::FromStr;
+    use std::sync::Arc;
     use test_helpers::get_temp_state_db;
     use types::header::Header;
 
@@ -584,7 +584,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error::Block(BlockError::InvalidSealArity(_))) => {}
+            Err(Error(Error::Block(BlockError::InvalidSealArity(_)), _)) => {}
             Err(_) => {
                 panic!("should be block seal-arity mismatch error (got {:?})", verify_result);
             }
@@ -603,7 +603,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error::Block(BlockError::DifficultyOutOfBounds(_))) => {}
+            Err(Error(Error::Block(BlockError::DifficultyOutOfBounds(_)), _)) => {}
             Err(_) => {
                 panic!("should be block difficulty error (got {:?})", verify_result);
             }
@@ -626,7 +626,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error::Block(BlockError::InvalidProofOfWork(_))) => {}
+            Err(Error(Error::Block(BlockError::InvalidProofOfWork(_)), _)) => {}
             Err(_) => {
                 panic!("should be invalid proof of work error (got {:?})", verify_result);
             }
@@ -645,7 +645,7 @@ mod tests {
         let verify_result = engine.verify_block_family(&header, &parent_header);
 
         match verify_result {
-            Err(Error::Block(BlockError::RidiculousNumber(_))) => {}
+            Err(Error(Error::Block(BlockError::RidiculousNumber(_)), _)) => {}
             Err(_) => {
                 panic!("should be invalid block number fail (got {:?})", verify_result);
             }
@@ -666,7 +666,7 @@ mod tests {
         let verify_result = engine.verify_block_family(&header, &parent_header);
 
         match verify_result {
-            Err(Error::Block(BlockError::InvalidDifficulty(_))) => {}
+            Err(Error(Error::Block(BlockError::InvalidDifficulty(_)), _)) => {}
             Err(_) => {
                 panic!("should be invalid difficulty fail (got {:?})", verify_result);
             }
