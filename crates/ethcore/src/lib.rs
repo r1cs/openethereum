@@ -15,7 +15,7 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 #![warn(missing_docs, unused_extern_crates)]
-
+#![cfg_attr(not(feature = "std"), no_std)]
 //! Ethcore library
 
 extern crate common_types as types;
