@@ -25,8 +25,8 @@ use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
 use crypto::publickey::{self, Secret};
 
 use rlp::{self, DecoderError, Rlp, RlpStream};
-use std::cmp::min;
-use std::ops::Deref;
+use core::ops::Deref;
+use core::cmp::min;
 
 pub type AccessListItem = (H160, Vec<H256>);
 pub type AccessList = Vec<AccessListItem>;
@@ -97,7 +97,12 @@ pub enum Condition {
 pub mod signature {
     /// Adds chain id into v
     pub fn add_chain_replay_protection(v: u8, chain_id: Option<u64>) -> u64 {
-        v as u64 + if let Some(n) = chain_id { 35 + n * 2 } else { 27 }
+        v as u64
+            + if let Some(n) = chain_id {
+                35 + n * 2
+            } else {
+                27
+            }
     }
 
     /// Returns refined v
@@ -147,15 +152,25 @@ impl Transaction {
     }
 
     pub fn rlp_append(
-        &self, rlp: &mut RlpStream, chain_id: Option<u64>, signature: &SignatureComponents,
+        &self,
+        rlp: &mut RlpStream,
+        chain_id: Option<u64>,
+        signature: &SignatureComponents,
     ) {
         self.encode_rlp(rlp, chain_id, Some(signature));
     }
 
     fn encode_rlp(
-        &self, rlp: &mut RlpStream, chain_id: Option<u64>, signature: Option<&SignatureComponents>,
+        &self,
+        rlp: &mut RlpStream,
+        chain_id: Option<u64>,
+        signature: Option<&SignatureComponents>,
     ) {
-        let list_size = if chain_id.is_some() || signature.is_some() { 9 } else { 6 };
+        let list_size = if chain_id.is_some() || signature.is_some() {
+            9
+        } else {
+            6
+        };
         rlp.begin_list(list_size);
 
         self.rlp_append_data_open(rlp);
@@ -226,7 +241,10 @@ pub struct AccessListTx {
 
 impl AccessListTx {
     pub fn new(transaction: Transaction, access_list: AccessList) -> AccessListTx {
-        AccessListTx { transaction, access_list }
+        AccessListTx {
+            transaction,
+            access_list,
+        }
     }
 
     pub fn tx_type(&self) -> TypedTxId {
@@ -281,7 +299,10 @@ impl AccessListTx {
 
         // and here we create UnverifiedTransaction and calculate its hash
         Ok(UnverifiedTransaction::new(
-            TypedTransaction::AccessList(AccessListTx { transaction, access_list: accl }),
+            TypedTransaction::AccessList(AccessListTx {
+                transaction,
+                access_list: accl,
+            }),
             chain_id,
             signature,
             H256::zero(),
@@ -290,7 +311,9 @@ impl AccessListTx {
     }
 
     fn encode_payload(
-        &self, chain_id: Option<u64>, signature: Option<&SignatureComponents>,
+        &self,
+        chain_id: Option<u64>,
+        signature: Option<&SignatureComponents>,
     ) -> RlpStream {
         let mut stream = RlpStream::new();
 
@@ -323,7 +346,9 @@ impl AccessListTx {
 
     // encode by this payload spec: 0x01 | rlp([1, [chain_id, nonce, gasPrice, gasLimit, to, value, data, access_list, senderV, senderR, senderS]])
     pub fn encode(
-        &self, chain_id: Option<u64>, signature: Option<&SignatureComponents>,
+        &self,
+        chain_id: Option<u64>,
+        signature: Option<&SignatureComponents>,
     ) -> Vec<u8> {
         let stream = self.encode_payload(chain_id, signature);
         // make as vector of bytes
@@ -331,7 +356,10 @@ impl AccessListTx {
     }
 
     pub fn rlp_append(
-        &self, rlp: &mut RlpStream, chain_id: Option<u64>, signature: &SignatureComponents,
+        &self,
+        rlp: &mut RlpStream,
+        chain_id: Option<u64>,
+        signature: &SignatureComponents,
     ) {
         rlp.append(&self.encode(chain_id, Some(signature)));
     }
@@ -415,7 +443,9 @@ impl EIP1559TransactionTx {
     }
 
     fn encode_payload(
-        &self, chain_id: Option<u64>, signature: Option<&SignatureComponents>,
+        &self,
+        chain_id: Option<u64>,
+        signature: Option<&SignatureComponents>,
     ) -> RlpStream {
         let mut stream = RlpStream::new();
 
@@ -453,7 +483,9 @@ impl EIP1559TransactionTx {
 
     // encode by this payload spec: 0x02 | rlp([2, [chainId, nonce, maxPriorityFeePerGas, maxFeePerGas(gasPrice), gasLimit, to, value, data, access_list, senderV, senderR, senderS]])
     pub fn encode(
-        &self, chain_id: Option<u64>, signature: Option<&SignatureComponents>,
+        &self,
+        chain_id: Option<u64>,
+        signature: Option<&SignatureComponents>,
     ) -> Vec<u8> {
         let stream = self.encode_payload(chain_id, signature);
         // make as vector of bytes
@@ -461,7 +493,10 @@ impl EIP1559TransactionTx {
     }
 
     pub fn rlp_append(
-        &self, rlp: &mut RlpStream, chain_id: Option<u64>, signature: &SignatureComponents,
+        &self,
+        rlp: &mut RlpStream,
+        chain_id: Option<u64>,
+        signature: &SignatureComponents,
     ) {
         rlp.append(&self.encode(chain_id, Some(signature)));
     }
