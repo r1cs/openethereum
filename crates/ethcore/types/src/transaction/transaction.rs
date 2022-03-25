@@ -26,6 +26,7 @@ use crypto::publickey::{self, Secret};
 
 use core::cmp::min;
 use core::ops::Deref;
+use alloc::vec::Vec;
 use rlp::{self, DecoderError, Rlp, RlpStream};
 
 pub type AccessListItem = (H160, Vec<H256>);

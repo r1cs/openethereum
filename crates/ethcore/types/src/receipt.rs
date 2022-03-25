@@ -18,6 +18,7 @@
 
 use super::transaction::TypedTxId;
 use core::ops::{Deref, DerefMut};
+use alloc::vec::Vec;
 use ethereum_types::{Address, Bloom, H160, H256, U256};
 use rlp::{DecoderError, Rlp, RlpStream};
 

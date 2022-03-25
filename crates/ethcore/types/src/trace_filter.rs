@@ -18,6 +18,7 @@
 
 use crate::ids::BlockId;
 use core::ops::Range;
+use alloc::vec::Vec;
 use ethereum_types::Address;
 
 /// Easy to use trace filter.

@@ -22,6 +22,7 @@ use crate::hash::keccak;
 use crate::BlockNumber;
 use ethereum_types::{Address, Bloom, H256, U256};
 use rlp::{self};
+use alloc::vec::Vec;
 
 /// View onto block header rlp.
 pub struct HeaderView<'a> {

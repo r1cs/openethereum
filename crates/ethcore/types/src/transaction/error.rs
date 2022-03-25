@@ -15,6 +15,8 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use core::fmt;
+use alloc::string::String;
+use alloc::format;
 #[cfg(feature = "std")]
 use std::error;
 

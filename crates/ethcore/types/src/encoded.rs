@@ -29,6 +29,7 @@ use crate::header::Header as FullHeader;
 use crate::transaction::UnverifiedTransaction;
 use crate::views::{self, BlockView, BodyView, HeaderView};
 use crate::BlockNumber;
+use alloc::vec::Vec;
 
 use ethereum_types::{Address, Bloom, H256, U256};
 use rlp::{self, Rlp, RlpStream};

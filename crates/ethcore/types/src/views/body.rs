@@ -24,6 +24,7 @@ use crate::transaction::{LocalizedTransaction, TypedTransaction, UnverifiedTrans
 use crate::views::{HeaderView, TypedTransactionView};
 use crate::BlockNumber;
 use ethereum_types::H256;
+use alloc::vec::Vec;
 
 /// View onto block rlp.
 pub struct BodyView<'a> {

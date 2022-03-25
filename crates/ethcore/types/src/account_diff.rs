@@ -21,6 +21,7 @@ use alloc::collections::BTreeMap;
 use core::cmp::*;
 use core::fmt;
 use ethereum_types::{H256, U256};
+use alloc::string::String;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 /// Diff type for specifying a change (or not).

@@ -18,6 +18,7 @@
 
 use crate::BlockNumber;
 
+use alloc::vec::Vec;
 use super::ViewRlp;
 use crate::bytes::Bytes;
 use crate::hash::keccak;

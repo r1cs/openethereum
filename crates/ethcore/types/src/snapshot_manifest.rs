@@ -19,6 +19,7 @@
 use crate::bytes::Bytes;
 use ethereum_types::H256;
 use rlp::{DecoderError, Rlp, RlpStream};
+use alloc::vec::Vec;
 
 /// Manifest data.
 #[derive(Debug, Clone, PartialEq, Eq)]
