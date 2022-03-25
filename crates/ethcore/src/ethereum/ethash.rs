@@ -429,7 +429,7 @@ mod tests {
     use super::{ecip1017_eras_block_reward, Ethash, EthashParams};
     use block::*;
     use engines::Engine;
-    use error::{BlockError, Error, ErrorKind};
+    use error::{BlockError, Error, Error};
     use ethereum_types::{Address, H256, H64, U256};
     use rlp;
     use spec::Spec;
@@ -584,7 +584,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidSealArity(_)), _)) => {}
+            Err(Error(Error::Block(BlockError::InvalidSealArity(_)), _)) => {}
             Err(_) => {
                 panic!("should be block seal-arity mismatch error (got {:?})", verify_result);
             }
@@ -603,7 +603,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::DifficultyOutOfBounds(_)), _)) => {}
+            Err(Error(Error::Block(BlockError::DifficultyOutOfBounds(_)), _)) => {}
             Err(_) => {
                 panic!("should be block difficulty error (got {:?})", verify_result);
             }
@@ -626,7 +626,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidProofOfWork(_)), _)) => {}
+            Err(Error(Error::Block(BlockError::InvalidProofOfWork(_)), _)) => {}
             Err(_) => {
                 panic!("should be invalid proof of work error (got {:?})", verify_result);
             }
@@ -645,7 +645,7 @@ mod tests {
         let verify_result = engine.verify_block_family(&header, &parent_header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::RidiculousNumber(_)), _)) => {}
+            Err(Error(Error::Block(BlockError::RidiculousNumber(_)), _)) => {}
             Err(_) => {
                 panic!("should be invalid block number fail (got {:?})", verify_result);
             }
@@ -666,7 +666,7 @@ mod tests {
         let verify_result = engine.verify_block_family(&header, &parent_header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidDifficulty(_)), _)) => {}
+            Err(Error(Error::Block(BlockError::InvalidDifficulty(_)), _)) => {}
             Err(_) => {
                 panic!("should be invalid difficulty fail (got {:?})", verify_result);
             }
