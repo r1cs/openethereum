@@ -17,10 +17,9 @@
 //! State diff module.
 
 use crate::account_diff::*;
-use ethereum_types::Address;
-use core::{fmt, ops::*};
 use alloc::collections::BTreeMap;
-
+use core::{fmt, ops::*};
+use ethereum_types::Address;
 
 /// Expression for the delta between two system states. Encoded the
 /// delta of every altered account.

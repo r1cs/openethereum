@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
+use core::fmt;
 #[cfg(feature = "std")]
 use std::error;
-use core::fmt;
 
 use ethereum_types::U256;
 use rlp;

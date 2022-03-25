@@ -17,9 +17,9 @@
 //! Receipt
 
 use super::transaction::TypedTxId;
+use core::ops::{Deref, DerefMut};
 use ethereum_types::{Address, Bloom, H160, H256, U256};
 use rlp::{DecoderError, Rlp, RlpStream};
-use core::ops::{Deref, DerefMut};
 
 use crate::log_entry::{LocalizedLogEntry, LogEntry};
 use crate::BlockNumber;
