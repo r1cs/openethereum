@@ -20,7 +20,8 @@ use ethereum_types::{Address, U256};
 use log::{debug, warn};
 use std::cmp::min;
 use trace::trace::{
-    Action, Call, CallResult, Create, CreateResult, MemoryDiff, Res, Reward, RewardType, StorageDiff, Suicide, VMExecutedOperation, VMOperation, VMTrace
+    Action, Call, CallResult, Create, CreateResult, MemoryDiff, Res, Reward, RewardType,
+    StorageDiff, Suicide, VMExecutedOperation, VMOperation, VMTrace,
 };
 use trace::{FlatTrace, Tracer, VMTracer};
 use vm::{ActionParams, Error as VmError};

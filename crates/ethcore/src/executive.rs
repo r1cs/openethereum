@@ -32,7 +32,8 @@ use trace::{self, Tracer, VMTracer};
 use transaction_ext::Transaction;
 use types::transaction::{Action, SignedTransaction, TypedTransaction};
 use vm::{
-    self, AccessList, ActionParams, ActionValue, CleanDustMode, CreateContractAddress, EnvInfo, ResumeCall, ResumeCreate, ReturnData, Schedule, TrapError
+    self, AccessList, ActionParams, ActionValue, CleanDustMode, CreateContractAddress, EnvInfo,
+    ResumeCall, ResumeCreate, ReturnData, Schedule, TrapError,
 };
 
 #[cfg(any(test, feature = "test-helpers"))]
@@ -1492,10 +1493,11 @@ mod tests {
     use std::sync::Arc;
     use test_helpers::{get_temp_state, get_temp_state_with_factory};
     use trace::{
-        trace, ExecutiveTracer, ExecutiveVMTracer, FlatTrace, MemoryDiff, NoopTracer, NoopVMTracer, StorageDiff, Tracer, VMExecutedOperation, VMOperation, VMTrace, VMTracer
+        trace, ExecutiveTracer, ExecutiveVMTracer, FlatTrace, MemoryDiff, NoopTracer, NoopVMTracer,
+        StorageDiff, Tracer, VMExecutedOperation, VMOperation, VMTrace, VMTracer,
     };
     use types::transaction::{
-        AccessListTx, Action, EIP1559TransactionTx, Transaction, TypedTransaction
+        AccessListTx, Action, EIP1559TransactionTx, Transaction, TypedTransaction,
     };
     use vm::{ActionParams, ActionValue, CallType, CreateContractAddress, EnvInfo};
 
