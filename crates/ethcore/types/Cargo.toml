@@ -16,8 +16,8 @@ crypto = {path = "../../crypto", default-features = false }
 rlp = { version = "0.4.6", default-features = false }
 rlp_derive = { path = "../../util/rlp-derive" }
 unexpected = { path = "../../util/unexpected" }
-serde = "1.0"
-serde_repr = "0.1"
+serde = {version="1.0",default-features=false}
+
 
 [dev-dependencies]
 rustc-hex = "1.0"
