@@ -18,11 +18,11 @@
 
 use crate::bytes::Bytes;
 use alloc::collections::BTreeMap;
+use alloc::format;
+use alloc::string::String;
 use core::cmp::*;
 use core::fmt;
 use ethereum_types::{H256, U256};
-use alloc::string::String;
-use alloc::format;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 /// Diff type for specifying a change (or not).

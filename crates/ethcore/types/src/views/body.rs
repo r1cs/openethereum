@@ -23,8 +23,8 @@ use crate::header::Header;
 use crate::transaction::{LocalizedTransaction, TypedTransaction, UnverifiedTransaction};
 use crate::views::{HeaderView, TypedTransactionView};
 use crate::BlockNumber;
-use ethereum_types::H256;
 use alloc::vec::Vec;
+use ethereum_types::H256;
 
 /// View onto block rlp.
 pub struct BodyView<'a> {

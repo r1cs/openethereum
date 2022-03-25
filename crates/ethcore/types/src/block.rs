@@ -36,8 +36,8 @@ use crate::bytes::Bytes;
 use crate::header::Header;
 use crate::transaction::{TypedTransaction, UnverifiedTransaction};
 use crate::BlockNumber;
-use rlp::{DecoderError, Rlp, RlpStream};
 use alloc::vec::Vec;
+use rlp::{DecoderError, Rlp, RlpStream};
 
 /// A block, encoded as it is on the block chain.
 #[derive(Default, Debug, Clone, PartialEq)]

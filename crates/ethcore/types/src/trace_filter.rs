@@ -17,8 +17,8 @@
 //! Trace filter related types
 
 use crate::ids::BlockId;
-use core::ops::Range;
 use alloc::vec::Vec;
+use core::ops::Range;
 use ethereum_types::Address;
 
 /// Easy to use trace filter.

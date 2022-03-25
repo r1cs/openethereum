@@ -18,13 +18,13 @@
 
 use crate::BlockNumber;
 
-use alloc::vec::Vec;
 use super::ViewRlp;
 use crate::bytes::Bytes;
 use crate::hash::keccak;
 use crate::header::Header;
 use crate::transaction::{LocalizedTransaction, TypedTransaction, UnverifiedTransaction};
 use crate::views::{HeaderView, TypedTransactionView};
+use alloc::vec::Vec;
 
 use ethereum_types::H256;
 

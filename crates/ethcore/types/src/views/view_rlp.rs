@@ -16,8 +16,8 @@
 
 //! Wrapper for view rlp expected to be valid with debug info
 
-use rlp::{Decodable, DecoderError, Rlp};
 use alloc::vec::Vec;
+use rlp::{Decodable, DecoderError, Rlp};
 
 /// Wrapper for trusted rlp, which is expected to be valid, for use in views
 /// When created with view!, records the file and line where it was created for debugging

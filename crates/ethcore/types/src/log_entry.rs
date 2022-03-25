@@ -18,8 +18,8 @@
 
 use crate::bytes::Bytes;
 use crate::BlockNumber;
-use core::ops::Deref;
 use alloc::vec::Vec;
+use core::ops::Deref;
 use ethereum_types::{Address, Bloom, BloomInput, H256};
 
 /// A record of execution for a `LOG` operation.

@@ -20,10 +20,10 @@ use super::ViewRlp;
 use crate::bytes::Bytes;
 use crate::hash::keccak;
 use crate::BlockNumber;
+use alloc::vec;
+use alloc::vec::Vec;
 use ethereum_types::{Address, Bloom, H256, U256};
 use rlp::{self};
-use alloc::vec::Vec;
-use alloc::vec;
 
 /// View onto block header rlp.
 pub struct HeaderView<'a> {

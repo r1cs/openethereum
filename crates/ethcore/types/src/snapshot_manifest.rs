@@ -17,9 +17,9 @@
 //! Snapshot manifest type definition
 
 use crate::bytes::Bytes;
+use alloc::vec::Vec;
 use ethereum_types::H256;
 use rlp::{DecoderError, Rlp, RlpStream};
-use alloc::vec::Vec;
 
 /// Manifest data.
 #[derive(Debug, Clone, PartialEq, Eq)]

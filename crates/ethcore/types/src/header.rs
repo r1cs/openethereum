@@ -19,11 +19,11 @@
 use crate::bytes::Bytes;
 use crate::hash::{keccak, KECCAK_EMPTY_LIST_RLP, KECCAK_NULL_RLP};
 use crate::BlockNumber;
-use ethereum_types::{Address, Bloom, H256, U256};
-use rlp::{DecoderError, Encodable, Rlp, RlpStream};
+use alloc::vec;
 use alloc::vec::Vec;
 use core::iter::FromIterator;
-use alloc::vec;
+use ethereum_types::{Address, Bloom, H256, U256};
+use rlp::{DecoderError, Encodable, Rlp, RlpStream};
 
 /// Semantic boolean for when a seal/signature is included.
 #[derive(Debug, Clone, Copy)]
@@ -228,9 +228,7 @@ impl Header {
     }
 
     /// Get the seal field with RLP-decoded values as bytes.
-    pub fn decode_seal<'a, T: FromIterator<&'a [u8]>>(
-        &'a self,
-    ) -> Result<T, DecoderError> {
+    pub fn decode_seal<'a, T: FromIterator<&'a [u8]>>(&'a self) -> Result<T, DecoderError> {
         self.seal.iter().map(|rlp| Rlp::new(rlp).data()).collect()
     }
 
