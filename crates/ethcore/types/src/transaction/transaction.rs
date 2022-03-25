@@ -16,16 +16,17 @@
 
 //! Transaction data structure.
 
-use crate::transaction::{error, Error};
-use crypto::hash::keccak;
 use crypto::publickey::{recover, Signature};
+use crypto::hash::keccak;
+use crate::transaction::{error, Error};
 use ethereum_types::{Address, BigEndianHash, H160, H256, U256};
+use core::cmp::min;
 
 #[cfg(feature = "std")]
 use crypto::publickey::{self, Secret};
 
-use rlp::{self, DecoderError, Rlp, RlpStream};
 use core::ops::Deref;
+use rlp::{self, DecoderError, Rlp, RlpStream};
 
 pub type AccessListItem = (H160, Vec<H256>);
 pub type AccessList = Vec<AccessListItem>;
@@ -592,7 +593,7 @@ impl TypedTransaction {
                 if overflow {
                     self.tx().gas_price
                 } else {
-					if self.tx().gas_price<=v2 {self.tx().gas_price}else{v2}
+					min(self.tx().gas_price,v2)
                 }
             }
             Self::AccessList(_) => self.tx().gas_price,
