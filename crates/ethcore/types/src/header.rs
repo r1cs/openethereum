@@ -487,9 +487,9 @@ mod tests {
             Header::decode_rlp(&rlp, BlockNumber::default()).expect("error decoding header");
 
         assert_eq!(header.seal().len(), 2);
-        assert_eq!(header.base_fee().unwrap(), U256::from(100));
+        assert_eq!(header.base_fee().unwrap(), U256::from(100u32));
 
-        let new_base_fee = U256::from(200);
+        let new_base_fee = U256::from(200u32);
         header.set_base_fee(Some(new_base_fee));
         assert_eq!(header.base_fee().unwrap(), new_base_fee);
 
@@ -545,7 +545,7 @@ mod tests {
         let header_legacy = Header::new();
         let mut header_1559 = Header::new();
 
-        header_1559.set_base_fee(Some(U256::from(100)));
+        header_1559.set_base_fee(Some(U256::from(100u32)));
 
         let hash_legacy = header_legacy.hash();
         let hash_1559 = header_1559.hash();
