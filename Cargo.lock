@@ -568,6 +568,7 @@ dependencies = [
  "evm",
  "globset",
  "hash-db 0.12.4",
+ "hashbrown",
  "hex-literal 0.2.1",
  "itertools",
  "keccak-hash",
