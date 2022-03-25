@@ -18,7 +18,7 @@
 use super::CleanupMode;
 use ethereum_types::Address;
 use evm::{CleanDustMode, Schedule};
-use std::collections::HashSet;
+use hashbrown::HashSet;
 use types::log_entry::LogEntry;
 use vm::access_list::AccessList;
 
