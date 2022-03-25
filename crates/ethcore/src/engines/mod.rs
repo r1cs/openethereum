@@ -326,9 +326,10 @@ pub trait Engine<M: Machine>: Sync + Send {
     /// Add Client which can be used for sealing, potentially querying the state and sending messages.
     fn register_client(&self, _client: Weak<M::EngineClient>) {}
 
+    #[cfg(feature = "std")]
     /// Return a new open block header timestamp based on the parent timestamp.
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {
-        use core::{cmp, time};
+        use std::{cmp, time};
 
         let now = time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap_or_default();
         cmp::max(now.as_secs() as u64, parent_timestamp + 1)

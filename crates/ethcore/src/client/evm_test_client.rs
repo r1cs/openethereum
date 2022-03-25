@@ -195,7 +195,7 @@ impl<'a> EvmTestClient<'a> {
     pub fn transact<T: trace::Tracer, V: trace::VMTracer>(
         &mut self, env_info: &client::EnvInfo, transaction: transaction::SignedTransaction,
         tracer: T, vm_tracer: V,
-    ) -> std::result::Result<TransactSuccess<T::Output, V::Output>, TransactErr> {
+    ) -> core::result::Result<TransactSuccess<T::Output, V::Output>, TransactErr> {
         let initial_gas = transaction.tx().gas;
         // Verify transaction
         let is_ok = transaction.verify_basic(true, None);
@@ -278,7 +278,7 @@ impl<'a> EvmTestClient<'a> {
     }
 }
 
-/// To be returned inside a std::result::Result::Ok after a successful
+/// To be returned inside a core::result::Result::Ok after a successful
 /// transaction completed.
 #[allow(dead_code)]
 pub struct TransactSuccess<T, V> {
@@ -302,7 +302,7 @@ pub struct TransactSuccess<T, V> {
     pub end_state: Option<pod_state::PodState>,
 }
 
-/// To be returned inside a std::result::Result::Err after a failed
+/// To be returned inside a core::result::Result::Err after a failed
 /// transaction.
 #[allow(dead_code)]
 pub struct TransactErr {
