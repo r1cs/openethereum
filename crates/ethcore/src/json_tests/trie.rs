@@ -18,12 +18,13 @@ use ethereum_types::H256;
 use ethjson;
 use ethtrie::RlpCodec;
 use keccak_hasher::KeccakHasher;
+#[cfg(feature = "std")]
 use std::path::Path;
 use trie::{DBValue, TrieFactory, TrieSpec};
 type MemoryDB = memory_db::MemoryDB<KeccakHasher, DBValue>;
 
 use super::HookType;
-
+#[cfg(feature = "std")]
 pub fn json_trie_test<H: FnMut(&str, HookType)>(
     path: &Path, json: &[u8], trie: TrieSpec, start_stop_hook: &mut H,
 ) -> Vec<String> {

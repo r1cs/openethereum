@@ -15,6 +15,7 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::test_common::*;
+use alloc::sync::Arc;
 use bytes::Bytes;
 use ethereum_types::BigEndianHash;
 use evm::Finalize;
@@ -24,8 +25,8 @@ use hash::keccak;
 use machine::EthereumMachine as Machine;
 use rlp::RlpStream;
 use state::{Backend as StateBackend, State, Substate};
+#[cfg(feature = "std")]
 use std::path::Path;
-use std::sync::Arc;
 use test_helpers::get_temp_state;
 use trace::{NoopTracer, NoopVMTracer, Tracer, VMTracer};
 use vm::{
@@ -246,6 +247,7 @@ where
     }
 }
 
+#[cfg(feature = "std")]
 /// run an json executive test
 pub fn json_executive_test<H: FnMut(&str, HookType)>(
     path: &Path, json_data: &[u8], start_stop_hook: &mut H,
