@@ -4,11 +4,13 @@ use ethjson;
 use ethjson::blockchain::Block;
 use log::warn;
 use rlp::RlpStream;
+#[cfg(feature = "std")]
 use std::path::Path;
 use types::transaction::{TypedTransaction, TypedTxId, UnverifiedTransaction};
 use types::BlockNumber;
 use verification::queue::kind::blocks::Unverified;
 
+#[cfg(feature = "std")]
 pub fn json_local_block_en_de_test<H: FnMut(&str, HookType)>(
     _test: &ethjson::test::LocalTests, path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {

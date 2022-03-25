@@ -17,11 +17,12 @@
 use super::test_common::*;
 use client::EvmTestClient;
 use ethjson;
+#[cfg(feature = "std")]
 use std::path::Path;
 use transaction_ext::Transaction;
 use types::header::Header;
 use types::transaction::{TypedTransaction, UnverifiedTransaction};
-
+#[cfg(feature = "std")]
 pub fn json_transaction_test<H: FnMut(&str, HookType)>(
     path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {

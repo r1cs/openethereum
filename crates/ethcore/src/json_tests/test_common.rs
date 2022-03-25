@@ -15,6 +15,7 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 pub use ethereum_types::{Address, H256, U256};
+#[cfg(feature = "std")]
 use std::path::PathBuf;
 use walkdir::{DirEntry, WalkDir};
 
@@ -27,6 +28,7 @@ pub enum HookType {
     OnStop,
 }
 
+#[cfg(feature = "std")]
 /// find all json files recursively from a path
 pub fn find_json_files_recursive(path: &PathBuf) -> Vec<PathBuf> {
     WalkDir::new(path)
@@ -37,6 +39,7 @@ pub fn find_json_files_recursive(path: &PathBuf) -> Vec<PathBuf> {
         .collect::<Vec<PathBuf>>()
 }
 
+#[cfg(feature = "std")]
 /// check if the test is selected to execute via TEST_DEBUG environment variable
 pub fn debug_include_test(name: &str) -> bool {
     match std::env::var_os("TEST_DEBUG") {

@@ -19,6 +19,7 @@ use super::{flushln, HookType};
 use client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
 use ethjson::spec::ForkSpec;
 use pod_state::PodState;
+#[cfg(feature = "std")]
 use std::path::Path;
 use vm::EnvInfo;
 use {ethjson, trace};
@@ -39,6 +40,7 @@ fn skip_test(
     })
 }
 
+#[cfg(feature = "std")]
 pub fn json_state_test<H: FnMut(&str, HookType)>(
     state_test: &ethjson::test::StateTests, path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {
