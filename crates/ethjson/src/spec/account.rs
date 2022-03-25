@@ -139,8 +139,8 @@ mod tests {
 		}"#;
         let deserialized: Account = serde_json::from_str(s).unwrap();
         assert!(!deserialized.is_empty());
-        assert_eq!(deserialized.balance.unwrap(), Uint(U256::from(1)));
-        assert_eq!(deserialized.nonce.unwrap(), Uint(U256::from(0)));
+        assert_eq!(deserialized.balance.unwrap(), Uint(U256::from(1u32)));
+        assert_eq!(deserialized.nonce.unwrap(), Uint(U256::from(0u32)));
         assert_eq!(deserialized.code.unwrap(), Bytes::new(vec![0x12, 0x34]));
         assert!(deserialized.builtin.is_some()); // Further tested in builtin.rs
     }
@@ -155,11 +155,12 @@ mod tests {
 		}"#;
         let deserialized: Account = serde_json::from_str(s).unwrap();
         assert!(!deserialized.is_empty());
-        assert_eq!(deserialized.balance.unwrap(), Uint(U256::from(1)));
-        assert_eq!(deserialized.nonce.unwrap(), Uint(U256::from(0)));
+        assert_eq!(deserialized.balance.unwrap(), Uint(U256::from(1u32)));
+        assert_eq!(deserialized.nonce.unwrap(), Uint(U256::from(0u32)));
         assert_eq!(deserialized.code.unwrap(), Bytes::new(vec![0x12, 0x34]));
         let mut storage = BTreeMap::new();
-        storage.insert(Uint(U256::from("7fffffffffffffff7fffffffffffffff")), Uint(U256::from(1)));
+        storage
+            .insert(Uint(U256::from("7fffffffffffffff7fffffffffffffff")), Uint(U256::from(1u32)));
         assert_eq!(deserialized.storage.unwrap(), storage);
     }
 }

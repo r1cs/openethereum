@@ -16,25 +16,12 @@
 
 //! Ethereum virtual machine.
 
-extern crate bit_set;
+#![cfg_attr(not(test), no_std)]
+
+extern crate alloc;
 extern crate ethcore_builtin as builtin;
-extern crate ethereum_types;
 extern crate keccak_hash as hash;
-extern crate memory_cache;
-extern crate num_bigint;
 extern crate parity_bytes as bytes;
-extern crate parity_util_mem;
-extern crate parking_lot;
-extern crate vm;
-
-#[cfg_attr(feature = "evm-debug", macro_use)]
-extern crate log;
-
-#[cfg(test)]
-extern crate hex_literal;
-#[cfg(test)]
-extern crate rustc_hex;
-
 pub mod evm;
 pub mod interpreter;
 

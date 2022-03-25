@@ -41,9 +41,9 @@ mod inner {
 
     use ethereum_types::U256;
 
-    use instructions::{Instruction, InstructionInfo};
-    use interpreter::stack::Stack;
-    use CostType;
+    use crate::instructions::{Instruction, InstructionInfo};
+    use crate::interpreter::stack::Stack;
+    use crate::CostType;
 
     macro_rules! evm_debug {
         ($x: expr) => {
@@ -55,7 +55,7 @@ mod inner {
         if cfg!(feature = "evm-debug-tests") {
             println!("{}", data);
         } else {
-            debug!(target: "evm", "{}", data);
+            log::debug!(target: "evm", "{}", data);
         }
     }
 

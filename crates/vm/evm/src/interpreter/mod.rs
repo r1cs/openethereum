@@ -24,19 +24,22 @@ mod shared_cache;
 mod stack;
 
 use bytes::Bytes;
+use core::marker::PhantomData;
+use core::{cmp, mem};
 use ethereum_types::{Address, BigEndianHash, H256, U256};
 use hash::keccak;
 use num_bigint::BigUint;
-use std::marker::PhantomData;
-use std::sync::Arc;
-use std::{cmp, mem};
+extern crate alloc;
+use alloc::boxed::Box;
+use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 use vm::{
     self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress, GasLeft, MessageCallResult, ReturnData, Schedule, TrapError, TrapKind
 };
 
-use evm::CostType;
-use instructions::{self, Instruction, InstructionInfo};
+use crate::evm::CostType;
+use crate::instructions::{self, Instruction, InstructionInfo};
 
 use self::gasometer::Gasometer;
 use self::memory::Memory;
@@ -1030,7 +1033,7 @@ impl<Cost: CostType> Interpreter<Cost> {
                 Self::copy_data_to_memory(
                     &mut self.mem,
                     &mut self.stack,
-                    &self.params.data.as_ref().map_or_else(|| &[] as &[u8], |d| &*d as &[u8]),
+                    self.params.data.as_ref().map_or_else(|| &[] as &[u8], |d| &*d as &[u8]),
                 );
             }
             instructions::RETURNDATACOPY => {
@@ -1156,15 +1159,15 @@ impl<Cost: CostType> Interpreter<Cost> {
                 self.stack.push(if !b.is_zero() {
                     match b {
                         ONE => a,
-                        TWO => a >> 1,
-                        TWO_POW_5 => a >> 5,
-                        TWO_POW_8 => a >> 8,
-                        TWO_POW_16 => a >> 16,
-                        TWO_POW_24 => a >> 24,
-                        TWO_POW_64 => a >> 64,
-                        TWO_POW_96 => a >> 96,
-                        TWO_POW_224 => a >> 224,
-                        TWO_POW_248 => a >> 248,
+                        TWO => a >> 1u32,
+                        TWO_POW_5 => a >> 5u32,
+                        TWO_POW_8 => a >> 8u32,
+                        TWO_POW_16 => a >> 16u32,
+                        TWO_POW_24 => a >> 24u32,
+                        TWO_POW_64 => a >> 64u32,
+                        TWO_POW_96 => a >> 96u32,
+                        TWO_POW_224 => a >> 224u32,
+                        TWO_POW_248 => a >> 248u32,
                         _ => a / b,
                     }
                 } else {
@@ -1181,7 +1184,7 @@ impl<Cost: CostType> Interpreter<Cost> {
                 let (b, sign_b) = get_and_reset_sign(self.stack.pop_back());
 
                 // -2^255
-                let min = (U256::one() << 255) - U256::one();
+                let min = (U256::one() << 255u32) - U256::one();
                 self.stack.push(if b.is_zero() {
                     U256::zero()
                 } else if a == min && b == !U256::zero() {
@@ -1275,8 +1278,8 @@ impl<Cost: CostType> Interpreter<Cost> {
             instructions::BYTE => {
                 let word = self.stack.pop_back();
                 let val = self.stack.pop_back();
-                let byte = match word < U256::from(32) {
-                    true => (val >> (8 * (31 - word.low_u64() as usize))) & U256::from(0xff),
+                let byte = match word < U256::from(32u32) {
+                    true => (val >> (8 * (31 - word.low_u64() as usize))) & U256::from(0xffu32),
                     false => U256::zero(),
                 };
                 self.stack.push(byte);
@@ -1315,7 +1318,7 @@ impl<Cost: CostType> Interpreter<Cost> {
             }
             instructions::SIGNEXTEND => {
                 let bit = self.stack.pop_back();
-                if bit < U256::from(32) {
+                if bit < U256::from(32u64) {
                     let number = self.stack.pop_back();
                     let bit_position = (bit.low_u64() * 8 + 7) as usize;
 
@@ -1460,13 +1463,13 @@ fn address_to_u256(value: Address) -> U256 {
 
 #[cfg(test)]
 mod tests {
+    use crate::factory::Factory;
+    use crate::vmtype::VMType;
     use ethereum_types::Address;
-    use factory::Factory;
     use rustc_hex::FromHex;
     use std::sync::Arc;
     use vm::tests::{test_finalize, FakeExt};
     use vm::{self, ActionParams, ActionValue, Exec};
-    use vmtype::VMType;
 
     fn interpreter(params: ActionParams, ext: &dyn vm::Ext) -> Box<dyn Exec> {
         Factory::new(VMType::Interpreter, 1).create(params, ext.schedule(), ext.depth())

@@ -16,8 +16,8 @@
 
 //! Evm interface.
 
+use core::{cmp, fmt, ops};
 use ethereum_types::{U128, U256, U512};
-use std::{cmp, fmt, ops};
 use vm::{Error, Ext, GasLeft, Result, ReturnData};
 
 /// Finalization result. Gas Left: either it is a known value, or it needs to be computed by processing

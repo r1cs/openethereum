@@ -53,6 +53,6 @@ mod tests {
 		}"#;
 
         let deserialized: NullEngine = serde_json::from_str(s).unwrap();
-        assert_eq!(deserialized.params.block_reward, Some(Uint(U256::from(0x0d))));
+        assert_eq!(deserialized.params.block_reward, Some(Uint(U256::from(0x0du32))));
     }
 }

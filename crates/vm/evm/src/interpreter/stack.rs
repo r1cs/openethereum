@@ -14,8 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use instructions;
-use std::fmt;
+use crate::instructions;
+use alloc::vec::Vec;
+use core::fmt;
 
 /// Stack trait with VM-friendly API
 pub trait Stack<T> {

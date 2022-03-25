@@ -98,14 +98,14 @@ mod tests {
                 author: Some(Address(
                     H160::from_str("1000000000000000000000000000000000000001").unwrap()
                 )),
-                timestamp: Some(Uint(U256::from(0x07))),
+                timestamp: Some(Uint(U256::from(0x07u32))),
                 parent_hash: Some(H256(
                     Eth256::from_str(
                         "9000000000000000000000000000000000000000000000000000000000000000"
                     )
                     .unwrap()
                 )),
-                gas_limit: Uint(U256::from(0x1388)),
+                gas_limit: Uint(U256::from(0x1388u32)),
                 transactions_root: None,
                 receipts_root: None,
                 state_root: Some(H256(

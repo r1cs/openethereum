@@ -1,6 +1,6 @@
 on: [push, pull_request]
 
-name: rustfmt
+name: rustfmt/cargo check
 
 jobs:
   fmt:
@@ -18,3 +18,18 @@ jobs:
         with:
           command: fmt
           args: --all -- --check
+      - name:                   Run cargo check 1
+        uses:                   actions-rs/cargo@v1
+        with:
+          command:              check
+          args:                 --locked --no-default-features --all
+      - name:                   Run cargo check 2
+        uses:                   actions-rs/cargo@v1
+        with:
+          command:              check
+          args:                 --locked --all
+      - name:                   Run cargo check benches
+        uses:                   actions-rs/cargo@v1
+        with:
+          command:              check
+          args:                 --locked -p ethcore --benches

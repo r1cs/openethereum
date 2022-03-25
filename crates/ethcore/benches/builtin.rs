@@ -29,32 +29,32 @@ use bytes::BytesRef;
 use criterion::{Bencher, Criterion};
 use ethcore::ethereum::new_byzantium_test_machine;
 use ethcore::machine::EthereumMachine;
-use ethcore_builtin::Builtin;
-use ethereum_types::H160;
+use ethereum_types::{Address, H160};
 use rustc_hex::FromHex;
 
-struct BuiltinBenchmark<'a> {
-    builtin: &'a Builtin,
+struct BuiltinBenchmark {
+    machine: EthereumMachine,
+    builtin: Address,
     input: Vec<u8>,
     expected: Vec<u8>,
 }
 
-impl<'a> BuiltinBenchmark<'a> {
-    fn new(builtin_address: &'static str, input: &str, expected: &str) -> BuiltinBenchmark<'a> {
-        let builtins = new_byzantium_test_machine().builtins();
-
-        let builtin = builtins.get(&H160::from_str(builtin_address).unwrap()).unwrap().clone();
+impl BuiltinBenchmark {
+    fn new(builtin_address: &'static str, input: &str, expected: &str) -> BuiltinBenchmark {
+        let machine = new_byzantium_test_machine();
+        let builtin = H160::from_str(builtin_address).unwrap();
         let input = FromHex::from_hex(input).unwrap();
         let expected = FromHex::from_hex(expected).unwrap();
 
-        BuiltinBenchmark { builtin, input, expected }
+        BuiltinBenchmark { machine, builtin, input, expected }
     }
 
     fn run(&self, b: &mut Bencher) {
         let mut output = vec![0; self.expected.len()];
+        let builtin = self.machine.builtins().get(&self.builtin).unwrap();
 
         b.iter(|| {
-            self.builtin.execute(&self.input, &mut BytesRef::Fixed(&mut output)).unwrap();
+            builtin.execute(&self.input, &mut BytesRef::Fixed(&mut output)).unwrap();
         });
 
         assert_eq!(self.expected[..], output[..]);

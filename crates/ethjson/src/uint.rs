@@ -88,8 +88,8 @@ impl<'a> Visitor<'a> for UintVisitor {
         E: Error,
     {
         let value = match value.len() {
-            0 => U256::from(0),
-            2 if value.starts_with("0x") => U256::from(0),
+            0 => U256::from(0u32),
+            2 if value.starts_with("0x") => U256::from(0u32),
             _ if value.starts_with("0x") => U256::from_str(&value[2..]).map_err(|e| {
                 Error::custom(format!("Invalid hex value {}: {}", value, e).as_str())
             })?,
@@ -116,7 +116,7 @@ where
 {
     let value = Uint::deserialize(d)?;
 
-    if value == Uint(U256::from(0)) {
+    if value == Uint(U256::from(0u32)) {
         return Err(Error::invalid_value(Unexpected::Unsigned(value.into()), &"a non-zero value"));
     }
 
@@ -131,7 +131,7 @@ where
     let value: Option<Uint> = Option::deserialize(d)?;
 
     if let Some(value) = value {
-        if value == Uint(U256::from(0)) {
+        if value == Uint(U256::from(0u32)) {
             return Err(Error::invalid_value(
                 Unexpected::Unsigned(value.into()),
                 &"a non-zero value",
@@ -155,17 +155,17 @@ mod test {
         assert_eq!(
             deserialized,
             vec![
-                Uint(U256::from(10)),
-                Uint(U256::from(10)),
-                Uint(U256::from(0)),
-                Uint(U256::from(0)),
-                Uint(U256::from(0))
+                Uint(U256::from(10u32)),
+                Uint(U256::from(10u32)),
+                Uint(U256::from(0u32)),
+                Uint(U256::from(0u32)),
+                Uint(U256::from(0u32))
             ]
         );
     }
 
     #[test]
     fn uint_into() {
-        assert_eq!(U256::from(10), Uint(U256::from(10)).into());
+        assert_eq!(U256::from(10u32), Uint(U256::from(10u32)).into());
     }
 }

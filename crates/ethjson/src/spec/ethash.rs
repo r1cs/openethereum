@@ -158,14 +158,17 @@ mod tests {
             deserialized,
             Ethash {
                 params: EthashParams {
-                    minimum_difficulty: Uint(U256::from(0x020000)),
-                    difficulty_bound_divisor: Uint(U256::from(0x0800)),
+                    minimum_difficulty: Uint(U256::from(0x020000u32)),
+                    difficulty_bound_divisor: Uint(U256::from(0x0800u32)),
                     difficulty_increment_divisor: None,
                     metropolis_difficulty_increment_divisor: None,
-                    duration_limit: Some(Uint(U256::from(0x0d))),
-                    homestead_transition: Some(Uint(U256::from(0x42))),
-                    block_reward: Some(BlockReward::Single(Uint(U256::from(0x100)))),
-                    dao_hardfork_transition: Some(Uint(U256::from(0x08))),
+                    duration_limit: Some(Uint(U256::from(0x0du32))),
+                    homestead_transition: Some(Uint(U256::from(0x42u32))),
+                    block_reward: Some(BlockReward::Single(Uint(U256::from(0x100u32)))),
+                    block_reward_contract_transition: None,
+                    block_reward_contract_address: None,
+                    block_reward_contract_code: None,
+                    dao_hardfork_transition: Some(Uint(U256::from(0x08u32))),
                     dao_hardfork_beneficiary: Some(Address(
                         H160::from_str("abcabcabcabcabcabcabcabcabcabcabcabcabca").unwrap()
                     )),
@@ -231,10 +234,10 @@ mod tests {
                             H160::from_str("807640a13483f8ac783c557fcdf27be11ea4ac7a").unwrap()
                         ),
                     ]),
-                    difficulty_hardfork_transition: Some(Uint(U256::from(0x59d9))),
-                    difficulty_hardfork_bound_divisor: Some(Uint(U256::from(0x0200))),
-                    bomb_defuse_transition: Some(Uint(U256::from(0x41))),
-                    eip100b_transition: Some(Uint(U256::from(0x42))),
+                    difficulty_hardfork_transition: Some(Uint(U256::from(0x59d9u32))),
+                    difficulty_hardfork_bound_divisor: Some(Uint(U256::from(0x0200u32))),
+                    bomb_defuse_transition: Some(Uint(U256::from(0x41u32))),
+                    eip100b_transition: Some(Uint(U256::from(0x42u32))),
                     ecip1017_era_rounds: None,
                     expip2_transition: None,
                     expip2_duration_limit: None,
@@ -259,8 +262,8 @@ mod tests {
             deserialized,
             Ethash {
                 params: EthashParams {
-                    minimum_difficulty: Uint(U256::from(0x020000)),
-                    difficulty_bound_divisor: Uint(U256::from(0x0800)),
+                    minimum_difficulty: Uint(U256::from(0x020000u32)),
+                    difficulty_bound_divisor: Uint(U256::from(0x0800u32)),
                     difficulty_increment_divisor: None,
                     metropolis_difficulty_increment_divisor: None,
                     duration_limit: None,

@@ -14,7 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::fmt;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::fmt;
 
 /// Type of EVM to use.
 #[derive(Debug, PartialEq, Clone)]

@@ -17,11 +17,11 @@
 //! Evm factory.
 //!
 use super::interpreter::SharedCache;
-use super::vm::ActionParams;
 use super::vmtype::VMType;
+use alloc::boxed::Box;
+use alloc::sync::Arc;
 use ethereum_types::U256;
-use std::sync::Arc;
-use vm::{Exec, Schedule};
+use vm::{ActionParams, Exec, Schedule};
 
 /// Evm factory. Creates appropriate Evm.
 #[derive(Clone)]

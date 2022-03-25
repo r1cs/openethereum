@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
+use alloc::vec::Vec;
 use ethereum_types::U256;
 use vm::ReturnData;
 

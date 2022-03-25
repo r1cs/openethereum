@@ -15,65 +15,36 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::super::instructions::{self, Instruction};
+use alloc::sync::Arc;
 use bit_set::BitSet;
 use ethereum_types::H256;
-use hash::KECCAK_EMPTY;
-use memory_cache::MemoryLruCache;
-use parity_util_mem::{MallocSizeOf, MallocSizeOfOps};
-use parking_lot::Mutex;
-use std::sync::Arc;
 
 const DEFAULT_CACHE_SIZE: usize = 4 * 1024 * 1024;
 
 #[derive(Clone)]
 struct Bits(Arc<BitSet>);
 
-impl MallocSizeOf for Bits {
-    fn size_of(&self, _ops: &mut MallocSizeOfOps) -> usize {
-        // dealing in bits here
-        self.0.capacity() * 8
-    }
-}
-
-#[derive(MallocSizeOf, Clone)]
+#[derive(Clone)]
 struct CacheItem {
     jump_destination: Bits,
     sub_entrypoint: Bits,
 }
 
 /// Global cache for EVM interpreter
-pub struct SharedCache {
-    jump_destinations: Mutex<MemoryLruCache<H256, CacheItem>>,
-}
+pub struct SharedCache {}
 
 impl SharedCache {
     /// Create a jump destinations cache with a maximum size in bytes
     /// to cache.
-    pub fn new(max_size: usize) -> Self {
-        SharedCache { jump_destinations: Mutex::new(MemoryLruCache::new(max_size)) }
+    pub fn new(_max_size: usize) -> Self {
+        SharedCache {}
     }
 
     /// Get jump destinations bitmap for a contract.
     pub fn jump_and_sub_destinations(
-        &self, code_hash: &Option<H256>, code: &[u8],
+        &self, _code_hash: &Option<H256>, code: &[u8],
     ) -> (Arc<BitSet>, Arc<BitSet>) {
-        if let Some(ref code_hash) = code_hash {
-            if code_hash == &KECCAK_EMPTY {
-                let cache_item = Self::find_jump_and_sub_destinations(code);
-                return (cache_item.jump_destination.0, cache_item.sub_entrypoint.0);
-            }
-
-            if let Some(d) = self.jump_destinations.lock().get_mut(code_hash) {
-                return (d.jump_destination.0.clone(), d.sub_entrypoint.0.clone());
-            }
-        }
-
         let d = Self::find_jump_and_sub_destinations(code);
-
-        if let Some(ref code_hash) = code_hash {
-            self.jump_destinations.lock().insert(*code_hash, d.clone());
-        }
-
         (d.jump_destination.0, d.sub_entrypoint.0)
     }
 

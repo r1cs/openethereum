@@ -67,7 +67,7 @@ mod tests {
 
         assert_eq!(call.destination, MaybeEmpty::None);
         assert_eq!(call.gas_limit, Uint(U256::from(0x1748766aa5u64)));
-        assert_eq!(call.value, Uint(U256::from(0)));
+        assert_eq!(call.value, Uint(U256::from(0u32)));
     }
 
     #[test]
@@ -89,6 +89,6 @@ mod tests {
             ))
         );
         assert_eq!(call.gas_limit, Uint(U256::from(0x1748766aa5u64)));
-        assert_eq!(call.value, Uint(U256::from(0)));
+        assert_eq!(call.value, Uint(U256::from(0u32)));
     }
 }

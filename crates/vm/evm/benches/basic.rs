@@ -21,10 +21,7 @@ extern crate criterion;
 extern crate bit_set;
 extern crate ethereum_types;
 extern crate evm;
-extern crate keccak_hash as hash;
-extern crate memory_cache;
 extern crate parity_bytes as bytes;
-extern crate parking_lot;
 extern crate rustc_hex;
 extern crate vm;
 

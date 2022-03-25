@@ -1002,7 +1002,7 @@ mod tests {
         }
         assert_eq!(t.tx().value, U256::from(0x0au64));
         assert_eq!(
-            &t.recover_sender().unwrap(),
+            t.recover_sender().unwrap(),
             H160::from_str("0f65fe9276bc9a24ae7083ae28e2660ef72df99e").unwrap()
         );
         assert_eq!(t.chain_id(), None);
