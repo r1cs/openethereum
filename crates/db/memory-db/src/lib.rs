@@ -20,10 +20,9 @@ extern crate hash_db;
 extern crate keccak_hasher;
 
 use hash_db::{AsHashDB, AsPlainDB, HashDB, HashDBRef, Hasher as KeyHasher, PlainDB, PlainDBRef};
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    hash, mem,
-};
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+use std::{hash, mem};
 
 // Backing `HashMap` parametrized with a `Hasher` for the keys `Hasher::Out` and the `Hasher::StdHasher`
 // as hash map builder.
@@ -441,14 +440,8 @@ mod tests {
 
         let overlay = main.drain();
 
-        assert_eq!(
-            overlay.get(&remove_key).unwrap(),
-            &("doggo".as_bytes().to_vec(), 0)
-        );
-        assert_eq!(
-            overlay.get(&insert_key).unwrap(),
-            &("arf".as_bytes().to_vec(), 2)
-        );
+        assert_eq!(overlay.get(&remove_key).unwrap(), &("doggo".as_bytes().to_vec(), 0));
+        assert_eq!(overlay.get(&insert_key).unwrap(), &("arf".as_bytes().to_vec(), 2));
         assert_eq!(
             overlay.get(&negative_remove_key).unwrap(),
             &("negative".as_bytes().to_vec(), -2)

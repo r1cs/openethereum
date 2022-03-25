@@ -51,21 +51,18 @@ where
 
 #[cfg(test)]
 mod tests {
-	extern crate std;
+    extern crate std;
     use super::{ordered_trie_root, sec_trie_root, trie_root};
     use ethereum_types::H256;
     use keccak_hasher::KeccakHasher;
     use std::str::FromStr;
-	use std::vec;
+    use std::vec;
     use triehash;
 
     #[test]
     fn simple_test() {
         assert_eq!(
-            trie_root(vec![(
-                b"A",
-                b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as &[u8]
-            )]),
+            trie_root(vec![(b"A", b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as &[u8])]),
             H256::from_str("d23786fb4a010da3ce639d66d5e904a11dbc02746d1ce25029e53290cabf28ab")
                 .unwrap()
         );
@@ -73,10 +70,7 @@ mod tests {
 
     #[test]
     fn proxy_works() {
-        let input = vec![(
-            b"A",
-            b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as &[u8],
-        )];
+        let input = vec![(b"A", b"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" as &[u8])];
         assert_eq!(
             trie_root(input.clone()),
             triehash::trie_root::<KeccakHasher, _, _, _>(input.clone())
@@ -88,9 +82,6 @@ mod tests {
         );
 
         let data = &["cake", "pie", "candy"];
-        assert_eq!(
-            ordered_trie_root(data),
-            triehash::ordered_trie_root::<KeccakHasher, _>(data)
-        );
+        assert_eq!(ordered_trie_root(data), triehash::ordered_trie_root::<KeccakHasher, _>(data));
     }
 }

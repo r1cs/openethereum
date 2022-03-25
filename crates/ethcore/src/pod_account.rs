@@ -24,13 +24,13 @@ use hash::keccak;
 use hash_db::HashDB;
 use itertools::Itertools;
 use keccak_hasher::KeccakHasher;
-use trie::DBValue;
 use rlp::{self, RlpStream};
 use rustc_hex::ToHex;
 use serde::Serializer;
 use state::Account;
-use std::{collections::BTreeMap, fmt};
-use trie::TrieFactory;
+use std::collections::BTreeMap;
+use std::fmt;
+use trie::{DBValue, TrieFactory};
 use triehash::sec_trie_root;
 use types::account_diff::*;
 
@@ -66,13 +66,10 @@ impl PodAccount {
         PodAccount {
             balance: *acc.balance(),
             nonce: *acc.nonce(),
-            storage: acc
-                .storage_changes()
-                .iter()
-                .fold(BTreeMap::new(), |mut m, (k, v)| {
-                    m.insert(k.clone(), v.clone());
-                    m
-                }),
+            storage: acc.storage_changes().iter().fold(BTreeMap::new(), |mut m, (k, v)| {
+                m.insert(k.clone(), v.clone());
+                m
+            }),
             code: acc.code().map(|x| x.to_vec()),
         }
     }
@@ -83,9 +80,7 @@ impl PodAccount {
         stream.append(&self.nonce);
         stream.append(&self.balance);
         stream.append(&sec_trie_root(
-            self.storage
-                .iter()
-                .map(|(k, v)| (k, rlp::encode(&v.into_uint()))),
+            self.storage.iter().map(|(k, v)| (k, rlp::encode(&v.into_uint()))),
         ));
         stream.append(&keccak(&self.code.as_ref().unwrap_or(&vec![])));
         stream.out()
@@ -93,8 +88,7 @@ impl PodAccount {
 
     /// Place additional data into given hash DB.
     pub fn insert_additional(
-        &self,
-        db: &mut dyn HashDB<KeccakHasher, DBValue>,
+        &self, db: &mut dyn HashDB<KeccakHasher, DBValue>,
         factory: &TrieFactory<KeccakHasher, RlpCodec>,
     ) {
         match self.code {
@@ -125,10 +119,7 @@ impl From<ethjson::blockchain::Account> for PodAccount {
                 .map(|(key, value)| {
                     let key: U256 = key.into();
                     let value: U256 = value.into();
-                    (
-                        BigEndianHash::from_uint(&key),
-                        BigEndianHash::from_uint(&value),
-                    )
+                    (BigEndianHash::from_uint(&key), BigEndianHash::from_uint(&value))
                 })
                 .collect(),
         }
@@ -146,10 +137,7 @@ impl From<ethjson::spec::Account> for PodAccount {
                     .map(|(key, value)| {
                         let key: U256 = key.into();
                         let value: U256 = value.into();
-                        (
-                            BigEndianHash::from_uint(&key),
-                            BigEndianHash::from_uint(&value),
-                        )
+                        (BigEndianHash::from_uint(&key), BigEndianHash::from_uint(&value))
                     })
                     .collect()
             }),
@@ -223,12 +211,8 @@ mod test {
 
     #[test]
     fn existence() {
-        let a = PodAccount {
-            balance: 69.into(),
-            nonce: 0.into(),
-            code: Some(vec![]),
-            storage: map![],
-        };
+        let a =
+            PodAccount { balance: 69.into(), nonce: 0.into(), code: Some(vec![]), storage: map![] };
         assert_eq!(diff_pod(Some(&a), Some(&a)), None);
         assert_eq!(
             diff_pod(None, Some(&a)),
@@ -243,18 +227,10 @@ mod test {
 
     #[test]
     fn basic() {
-        let a = PodAccount {
-            balance: 69.into(),
-            nonce: 0.into(),
-            code: Some(vec![]),
-            storage: map![],
-        };
-        let b = PodAccount {
-            balance: 42.into(),
-            nonce: 1.into(),
-            code: Some(vec![]),
-            storage: map![],
-        };
+        let a =
+            PodAccount { balance: 69.into(), nonce: 0.into(), code: Some(vec![]), storage: map![] };
+        let b =
+            PodAccount { balance: 42.into(), nonce: 1.into(), code: Some(vec![]), storage: map![] };
         assert_eq!(
             diff_pod(Some(&a), Some(&b)),
             Some(AccountDiff {
@@ -268,18 +244,10 @@ mod test {
 
     #[test]
     fn code() {
-        let a = PodAccount {
-            balance: 0.into(),
-            nonce: 0.into(),
-            code: Some(vec![]),
-            storage: map![],
-        };
-        let b = PodAccount {
-            balance: 0.into(),
-            nonce: 1.into(),
-            code: Some(vec![0]),
-            storage: map![],
-        };
+        let a =
+            PodAccount { balance: 0.into(), nonce: 0.into(), code: Some(vec![]), storage: map![] };
+        let b =
+            PodAccount { balance: 0.into(), nonce: 1.into(), code: Some(vec![0]), storage: map![] };
         assert_eq!(
             diff_pod(Some(&a), Some(&b)),
             Some(AccountDiff {

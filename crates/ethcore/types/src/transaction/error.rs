@@ -116,10 +116,7 @@ impl fmt::Display for Error {
             InsufficientGasPrice { minimal, got } => {
                 format!("Insufficient gas price. Min={}, Given={}", minimal, got)
             }
-            GasPriceLowerThanBaseFee {
-                gas_price,
-                base_fee,
-            } => {
+            GasPriceLowerThanBaseFee { gas_price, base_fee } => {
                 format!(
                     "Max gas price is lower then required base fee. Gas price={}, Base fee={}",
                     gas_price, base_fee
@@ -128,10 +125,9 @@ impl fmt::Display for Error {
             InsufficientGas { minimal, got } => {
                 format!("Insufficient gas. Min={}, Given={}", minimal, got)
             }
-            InsufficientBalance { balance, cost } => format!(
-                "Insufficient balance for transaction. Balance={}, Cost={}",
-                balance, cost
-            ),
+            InsufficientBalance { balance, cost } => {
+                format!("Insufficient balance for transaction. Balance={}, Cost={}", balance, cost)
+            }
             GasLimitExceeded { limit, got } => {
                 format!("Gas limit exceeded. Limit={}, Given={}", limit, got)
             }

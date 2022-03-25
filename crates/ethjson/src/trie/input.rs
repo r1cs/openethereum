@@ -17,11 +17,11 @@
 //! Trie test input deserialization.
 
 use crate::bytes::Bytes;
-use serde::{
-    de::{Error as ErrorTrait, MapAccess, SeqAccess, Visitor},
-    Deserialize, Deserializer,
-};
-use std::{collections::BTreeMap, fmt, str::FromStr};
+use serde::de::{Error as ErrorTrait, MapAccess, SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer};
+use std::collections::BTreeMap;
+use std::fmt;
+use std::str::FromStr;
 
 /// Trie test input.
 #[derive(Debug, PartialEq)]
@@ -149,10 +149,7 @@ mod tests {
 
         let input: Input = serde_json::from_str(s).unwrap();
         let mut map = BTreeMap::new();
-        map.insert(
-            Bytes::new(vec![0, 0x45]),
-            Some(Bytes::new(vec![0x01, 0x23, 0x45, 0x67, 0x89])),
-        );
+        map.insert(Bytes::new(vec![0, 0x45]), Some(Bytes::new(vec![0x01, 0x23, 0x45, 0x67, 0x89])));
         map.insert(Bytes::new(vec![0x62, 0x65]), Some(Bytes::new(vec![0x65])));
         map.insert(Bytes::new(vec![0x0a]), None);
         assert_eq!(input.data, map);
@@ -168,10 +165,7 @@ mod tests {
 
         let input: Input = serde_json::from_str(s).unwrap();
         let mut map = BTreeMap::new();
-        map.insert(
-            Bytes::new(vec![0, 0x45]),
-            Some(Bytes::new(vec![0x01, 0x23, 0x45, 0x67, 0x89])),
-        );
+        map.insert(Bytes::new(vec![0, 0x45]), Some(Bytes::new(vec![0x01, 0x23, 0x45, 0x67, 0x89])));
         map.insert(Bytes::new(vec![0x62, 0x65]), Some(Bytes::new(vec![0x65])));
         map.insert(Bytes::new(vec![0x0a]), None);
         assert_eq!(input.data, map);

@@ -16,12 +16,10 @@
 
 //! Parameters for a block chain.
 
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    convert::TryFrom,
-    io::Read,
-    sync::Arc,
-};
+use std::collections::{BTreeMap, BTreeSet};
+use std::convert::TryFrom;
+use std::io::Read;
+use std::sync::Arc;
 
 use bytes::Bytes;
 use ethereum_types::{Address, Bloom, H256, U256};
@@ -29,7 +27,8 @@ use ethjson;
 use hash::{keccak, KECCAK_NULL_RLP};
 use parking_lot::RwLock;
 use rlp::{Rlp, RlpStream};
-use types::{header::Header, BlockNumber};
+use types::header::Header;
+use types::BlockNumber;
 use vm::{AccessList, ActionParams, ActionValue, CallType, EnvInfo, ParamsType};
 
 use builtin::Builtin;
@@ -37,12 +36,14 @@ use engines::{EthEngine, InstantSeal, InstantSealParams, NullEngine};
 use error::Error;
 use executive::Executive;
 use factory::Factories;
+use keccak_hasher::KeccakHasher;
 use machine::EthereumMachine;
 use maplit::btreeset;
-use keccak_hasher::KeccakHasher;
 use pod_state::PodState;
-use spec::{seal::Generic as GenericSeal, Genesis};
-use state::{backend::Basic as BasicBackend, Backend, State, Substate};
+use spec::seal::Generic as GenericSeal;
+use spec::Genesis;
+use state::backend::Basic as BasicBackend;
+use state::{Backend, State, Substate};
 use trace::{NoopTracer, NoopVMTracer};
 use trie::DBValue;
 
@@ -295,11 +296,7 @@ impl From<ethjson::spec::Params> for CommonParams {
             account_start_nonce: p.account_start_nonce.map_or_else(U256::zero, Into::into),
             maximum_extra_data_size: p.maximum_extra_data_size.into(),
             network_id: p.network_id.into(),
-            chain_id: if let Some(n) = p.chain_id {
-                n.into()
-            } else {
-                p.network_id.into()
-            },
+            chain_id: if let Some(n) = p.chain_id { n.into() } else { p.network_id.into() },
             subprotocol_name: p.subprotocol_name.unwrap_or_else(|| "eth".to_owned()),
             min_gas_limit: p.min_gas_limit.into(),
             fork_block: if let (Some(n), Some(h)) = (p.fork_block, p.fork_hash) {
@@ -311,27 +308,15 @@ impl From<ethjson::spec::Params> for CommonParams {
             eip160_transition: p.eip160_transition.map_or(0, Into::into),
             eip161abc_transition: p.eip161abc_transition.map_or(0, Into::into),
             eip161d_transition: p.eip161d_transition.map_or(0, Into::into),
-            eip98_transition: p
-                .eip98_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
+            eip98_transition: p.eip98_transition.map_or_else(BlockNumber::max_value, Into::into),
             eip155_transition: p.eip155_transition.map_or(0, Into::into),
             validate_receipts_transition: p.validate_receipts_transition.map_or(0, Into::into),
             validate_chain_id_transition: p.validate_chain_id_transition.map_or(0, Into::into),
-            eip140_transition: p
-                .eip140_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
-            eip211_transition: p
-                .eip211_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
-            eip145_transition: p
-                .eip145_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
-            eip214_transition: p
-                .eip214_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
-            eip658_transition: p
-                .eip658_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
+            eip140_transition: p.eip140_transition.map_or_else(BlockNumber::max_value, Into::into),
+            eip211_transition: p.eip211_transition.map_or_else(BlockNumber::max_value, Into::into),
+            eip145_transition: p.eip145_transition.map_or_else(BlockNumber::max_value, Into::into),
+            eip214_transition: p.eip214_transition.map_or_else(BlockNumber::max_value, Into::into),
+            eip658_transition: p.eip658_transition.map_or_else(BlockNumber::max_value, Into::into),
             eip1052_transition: p
                 .eip1052_transition
                 .map_or_else(BlockNumber::max_value, Into::into),
@@ -390,16 +375,10 @@ impl From<ethjson::spec::Params> for CommonParams {
             registrar: p.registrar.map_or_else(Address::default, Into::into),
             node_permission_contract: p.node_permission_contract.map(Into::into),
             max_code_size: p.max_code_size.map_or(u64::max_value(), Into::into),
-            max_transaction_size: p
-                .max_transaction_size
-                .map_or(MAX_TRANSACTION_SIZE, Into::into),
+            max_transaction_size: p.max_transaction_size.map_or(MAX_TRANSACTION_SIZE, Into::into),
             max_code_size_transition: p.max_code_size_transition.map_or(0, Into::into),
-            kip4_transition: p
-                .kip4_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
-            kip6_transition: p
-                .kip6_transition
-                .map_or_else(BlockNumber::max_value, Into::into),
+            kip4_transition: p.kip4_transition.map_or_else(BlockNumber::max_value, Into::into),
+            kip6_transition: p.kip6_transition.map_or_else(BlockNumber::max_value, Into::into),
             eip1559_base_fee_max_change_denominator: p
                 .eip1559_base_fee_max_change_denominator
                 .map(Into::into),
@@ -502,12 +481,7 @@ fn load_machine_from(s: ethjson::spec::Spec) -> EthereumMachine {
         .accounts
         .builtins()
         .into_iter()
-        .map(|p| {
-            (
-                p.0.into(),
-                Builtin::try_from(p.1).expect("chain spec is invalid"),
-            )
-        })
+        .map(|p| (p.0.into(), Builtin::try_from(p.1).expect("chain spec is invalid")))
         .collect();
     let params = CommonParams::from(s.params);
 
@@ -523,12 +497,8 @@ fn convert_json_to_spec(
 
 /// Load from JSON object.
 fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
-    let builtins: Result<BTreeMap<Address, Builtin>, _> = s
-        .accounts
-        .builtins()
-        .into_iter()
-        .map(convert_json_to_spec)
-        .collect();
+    let builtins: Result<BTreeMap<Address, Builtin>, _> =
+        s.accounts.builtins().into_iter().map(convert_json_to_spec).collect();
     let builtins = builtins?;
     let g = Genesis::from(s.genesis);
     let GenericSeal(seal_rlp) = g.seal.into();
@@ -567,10 +537,7 @@ fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
     match g.state_root {
         Some(root) => *s.state_root_memo.get_mut() = root,
         None => {
-            let _ = s.run_constructors(
-                &Default::default(),
-                BasicBackend(new_memory_db()),
-            )?;
+            let _ = s.run_constructors(&Default::default(), BasicBackend(new_memory_db()))?;
         }
     }
 
@@ -580,7 +547,7 @@ fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
 macro_rules! load_bundled {
     ($e:expr) => {
         Spec::load(include_bytes!(concat!("../../res/chainspec/", $e, ".json")) as &[u8])
-        .expect(concat!("Chain spec ", $e, " is invalid."))
+            .expect(concat!("Chain spec ", $e, " is invalid."))
     };
 }
 
@@ -593,14 +560,13 @@ macro_rules! load_machine_bundled {
 }
 
 fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
-	memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
+    memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into())
 }
 
 impl Spec {
     // create an instance of an Ethereum state machine, minus consensus logic.
     fn machine(
-        engine_spec: &ethjson::spec::Engine,
-        params: CommonParams,
+        engine_spec: &ethjson::spec::Engine, params: CommonParams,
         builtins: BTreeMap<Address, Builtin>,
     ) -> EthereumMachine {
         if let ethjson::spec::Engine::Ethash(ref ethash) = *engine_spec {
@@ -613,8 +579,7 @@ impl Spec {
     /// Convert engine spec into a arc'd Engine of the right underlying type.
     /// TODO avoid this hard-coded nastiness - use dynamic-linked plugin framework instead.
     fn engine(
-        engine_spec: ethjson::spec::Engine,
-        params: CommonParams,
+        engine_spec: ethjson::spec::Engine, params: CommonParams,
         builtins: BTreeMap<Address, Builtin>,
     ) -> (Arc<dyn EthEngine>, BTreeSet<BlockNumber>) {
         let mut hard_forks = btreeset![
@@ -667,10 +632,9 @@ impl Spec {
             }
             ethjson::spec::Engine::Ethash(ethash) => {
                 // Specific transitions for Ethash-based networks
-                for block in &[
-                    ethash.params.homestead_transition,
-                    ethash.params.dao_hardfork_transition,
-                ] {
+                for block in
+                    &[ethash.params.homestead_transition, ethash.params.dao_hardfork_transition]
+                {
                     if let Some(block) = *block {
                         hard_forks.insert(block.into());
                     }
@@ -683,10 +647,7 @@ impl Spec {
                     }
                 }
 
-                Arc::new(::ethereum::Ethash::new(
-                    ethash.params.into(),
-                    machine,
-                ))
+                Arc::new(::ethereum::Ethash::new(ethash.params.into(), machine))
             }
             ethjson::spec::Engine::InstantSeal(Some(instant_seal)) => {
                 Arc::new(InstantSeal::new(instant_seal.params.into(), machine))
@@ -718,9 +679,7 @@ impl Spec {
 
         for (address, account) in self.genesis_state.get().iter() {
             account.insert_additional(
-                &mut *factories
-                    .accountdb
-                    .create(db.as_hash_db_mut(), keccak(address)),
+                &mut *factories.accountdb.create(db.as_hash_db_mut(), keccak(address)),
                 &factories.trie,
             );
         }
@@ -883,10 +842,7 @@ impl Spec {
     /// Alter the value of the genesis state.
     pub fn set_genesis_state(&mut self, s: PodState) -> Result<(), Error> {
         self.genesis_state = s;
-        let _ = self.run_constructors(
-            &Default::default(),
-            BasicBackend(new_memory_db()),
-        )?;
+        let _ = self.run_constructors(&Default::default(), BasicBackend(new_memory_db()))?;
 
         Ok(())
     }
@@ -918,9 +874,7 @@ impl Spec {
 
     /// Loads just the state machine from a json file.
     pub fn load_machine<R: Read>(reader: R) -> Result<EthereumMachine, String> {
-        ethjson::spec::Spec::load(reader)
-            .map_err(fmt_err)
-            .map(load_machine_from)
+        ethjson::spec::Spec::load(reader).map_err(fmt_err).map(load_machine_from)
     }
 
     /// Loads spec from json file. Provide factories for executing contracts and ensuring
@@ -1023,7 +977,8 @@ mod tests {
     use state::State;
     use std::str::FromStr;
     use test_helpers::get_temp_state_db;
-    use types::{view, views::BlockView};
+    use types::view;
+    use types::views::BlockView;
 
     #[test]
     fn test_load_empty() {
@@ -1051,9 +1006,7 @@ mod tests {
     fn genesis_constructor() {
         let _ = ::env_logger::try_init();
         let spec = Spec::new_test_constructor();
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let state = State::from_existing(
             db,
             spec.state_root(),

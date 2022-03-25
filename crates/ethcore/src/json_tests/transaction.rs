@@ -19,24 +19,18 @@ use client::EvmTestClient;
 use ethjson;
 use std::path::Path;
 use transaction_ext::Transaction;
-use types::{
-    header::Header,
-    transaction::{TypedTransaction, UnverifiedTransaction},
-};
+use types::header::Header;
+use types::transaction::{TypedTransaction, UnverifiedTransaction};
 
 pub fn json_transaction_test<H: FnMut(&str, HookType)>(
-    path: &Path,
-    json_data: &[u8],
-    start_stop_hook: &mut H,
+    path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {
     // Block number used to run the tests.
     // Make sure that all the specified features are activated.
     const BLOCK_NUMBER: u64 = 0x6ffffffffffffe;
 
-    let tests = ethjson::transaction::Test::load(json_data).expect(&format!(
-        "Could not parse JSON transaction test data from {}",
-        path.display()
-    ));
+    let tests = ethjson::transaction::Test::load(json_data)
+        .expect(&format!("Could not parse JSON transaction test data from {}", path.display()));
     let mut failed = Vec::new();
     for (name, test) in tests.into_iter() {
         if !super::debug_include_test(&name) {
@@ -59,25 +53,19 @@ pub fn json_transaction_test<H: FnMut(&str, HookType)>(
             let mut fail_unless = |cond: bool, title: &str| {
                 if !cond {
                     failed.push(format!("{}-{:?}", name, spec_name));
-                    println!(
-                        "Transaction failed: {:?}-{:?}: {:?}",
-                        name, spec_name, title
-                    );
+                    println!("Transaction failed: {:?}-{:?}: {:?}", name, spec_name, title);
                 }
             };
 
             let rlp: Vec<u8> = test.rlp.clone().into();
-            let res = TypedTransaction::decode(&rlp)
-                .map_err(::error::Error::from)
-                .and_then(|t: UnverifiedTransaction| {
+            let res = TypedTransaction::decode(&rlp).map_err(::error::Error::from).and_then(
+                |t: UnverifiedTransaction| {
                     let mut header: Header = Default::default();
                     // Use high enough number to activate all required features.
                     header.set_number(BLOCK_NUMBER);
 
-                    let minimal = t
-                        .tx()
-                        .gas_required(&spec.engine.schedule(header.number()))
-                        .into();
+                    let minimal =
+                        t.tx().gas_required(&spec.engine.schedule(header.number())).into();
                     if t.tx().gas < minimal {
                         return Err(::types::transaction::Error::InsufficientGas {
                             minimal,
@@ -87,7 +75,8 @@ pub fn json_transaction_test<H: FnMut(&str, HookType)>(
                     }
                     spec.engine.verify_transaction_basic(&t, &header)?;
                     Ok(spec.engine.verify_transaction_unordered(t, &header)?)
-                });
+                },
+            );
 
             match (res, result.hash, result.sender) {
                 (Ok(t), Some(hash), Some(sender)) => {

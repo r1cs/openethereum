@@ -16,11 +16,9 @@
 
 //! Ethash params deserialization.
 
-use crate::{
-    bytes::Bytes,
-    hash::Address,
-    uint::{self, Uint},
-};
+use crate::bytes::Bytes;
+use crate::hash::Address;
+use crate::uint::{self, Uint};
 use std::collections::BTreeMap;
 
 /// Deserializable doppelganger of block rewards for EthashParams
@@ -107,11 +105,9 @@ pub struct Ethash {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        hash::Address,
-        spec::ethash::{BlockReward, Ethash, EthashParams},
-        uint::Uint,
-    };
+    use crate::hash::Address;
+    use crate::spec::ethash::{BlockReward, Ethash, EthashParams};
+    use crate::uint::Uint;
     use ethereum_types::{H160, U256};
     use serde_json;
     use std::str::FromStr;

@@ -43,11 +43,7 @@ impl core_::ops::Deref for ReturnData {
 impl ReturnData {
     /// Create empty `ReturnData`.
     pub fn empty() -> Self {
-        ReturnData {
-            mem: Vec::new(),
-            offset: 0,
-            size: 0,
-        }
+        ReturnData { mem: Vec::new(), offset: 0, size: 0 }
     }
     /// Create `ReturnData` from give buffer and slice.
     pub fn new(mem: Vec<u8>, offset: usize, size: usize) -> Self {

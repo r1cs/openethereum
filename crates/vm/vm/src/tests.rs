@@ -19,18 +19,19 @@ use core as core_;
 #[cfg(feature = "std")]
 use std as core_;
 
-use hashbrown::{HashSet, HashMap};
+use hashbrown::{HashMap, HashSet};
 extern crate alloc;
 
-use alloc::{sync::Arc, vec::Vec};
+use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 use crate::access_list::AccessList;
+use crate::{
+    CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, GasLeft, MessageCallResult, Result, ReturnData, Schedule, TrapKind
+};
 use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
 use hash::keccak;
-use crate::Result;
-use crate::{CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, GasLeft,
-	 MessageCallResult, ReturnData, Schedule, TrapKind};
 
 pub struct FakeLogEntry {
     pub topics: Vec<H256>,
@@ -152,8 +153,7 @@ impl FakeExt {
             let key = H256::from_low_u64_be(k as u64);
             let value = H256::from_low_u64_be(*v);
             self.set_initial_storage(key, value);
-            self.set_storage(key, value)
-                .expect("FakeExt::set_storage() never returns an Err.");
+            self.set_storage(key, value).expect("FakeExt::set_storage() never returns an Err.");
         }
     }
 }
@@ -192,18 +192,11 @@ impl Ext for FakeExt {
     }
 
     fn blockhash(&mut self, number: &U256) -> H256 {
-        self.blockhashes
-            .get(number)
-            .unwrap_or(&H256::default())
-            .clone()
+        self.blockhashes.get(number).unwrap_or(&H256::default()).clone()
     }
 
     fn create(
-        &mut self,
-        gas: &U256,
-        value: &U256,
-        code: &[u8],
-        address: CreateContractAddress,
+        &mut self, gas: &U256, value: &U256, code: &[u8], address: CreateContractAddress,
         _trap: bool,
     ) -> core_::result::Result<ContractCreateResult, TrapKind> {
         self.calls.insert(FakeCall {
@@ -225,14 +218,8 @@ impl Ext for FakeExt {
     }
 
     fn call(
-        &mut self,
-        gas: &U256,
-        sender_address: &Address,
-        receive_address: &Address,
-        value: Option<U256>,
-        data: &[u8],
-        code_address: &Address,
-        _call_type: CallType,
+        &mut self, gas: &U256, sender_address: &Address, receive_address: &Address,
+        value: Option<U256>, data: &[u8], code_address: &Address, _call_type: CallType,
         _trap: bool,
     ) -> core_::result::Result<MessageCallResult, TrapKind> {
         self.calls.insert(FakeCall {
@@ -262,10 +249,7 @@ impl Ext for FakeExt {
     }
 
     fn log(&mut self, topics: Vec<H256>, data: &[u8]) -> Result<()> {
-        self.logs.push(FakeLogEntry {
-            topics,
-            data: data.to_vec(),
-        });
+        self.logs.push(FakeLogEntry { topics, data: data.to_vec() });
         Ok(())
     }
 

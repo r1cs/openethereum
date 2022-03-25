@@ -49,17 +49,9 @@ impl Finalize for Result<GasLeft> {
                 apply_state: true,
                 return_data: ReturnData::empty(),
             }),
-            Ok(GasLeft::NeedsReturn {
-                gas_left,
-                data,
-                apply_state,
-            }) => ext
+            Ok(GasLeft::NeedsReturn { gas_left, data, apply_state }) => ext
                 .ret(&gas_left, &data, apply_state)
-                .map(|gas_left| FinalizationResult {
-                    gas_left,
-                    apply_state,
-                    return_data: data,
-                }),
+                .map(|gas_left| FinalizationResult { gas_left, apply_state, return_data: data }),
             Err(err) => Err(err),
         }
     }

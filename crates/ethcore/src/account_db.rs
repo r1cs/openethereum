@@ -16,7 +16,7 @@
 
 //! DB backend wrapper for Account trie
 use ethereum_types::H256;
-use hash::{KECCAK_NULL_RLP};
+use hash::KECCAK_NULL_RLP;
 use hash_db::{AsHashDB, HashDB};
 use keccak_hasher::KeccakHasher;
 use rlp::NULL_RLP;
@@ -39,9 +39,7 @@ impl Factory {
     /// Create a read-only accountdb.
     /// This will panic when write operations are called.
     pub fn readonly<'db>(
-        &self,
-        db: &'db dyn HashDB<KeccakHasher, DBValue>,
-        _address_hash: H256,
+        &self, db: &'db dyn HashDB<KeccakHasher, DBValue>, _address_hash: H256,
     ) -> Box<dyn HashDB<KeccakHasher, DBValue> + 'db> {
         match *self {
             Factory::Plain => Box::new(Wrapping(db)),
@@ -50,9 +48,7 @@ impl Factory {
 
     /// Create a new mutable hashdb.
     pub fn create<'db>(
-        &self,
-        db: &'db mut dyn HashDB<KeccakHasher, DBValue>,
-        _address_hash: H256,
+        &self, db: &'db mut dyn HashDB<KeccakHasher, DBValue>, _address_hash: H256,
     ) -> Box<dyn HashDB<KeccakHasher, DBValue> + 'db> {
         match *self {
             Factory::Plain => Box::new(WrappingMut(db)),

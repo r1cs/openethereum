@@ -20,4 +20,6 @@ mod input;
 mod test;
 mod trie;
 
-pub use self::{input::Input, test::Test, trie::Trie};
+pub use self::input::Input;
+pub use self::test::Test;
+pub use self::trie::Trie;

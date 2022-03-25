@@ -41,11 +41,7 @@ impl Transaction for transaction::Transaction {
 /// Get the transaction cost in gas for the given params.
 fn gas_required_for(is_create: bool, data: &[u8], schedule: &Schedule) -> u64 {
     data.iter().fold(
-        (if is_create {
-            schedule.tx_create_gas
-        } else {
-            schedule.tx_gas
-        }) as u64,
+        (if is_create { schedule.tx_create_gas } else { schedule.tx_gas }) as u64,
         |g, b| {
             g + (match *b {
                 0 => schedule.tx_data_zero_gas,

@@ -16,12 +16,10 @@
 
 //! Spec genesis deserialization.
 
-use crate::{
-    bytes::Bytes,
-    hash::{Address, H256},
-    spec::Seal,
-    uint::{self, Uint},
-};
+use crate::bytes::Bytes;
+use crate::hash::{Address, H256};
+use crate::spec::Seal;
+use crate::uint::{self, Uint};
 
 /// Spec genesis.
 #[derive(Debug, PartialEq, Deserialize)]
@@ -57,12 +55,11 @@ pub struct Genesis {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        bytes::Bytes,
-        hash::{Address, H256, H64},
-        spec::{genesis::Genesis, Ethereum, Seal},
-        uint::Uint,
-    };
+    use crate::bytes::Bytes;
+    use crate::hash::{Address, H256, H64};
+    use crate::spec::genesis::Genesis;
+    use crate::spec::{Ethereum, Seal};
+    use crate::uint::Uint;
     use ethereum_types::{H160, H256 as Eth256, H64 as Eth64, U256};
     use serde_json;
     use std::str::FromStr;

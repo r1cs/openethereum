@@ -14,6 +14,9 @@ authors = [
 [dependencies]
 ethcore = {path = "crates/ethcore"}
 
+[features]
+json-tests = ["ethcore/json-tests"]
+
 [profile.test]
 lto = false
 opt-level = 3 # makes tests slower to compile, but faster to run
@@ -27,5 +30,6 @@ lto = true
 # in the dependency tree in any other way
 # (i.e. pretty much only standalone CLI tools)
 members = [
-	"crates/crypto"
+	"crates/crypto",
+	"crates/ethcore"
 ]

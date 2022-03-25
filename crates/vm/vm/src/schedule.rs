@@ -197,10 +197,7 @@ impl Schedule {
 
     /// Schedule for the post-EIP-150-era of the Ethereum main net.
     pub fn new_post_eip150(
-        max_code_size: usize,
-        fix_exp: bool,
-        no_empty: bool,
-        kill_empty: bool,
+        max_code_size: usize, fix_exp: bool, no_empty: bool, kill_empty: bool,
     ) -> Schedule {
         Schedule {
             exceptional_failed_code_deposit: true,

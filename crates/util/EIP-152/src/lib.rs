@@ -94,11 +94,11 @@ pub fn compress(h: &mut [u64; 8], m: [u64; 16], t: [u64; 2], f: bool, rounds: us
 
 #[cfg(test)]
 mod tests {
-	extern crate std;
-	use std::vec;
-	use std::vec::Vec;
+    extern crate std;
     use crate::compress;
     use rustc_hex::FromHex;
+    use std::vec;
+    use std::vec::Vec;
 
     #[test]
     fn test_blake2_f() {
@@ -153,9 +153,8 @@ mod tests {
 
     fn to_u64_slice(vec: &[u8], slice: &mut [u64]) {
         vec.chunks(8).enumerate().for_each(|(index, val)| {
-            slice[index] = u64::from_le_bytes([
-                val[0], val[1], val[2], val[3], val[4], val[5], val[6], val[7],
-            ])
+            slice[index] =
+                u64::from_le_bytes([val[0], val[1], val[2], val[3], val[4], val[5], val[6], val[7]])
         })
     }
 

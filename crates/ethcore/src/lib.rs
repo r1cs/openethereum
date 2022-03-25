@@ -19,6 +19,8 @@
 //! Ethcore library
 
 extern crate common_types as types;
+extern crate core;
+extern crate crypto;
 extern crate ethash;
 extern crate ethcore_builtin as builtin;
 extern crate ethereum_types;
@@ -42,8 +44,6 @@ extern crate trie_db as trie;
 extern crate triehash_ethereum as triehash;
 extern crate unexpected;
 extern crate vm;
-extern crate core;
-extern crate crypto;
 
 #[cfg(any(test, feature = "env_logger"))]
 extern crate env_logger;

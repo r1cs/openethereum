@@ -18,10 +18,10 @@
 
 use bytes::Bytes;
 use ethereum_types::{Address, U256, U512};
-use ethtrie;
 use trace::{FlatTrace, VMTrace};
-use types::{log_entry::LogEntry, state_diff::StateDiff};
-use vm;
+use types::log_entry::LogEntry;
+use types::state_diff::StateDiff;
+use {ethtrie, vm};
 
 use std::{error, fmt};
 

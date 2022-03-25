@@ -18,12 +18,10 @@
 
 use std::cmp::min;
 
-use crate::{
-    bytes::Bytes,
-    hash::keccak,
-    transaction::{signature, TypedTxId},
-    views::ViewRlp,
-};
+use crate::bytes::Bytes;
+use crate::hash::keccak;
+use crate::transaction::{signature, TypedTxId};
+use crate::views::ViewRlp;
 
 use ethereum_types::{H256, U256};
 use rlp::Rlp;
@@ -45,10 +43,7 @@ impl<'a> TypedTransactionView<'a> {
     /// Use the `view!` macro to create this view in order to capture debugging info.
     pub fn new(rlp: ViewRlp<'a>) -> TypedTransactionView<'a> {
         let transaction_type = Self::extract_transaction_type(&rlp.rlp);
-        TypedTransactionView {
-            rlp: rlp,
-            transaction_type,
-        }
+        TypedTransactionView { rlp: rlp, transaction_type }
     }
 
     /// Extract transaction type from rlp bytes.
@@ -83,12 +78,10 @@ impl<'a> TypedTransactionView<'a> {
             TypedTxId::Legacy => {
                 signature::extract_chain_id_from_legacy_v(self.rlp.val_at(6)).unwrap_or(0)
             }
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(0),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(0),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(0),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(0)
+            }
         }
     }
 
@@ -96,12 +89,10 @@ impl<'a> TypedTransactionView<'a> {
     pub fn nonce(&self) -> U256 {
         match self.transaction_type {
             TypedTxId::Legacy => self.rlp.val_at(0),
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(1),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(1),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(1),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(1)
+            }
         }
     }
 
@@ -109,12 +100,10 @@ impl<'a> TypedTransactionView<'a> {
     pub fn gas_price(&self) -> U256 {
         match self.transaction_type {
             TypedTxId::Legacy => self.rlp.val_at(1),
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(2),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(3),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(2),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(3)
+            }
         }
     }
 
@@ -125,14 +114,9 @@ impl<'a> TypedTransactionView<'a> {
             TypedTxId::AccessList => self.gas_price(),
             TypedTxId::EIP1559Transaction => {
                 let max_priority_fee_per_gas: U256 =
-                    view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                        .rlp
-                        .val_at(2);
+                    view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(2);
 
-                min(
-                    self.gas_price(),
-                    max_priority_fee_per_gas + block_base_fee.unwrap_or_default(),
-                )
+                min(self.gas_price(), max_priority_fee_per_gas + block_base_fee.unwrap_or_default())
             }
         }
     }
@@ -140,21 +124,18 @@ impl<'a> TypedTransactionView<'a> {
     /// Get the actual priority gas price paid to the miner
     pub fn effective_priority_gas_price(&self, block_base_fee: Option<U256>) -> U256 {
         match self.transaction_type {
-            TypedTxId::Legacy => self
-                .gas_price()
-                .saturating_sub(block_base_fee.unwrap_or_default()),
-            TypedTxId::AccessList => self
-                .gas_price()
-                .saturating_sub(block_base_fee.unwrap_or_default()),
+            TypedTxId::Legacy => {
+                self.gas_price().saturating_sub(block_base_fee.unwrap_or_default())
+            }
+            TypedTxId::AccessList => {
+                self.gas_price().saturating_sub(block_base_fee.unwrap_or_default())
+            }
             TypedTxId::EIP1559Transaction => {
                 let max_priority_fee_per_gas: U256 =
-                    view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                        .rlp
-                        .val_at(2);
+                    view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(2);
                 min(
                     max_priority_fee_per_gas,
-                    self.gas_price()
-                        .saturating_sub(block_base_fee.unwrap_or_default()),
+                    self.gas_price().saturating_sub(block_base_fee.unwrap_or_default()),
                 )
             }
         }
@@ -164,12 +145,10 @@ impl<'a> TypedTransactionView<'a> {
     pub fn gas(&self) -> U256 {
         match self.transaction_type {
             TypedTxId::Legacy => self.rlp.val_at(2),
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(3),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(4),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(3),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(4)
+            }
         }
     }
 
@@ -177,12 +156,10 @@ impl<'a> TypedTransactionView<'a> {
     pub fn value(&self) -> U256 {
         match self.transaction_type {
             TypedTxId::Legacy => self.rlp.val_at(4),
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(5),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(6),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(5),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(6)
+            }
         }
     }
 
@@ -190,12 +167,10 @@ impl<'a> TypedTransactionView<'a> {
     pub fn data(&self) -> Bytes {
         match self.transaction_type {
             TypedTxId::Legacy => self.rlp.val_at(5),
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(6),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(7),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(6),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(7)
+            }
         }
     }
 
@@ -209,9 +184,7 @@ impl<'a> TypedTransactionView<'a> {
                     n => Some(n),
                 };
                 signature::add_chain_replay_protection(
-                    view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                        .rlp
-                        .val_at(8),
+                    view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(8),
                     chain_id,
                 )
             }
@@ -221,9 +194,7 @@ impl<'a> TypedTransactionView<'a> {
                     n => Some(n),
                 };
                 signature::add_chain_replay_protection(
-                    view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                        .rlp
-                        .val_at(9),
+                    view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(9),
                     chain_id,
                 )
             }
@@ -234,12 +205,10 @@ impl<'a> TypedTransactionView<'a> {
     pub fn standard_v(&self) -> u8 {
         match self.transaction_type {
             TypedTxId::Legacy => signature::extract_standard_v(self.rlp.val_at(6)),
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(8),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(9),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(8),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(9)
+            }
         }
     }
 
@@ -247,12 +216,10 @@ impl<'a> TypedTransactionView<'a> {
     pub fn r(&self) -> U256 {
         match self.transaction_type {
             TypedTxId::Legacy => self.rlp.val_at(7),
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(9),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(10),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(9),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(10)
+            }
         }
     }
 
@@ -260,12 +227,10 @@ impl<'a> TypedTransactionView<'a> {
     pub fn s(&self) -> U256 {
         match self.transaction_type {
             TypedTxId::Legacy => self.rlp.val_at(8),
-            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(10),
-            TypedTxId::EIP1559Transaction => view!(Self, &self.rlp.rlp.data().unwrap()[1..])
-                .rlp
-                .val_at(11),
+            TypedTxId::AccessList => view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(10),
+            TypedTxId::EIP1559Transaction => {
+                view!(Self, &self.rlp.rlp.data().unwrap()[1..]).rlp.val_at(11)
+            }
         }
     }
 }
@@ -288,9 +253,7 @@ mod tests {
         assert_eq!(view.value(), 0xa.into());
         assert_eq!(
             view.data(),
-            "0000000000000000000000000000000000000000000000000000000000"
-                .from_hex()
-                .unwrap()
+            "0000000000000000000000000000000000000000000000000000000000".from_hex().unwrap()
         );
         assert_eq!(
             view.r(),
@@ -331,10 +294,7 @@ mod tests {
         assert_eq!(view.nonce(), 0x1.into());
         assert_eq!(view.gas_price(), 0xa.into());
         assert_eq!(view.effective_gas_price(Some(0x07.into())), 0x08.into());
-        assert_eq!(
-            view.effective_priority_gas_price(Some(0x07.into())),
-            0x01.into()
-        );
+        assert_eq!(view.effective_priority_gas_price(Some(0x07.into())), 0x01.into());
         assert_eq!(view.gas(), 0x1e241.into());
         assert_eq!(view.value(), 0x0.into());
         assert_eq!(view.data(), "".from_hex().unwrap());

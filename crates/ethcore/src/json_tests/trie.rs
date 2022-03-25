@@ -17,23 +17,18 @@
 use ethereum_types::H256;
 use ethjson;
 use ethtrie::RlpCodec;
-use std::path::Path;
 use keccak_hasher::KeccakHasher;
+use std::path::Path;
 use trie::{DBValue, TrieFactory, TrieSpec};
 type MemoryDB = memory_db::MemoryDB<KeccakHasher, DBValue>;
 
 use super::HookType;
 
 pub fn json_trie_test<H: FnMut(&str, HookType)>(
-    path: &Path,
-    json: &[u8],
-    trie: TrieSpec,
-    start_stop_hook: &mut H,
+    path: &Path, json: &[u8], trie: TrieSpec, start_stop_hook: &mut H,
 ) -> Vec<String> {
-    let tests = ethjson::trie::Test::load(json).expect(&format!(
-        "Could not parse JSON trie test data from {}",
-        path.display()
-    ));
+    let tests = ethjson::trie::Test::load(json)
+        .expect(&format!("Could not parse JSON trie test data from {}", path.display()));
     let factory = TrieFactory::<_, RlpCodec>::new(trie);
     let mut failed = vec![];
 
@@ -44,17 +39,15 @@ pub fn json_trie_test<H: FnMut(&str, HookType)>(
 
         start_stop_hook(&name, HookType::OnStart);
 
-        let mut memdb= MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into());
-		let mut root = H256::zero();
+        let mut memdb = MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into());
+        let mut root = H256::zero();
         let mut t = factory.create(&mut memdb, &mut root);
 
         for (key, value) in test.input.data.into_iter() {
             let key: Vec<u8> = key.into();
             let value: Vec<u8> = value.map_or_else(Vec::new, Into::into);
-            t.insert(&key, &value).expect(&format!(
-                "Trie test '{:?}' failed due to internal error",
-                name
-            ));
+            t.insert(&key, &value)
+                .expect(&format!("Trie test '{:?}' failed due to internal error", name));
         }
 
         if *t.root() == test.root.into() {

@@ -35,11 +35,9 @@ mod inner {
 #[macro_use]
 #[cfg(feature = "evm-debug")]
 mod inner {
-    use std::{
-        collections::HashMap,
-        iter,
-        time::{Duration, Instant},
-    };
+    use std::collections::HashMap;
+    use std::iter;
+    use std::time::{Duration, Instant};
 
     use ethereum_types::U256;
 
@@ -91,12 +89,8 @@ mod inner {
         }
 
         pub fn before_instruction<Cost: CostType>(
-            &mut self,
-            pc: usize,
-            instruction: Instruction,
-            info: &InstructionInfo,
-            current_gas: &Cost,
-            stack: &dyn Stack<U256>,
+            &mut self, pc: usize, instruction: Instruction, info: &InstructionInfo,
+            current_gas: &Cost, stack: &dyn Stack<U256>,
         ) {
             let time = self.last_instruction.elapsed();
             self.last_instruction = Instant::now();
@@ -119,10 +113,7 @@ mod inner {
         }
 
         pub fn after_instruction(&mut self, instruction: Instruction) {
-            let stats = self
-                .stats
-                .entry(instruction)
-                .or_insert_with(|| Stats::default());
+            let stats = self.stats.entry(instruction).or_insert_with(|| Stats::default());
             let took = self.last_instruction.elapsed();
             stats.note(took);
         }
@@ -154,10 +145,7 @@ mod inner {
 
     impl Default for Stats {
         fn default() -> Self {
-            Stats {
-                count: 0,
-                total_duration: Duration::from_secs(0),
-            }
+            Stats { count: 0, total_duration: Duration::from_secs(0) }
         }
     }
 

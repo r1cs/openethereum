@@ -24,19 +24,11 @@ struct ParseQuotes {
 }
 
 fn decodable_parse_quotes() -> ParseQuotes {
-    ParseQuotes {
-        single: quote! { rlp.val_at },
-        list: quote! { rlp.list_at },
-        takes_index: true,
-    }
+    ParseQuotes { single: quote! { rlp.val_at }, list: quote! { rlp.list_at }, takes_index: true }
 }
 
 fn decodable_wrapper_parse_quotes() -> ParseQuotes {
-    ParseQuotes {
-        single: quote! { rlp.as_val },
-        list: quote! { rlp.as_list },
-        takes_index: false,
-    }
+    ParseQuotes { single: quote! { rlp.as_val }, list: quote! { rlp.as_list }, takes_index: false }
 }
 
 pub fn impl_decodable(ast: &syn::DeriveInput) -> TokenStream {
@@ -45,18 +37,11 @@ pub fn impl_decodable(ast: &syn::DeriveInput) -> TokenStream {
         _ => panic!("#[derive(RlpDecodable)] is only defined for structs."),
     };
 
-    let stmts: Vec<_> = body
-        .fields
-        .iter()
-        .enumerate()
-        .map(decodable_field_map)
-        .collect();
+    let stmts: Vec<_> = body.fields.iter().enumerate().map(decodable_field_map).collect();
     let name = &ast.ident;
 
-    let dummy_const = syn::Ident::new(
-        &format!("_IMPL_RLP_DECODABLE_FOR_{}", name),
-        Span::call_site(),
-    );
+    let dummy_const =
+        syn::Ident::new(&format!("_IMPL_RLP_DECODABLE_FOR_{}", name), Span::call_site());
     let impl_block = quote! {
         impl rlp::Decodable for #name {
             fn decode(rlp: &rlp::Rlp) -> Result<Self, rlp::DecoderError> {
@@ -96,10 +81,8 @@ pub fn impl_decodable_wrapper(ast: &syn::DeriveInput) -> TokenStream {
 
     let name = &ast.ident;
 
-    let dummy_const = syn::Ident::new(
-        &format!("_IMPL_RLP_DECODABLE_FOR_{}", name),
-        Span::call_site(),
-    );
+    let dummy_const =
+        syn::Ident::new(&format!("_IMPL_RLP_DECODABLE_FOR_{}", name), Span::call_site());
     let impl_block = quote! {
         impl rlp::Decodable for #name {
             fn decode(rlp: &rlp::Rlp) -> Result<Self, rlp::DecoderError> {

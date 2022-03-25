@@ -19,13 +19,10 @@
 use ethereum_types::{Address, U256};
 use log::{debug, warn};
 use std::cmp::min;
-use trace::{
-    trace::{
-        Action, Call, CallResult, Create, CreateResult, MemoryDiff, Res, Reward, RewardType,
-        StorageDiff, Suicide, VMExecutedOperation, VMOperation, VMTrace,
-    },
-    FlatTrace, Tracer, VMTracer,
+use trace::trace::{
+    Action, Call, CallResult, Create, CreateResult, MemoryDiff, Res, Reward, RewardType, StorageDiff, Suicide, VMExecutedOperation, VMOperation, VMTrace
 };
+use trace::{FlatTrace, Tracer, VMTracer};
 use vm::{ActionParams, Error as VmError};
 
 /// Simple executive tracer. Traces all calls and creates. Ignores delegatecalls.
@@ -57,10 +54,7 @@ impl Tracer for ExecutiveTracer {
             trace_address: self.index_stack.clone(),
             subtraces: self.sublen_stack.last().cloned().unwrap_or(0),
             action: Action::Call(Call::from(params.clone())),
-            result: Res::Call(CallResult {
-                gas_used: U256::zero(),
-                output: Vec::new(),
-            }),
+            result: Res::Call(CallResult { gas_used: U256::zero(), output: Vec::new() }),
         };
         self.vecindex_stack.push(self.traces.len());
         self.traces.push(trace);
@@ -101,10 +95,7 @@ impl Tracer for ExecutiveTracer {
         let sublen = self.sublen_stack.pop().expect("Executive invoked prepare_trace_call before this function; sublen_stack is never empty; qed");
         self.index_stack.pop();
 
-        self.traces[vecindex].result = Res::Call(CallResult {
-            gas_used,
-            output: output.into(),
-        });
+        self.traces[vecindex].result = Res::Call(CallResult { gas_used, output: output.into() });
         self.traces[vecindex].subtraces = sublen;
 
         if let Some(index) = self.index_stack.last_mut() {
@@ -119,11 +110,8 @@ impl Tracer for ExecutiveTracer {
         let sublen = self.sublen_stack.pop().expect("Executive invoked prepare_trace_create before this function; sublen_stack is never empty; qed");
         self.index_stack.pop();
 
-        self.traces[vecindex].result = Res::Create(CreateResult {
-            gas_used,
-            address,
-            code: code.into(),
-        });
+        self.traces[vecindex].result =
+            Res::Create(CreateResult { gas_used, address, code: code.into() });
         self.traces[vecindex].subtraces = sublen;
 
         if let Some(index) = self.index_stack.last_mut() {
@@ -165,11 +153,7 @@ impl Tracer for ExecutiveTracer {
 
         let trace = FlatTrace {
             subtraces: 0,
-            action: Action::Suicide(Suicide {
-                address,
-                refund_address,
-                balance,
-            }),
+            action: Action::Suicide(Suicide { address, refund_address, balance }),
             result: Res::None,
             trace_address: self.index_stack.clone(),
         };
@@ -188,11 +172,7 @@ impl Tracer for ExecutiveTracer {
 
         let trace = FlatTrace {
             subtraces: 0,
-            action: Action::Reward(Reward {
-                author,
-                value,
-                reward_type,
-            }),
+            action: Action::Reward(Reward { author, value, reward_type }),
             result: Res::None,
             trace_address: self.index_stack.clone(),
         };
@@ -253,11 +233,7 @@ impl VMTracer for ExecutiveVMTracer {
     }
 
     fn trace_prepare_execute(
-        &mut self,
-        pc: usize,
-        instruction: u8,
-        gas_cost: U256,
-        mem_written: Option<(usize, usize)>,
+        &mut self, pc: usize, instruction: u8, gas_cost: U256, mem_written: Option<(usize, usize)>,
         store_written: Option<(U256, U256)>,
     ) {
         Self::with_trace_in_depth(&mut self.data, self.depth, move |trace| {
@@ -268,27 +244,16 @@ impl VMTracer for ExecutiveVMTracer {
                 executed: None,
             });
         });
-        self.trace_stack.push(TraceData {
-            mem_written,
-            store_written,
-        });
+        self.trace_stack.push(TraceData { mem_written, store_written });
     }
 
     fn trace_failed(&mut self) {
-        let _ = self
-            .trace_stack
-            .pop()
-            .expect("pushed in trace_prepare_execute; qed");
+        let _ = self.trace_stack.pop().expect("pushed in trace_prepare_execute; qed");
     }
 
     fn trace_executed(&mut self, gas_used: U256, stack_push: &[U256], mem: &[u8]) {
-        let TraceData {
-            mem_written,
-            store_written,
-        } = self
-            .trace_stack
-            .pop()
-            .expect("pushed in trace_prepare_execute; qed");
+        let TraceData { mem_written, store_written } =
+            self.trace_stack.pop().expect("pushed in trace_prepare_execute; qed");
         let mem_diff = mem_written.map(|(o, s)| {
             if o + s > mem.len() {
                 warn!(target: "trace", "mem_written is out of bounds");
@@ -300,14 +265,8 @@ impl VMTracer for ExecutiveVMTracer {
             let ex = VMExecutedOperation {
                 gas_used: gas_used,
                 stack_push: stack_push.to_vec(),
-                mem_diff: mem_diff.map(|(s, r)| MemoryDiff {
-                    offset: s,
-                    data: r.to_vec(),
-                }),
-                store_diff: store_diff.map(|(l, v)| StorageDiff {
-                    location: l,
-                    value: v,
-                }),
+                mem_diff: mem_diff.map(|(s, r)| MemoryDiff { offset: s, data: r.to_vec() }),
+                store_diff: store_diff.map(|(l, v)| StorageDiff { location: l, value: v }),
             };
             trace.operations.last_mut().expect("trace_executed is always called after a trace_prepare_execute; trace.operations cannot be empty; qed").executed = Some(ex);
         });

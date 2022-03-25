@@ -29,13 +29,11 @@ pub struct VmFactory {
 
 impl VmFactory {
     pub fn create(&self, params: ActionParams, schedule: &Schedule, depth: usize) -> Box<dyn Exec> {
-		self.evm.create(params, schedule, depth)
+        self.evm.create(params, schedule, depth)
     }
 
     pub fn new(evm: VMType, cache_size: usize) -> Self {
-        VmFactory {
-            evm: EvmFactory::new(evm, cache_size),
-        }
+        VmFactory { evm: EvmFactory::new(evm, cache_size) }
     }
 }
 

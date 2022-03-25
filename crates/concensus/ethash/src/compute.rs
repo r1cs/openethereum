@@ -31,10 +31,7 @@ use core::mem;
 /// `mix_hash`         The mix digest hash
 /// Boundary recovered from mix hash
 pub fn quick_get_difficulty(
-    header_hash: &H256,
-    nonce: u64,
-    mix_hash: &H256,
-    progpow: bool,
+    header_hash: &H256, nonce: u64, mix_hash: &H256, progpow: bool,
 ) -> H256 {
     if progpow {
         let seed = keccak_f800_short(*header_hash, nonce, [0u32; 8]);

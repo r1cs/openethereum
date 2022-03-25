@@ -20,7 +20,5 @@ mod genesis;
 mod seal;
 mod spec;
 
-pub use self::{
-    genesis::Genesis,
-    spec::{CommonParams, Spec},
-};
+pub use self::genesis::Genesis;
+pub use self::spec::{CommonParams, Spec};

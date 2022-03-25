@@ -14,28 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::{
-    cmp::{self},
-    collections::BTreeMap,
-    sync::Arc,
-};
+use std::cmp::{self};
+use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use ethereum_types::{H256, H64, U256};
-use ethjson::{self, uint::Uint};
+use ethjson;
+use ethjson::uint::Uint;
 use hash::KECCAK_EMPTY_LIST_RLP;
 use rlp::Rlp;
-use types::{
-    header::{ExtendedHeader, Header},
-    BlockNumber,
-};
+use types::header::{ExtendedHeader, Header};
+use types::BlockNumber;
 use unexpected::{Mismatch, OutOfBounds};
 
 use block::ExecutedBlock;
-use engines::{
-    self,
-    block_reward::{self, RewardKind},
-    Engine,
-};
+use engines::block_reward::{self, RewardKind};
+use engines::{self, Engine};
 use error::{BlockError, Error};
 use ethash::{boundary_to_difficulty, quick_get_difficulty};
 use machine::EthereumMachine;
@@ -53,11 +47,9 @@ impl Seal {
     /// Tries to parse rlp as ethash seal.
     pub fn parse_seal<T: AsRef<[u8]>>(seal: &[T]) -> Result<Self, Error> {
         if seal.len() != 2 {
-            return Err(BlockError::InvalidSealArity(Mismatch {
-                expected: 2,
-                found: seal.len(),
-            })
-            .into());
+            return Err(
+                BlockError::InvalidSealArity(Mismatch { expected: 2, found: seal.len() }).into()
+            );
         }
 
         let mix_hash = Rlp::new(seal[0].as_ref()).as_val::<H256>()?;
@@ -122,9 +114,7 @@ impl From<ethjson::spec::EthashParams> for EthashParams {
             difficulty_hardfork_bound_divisor: p
                 .difficulty_hardfork_bound_divisor
                 .map_or(p.difficulty_bound_divisor.into(), Into::into),
-            bomb_defuse_transition: p
-                .bomb_defuse_transition
-                .map_or(u64::max_value(), Into::into),
+            bomb_defuse_transition: p.bomb_defuse_transition.map_or(u64::max_value(), Into::into),
             eip100b_transition: p.eip100b_transition.map_or(u64::max_value(), Into::into),
             ecip1017_era_rounds: p.ecip1017_era_rounds.map_or(u64::max_value(), Into::into),
             block_reward: p.block_reward.map_or_else(
@@ -144,9 +134,7 @@ impl From<ethjson::spec::EthashParams> for EthashParams {
                             panic!("No block rewards are found in config");
                         }
                         // add block reward from genesis and put reward to zero.
-                        multi
-                            .entry(Uint(U256::from(0)))
-                            .or_insert(Uint(U256::from(0)));
+                        multi.entry(Uint(U256::from(0))).or_insert(Uint(U256::from(0)));
                         multi
                             .into_iter()
                             .map(|(block, reward)| (block.into(), reward.into()))
@@ -177,10 +165,7 @@ pub struct Ethash {
 impl Ethash {
     /// Create a new instance of Ethash engine
     pub fn new(ethash_params: EthashParams, machine: EthereumMachine) -> Arc<Self> {
-        Arc::new(Ethash {
-            ethash_params,
-            machine,
-        })
+        Arc::new(Ethash { ethash_params, machine })
     }
 }
 
@@ -229,7 +214,8 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
         let author = *block.header.author();
         let number = block.header.number();
 
-        let rewards = {
+        let rewards =
+            {
                 let mut rewards = Vec::new();
 
                 let (_, reward) = self.ethash_params.block_reward.iter()
@@ -267,15 +253,14 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
                 }
 
                 rewards
-        };
+            };
 
         block_reward::apply_block_rewards(&rewards, block, &self.machine)
     }
 
     #[cfg(not(feature = "miner-debug"))]
     fn verify_local_seal(&self, header: &Header) -> Result<(), Error> {
-        self.verify_block_basic(header)
-            .and_then(|_| self.verify_block_unordered(header))
+        self.verify_block_basic(header).and_then(|_| self.verify_block_unordered(header))
     }
 
     #[cfg(feature = "miner-debug")]
@@ -317,7 +302,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
     }
 
     fn verify_block_unordered(&self, _header: &Header) -> Result<(), Error> {
-		return Ok(());
+        return Ok(());
     }
 
     fn verify_block_family(&self, header: &Header, parent: &Header) -> Result<(), Error> {
@@ -348,7 +333,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
 }
 
 impl Ethash {
-	fn calculate_difficulty(&self, header: &Header, parent: &Header) -> U256 {
+    fn calculate_difficulty(&self, header: &Header, parent: &Header) -> U256 {
         const EXP_DIFF_PERIOD: u64 = 100_000;
         if header.number() == 0 {
             panic!("Can't calculate genesis block difficulty");
@@ -388,15 +373,9 @@ impl Ethash {
                 if header.number() < self.ethash_params.eip100b_transition {
                     (self.ethash_params.difficulty_increment_divisor, 1)
                 } else if parent_has_uncles {
-                    (
-                        self.ethash_params.metropolis_difficulty_increment_divisor,
-                        2,
-                    )
+                    (self.ethash_params.metropolis_difficulty_increment_divisor, 2)
                 } else {
-                    (
-                        self.ethash_params.metropolis_difficulty_increment_divisor,
-                        1,
-                    )
+                    (self.ethash_params.metropolis_difficulty_increment_divisor, 1)
                 };
 
             let diff_inc = (header.timestamp() - parent.timestamp()) / increment_divisor;
@@ -446,17 +425,17 @@ fn ecip1017_eras_block_reward(era_rounds: u64, mut reward: U256, block_number: u
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        super::{new_homestead_test_machine, new_morden},
-        ecip1017_eras_block_reward, Ethash, EthashParams,
-    };
+    use super::super::{new_homestead_test_machine, new_morden};
+    use super::{ecip1017_eras_block_reward, Ethash, EthashParams};
     use block::*;
     use engines::Engine;
     use error::{BlockError, Error, ErrorKind};
     use ethereum_types::{Address, H256, H64, U256};
     use rlp;
     use spec::Spec;
-    use std::{collections::BTreeMap, str::FromStr, sync::Arc};
+    use std::collections::BTreeMap;
+    use std::str::FromStr;
+    use std::sync::Arc;
     use test_helpers::get_temp_state_db;
     use types::header::Header;
 
@@ -494,9 +473,7 @@ mod tests {
         let spec = test_spec();
         let engine = &*spec.engine;
         let genesis_header = spec.genesis_header();
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let last_hashes = Arc::new(vec![genesis_header.hash()]);
         let b = OpenBlock::new(
             engine,
@@ -559,9 +536,7 @@ mod tests {
         let spec = test_spec();
         let engine = &*spec.engine;
         let genesis_header = spec.genesis_header();
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let last_hashes = Arc::new(vec![genesis_header.hash()]);
         let mut b = OpenBlock::new(
             engine,
@@ -581,14 +556,8 @@ mod tests {
         b.push_uncle(uncle).unwrap();
 
         let b = b.close().unwrap();
-        assert_eq!(
-            b.state.balance(&Address::zero()).unwrap(),
-            "478eae0e571ba000".into()
-        );
-        assert_eq!(
-            b.state.balance(&uncle_author).unwrap(),
-            "3cb71f51fc558000".into()
-        );
+        assert_eq!(b.state.balance(&Address::zero()).unwrap(), "478eae0e571ba000".into());
+        assert_eq!(b.state.balance(&uncle_author).unwrap(), "3cb71f51fc558000".into());
     }
 
     #[test]
@@ -617,10 +586,7 @@ mod tests {
         match verify_result {
             Err(Error(ErrorKind::Block(BlockError::InvalidSealArity(_)), _)) => {}
             Err(_) => {
-                panic!(
-                    "should be block seal-arity mismatch error (got {:?})",
-                    verify_result
-                );
+                panic!("should be block seal-arity mismatch error (got {:?})", verify_result);
             }
             _ => {
                 panic!("Should be error, got Ok");
@@ -662,10 +628,7 @@ mod tests {
         match verify_result {
             Err(Error(ErrorKind::Block(BlockError::InvalidProofOfWork(_)), _)) => {}
             Err(_) => {
-                panic!(
-                    "should be invalid proof of work error (got {:?})",
-                    verify_result
-                );
+                panic!("should be invalid proof of work error (got {:?})", verify_result);
             }
             _ => {
                 panic!("Should be error, got Ok");
@@ -684,10 +647,7 @@ mod tests {
         match verify_result {
             Err(Error(ErrorKind::Block(BlockError::RidiculousNumber(_)), _)) => {}
             Err(_) => {
-                panic!(
-                    "should be invalid block number fail (got {:?})",
-                    verify_result
-                );
+                panic!("should be invalid block number fail (got {:?})", verify_result);
             }
             _ => {
                 panic!("Should be error, got Ok");
@@ -708,10 +668,7 @@ mod tests {
         match verify_result {
             Err(Error(ErrorKind::Block(BlockError::InvalidDifficulty(_)), _)) => {}
             Err(_) => {
-                panic!(
-                    "should be invalid difficulty fail (got {:?})",
-                    verify_result
-                );
+                panic!("should be invalid difficulty fail (got {:?})", verify_result);
             }
             _ => {
                 panic!("Should be error, got Ok");
@@ -741,9 +698,9 @@ mod tests {
     fn difficulty_homestead() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-		let ethash = Ethash::new(ethparams, machine);
+        let ethash = Ethash::new(ethparams, machine);
 
-		let mut parent_header = Header::default();
+        let mut parent_header = Header::default();
         parent_header.set_number(1500000);
         parent_header.set_difficulty(U256::from_str("1fd0fd70792b").unwrap());
         parent_header.set_timestamp(1463003133);
@@ -759,7 +716,7 @@ mod tests {
     fn difficulty_max_timestamp() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-		let ethash = Ethash::new(ethparams, machine);
+        let ethash = Ethash::new(ethparams, machine);
 
         let mut parent_header = Header::default();
         parent_header.set_number(1000000);
@@ -777,8 +734,8 @@ mod tests {
     fn test_extra_info() {
         let machine = new_homestead_test_machine();
         let ethparams = get_default_ethash_params();
-		let ethash = Ethash::new(ethparams, machine);
-		let mut header = Header::default();
+        let ethash = Ethash::new(ethparams, machine);
+        let mut header = Header::default();
         header.set_seal(vec![
             rlp::encode(
                 &H256::from_str("b251bd2e0283d0658f2cadfdc8ca619b5de94eca5742725e2e757dd13ed7503d")

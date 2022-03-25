@@ -16,11 +16,9 @@
 
 //! Blockchain test header deserializer.
 
-use crate::{
-    bytes::Bytes,
-    hash::{Address, Bloom, H256, H64},
-    uint::Uint,
-};
+use crate::bytes::Bytes;
+use crate::hash::{Address, Bloom, H256, H64};
+use crate::uint::Uint;
 
 /// Blockchain test header deserializer.
 #[derive(Debug, PartialEq, Deserialize)]

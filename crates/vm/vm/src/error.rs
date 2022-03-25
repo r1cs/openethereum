@@ -21,14 +21,14 @@ use core as core_;
 #[cfg(feature = "std")]
 use std as core_;
 
+use core_::fmt;
 use ethereum_types::Address;
 use ethtrie;
-use core_::fmt;
 extern crate alloc;
+use crate::{ActionParams, ResumeCall, ResumeCreate};
 use alloc::boxed::Box;
 use alloc::format;
 use alloc::string::String;
-use crate::{ActionParams, ResumeCall, ResumeCreate};
 
 #[derive(Debug)]
 pub enum TrapKind {
@@ -126,22 +126,16 @@ impl fmt::Display for Error {
         use self::Error::*;
         match *self {
             OutOfGas => write!(f, "Out of gas"),
-            BadJumpDestination { destination } => write!(
-                f,
-                "Bad jump destination {:x}  (trimmed to usize)",
-                destination
-            ),
+            BadJumpDestination { destination } => {
+                write!(f, "Bad jump destination {:x}  (trimmed to usize)", destination)
+            }
             BadInstruction { instruction } => write!(f, "Bad instruction {:x}", instruction),
-            StackUnderflow {
-                instruction,
-                wanted,
-                on_stack,
-            } => write!(f, "Stack underflow {} {}/{}", instruction, wanted, on_stack),
-            OutOfStack {
-                instruction,
-                wanted,
-                limit,
-            } => write!(f, "Out of stack {} {}/{}", instruction, wanted, limit),
+            StackUnderflow { instruction, wanted, on_stack } => {
+                write!(f, "Stack underflow {} {}/{}", instruction, wanted, on_stack)
+            }
+            OutOfStack { instruction, wanted, limit } => {
+                write!(f, "Out of stack {} {}/{}", instruction, wanted, limit)
+            }
             SubStackUnderflow { wanted, on_stack } => {
                 write!(f, "Subroutine stack underflow {}/{}", wanted, on_stack)
             }

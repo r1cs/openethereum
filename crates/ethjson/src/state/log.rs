@@ -15,10 +15,8 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! State test log deserialization.
-use crate::{
-    bytes::Bytes,
-    hash::{Address, Bloom, H256},
-};
+use crate::bytes::Bytes;
+use crate::hash::{Address, Bloom, H256};
 
 /// State test log deserialization.
 #[derive(Debug, PartialEq, Deserialize)]

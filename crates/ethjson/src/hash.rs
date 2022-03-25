@@ -17,13 +17,12 @@
 //! Lenient hash json deserialization for test json files.
 
 use ethereum_types::{
-    Bloom as Hash2048, H160 as Hash160, H256 as Hash256, H520 as Hash520, H64 as Hash64,
+    Bloom as Hash2048, H160 as Hash160, H256 as Hash256, H520 as Hash520, H64 as Hash64
 };
-use serde::{
-    de::{Error, Visitor},
-    Deserialize, Deserializer, Serialize, Serializer,
-};
-use std::{fmt, str::FromStr};
+use serde::de::{Error, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
+use std::str::FromStr;
 
 macro_rules! impl_hash {
     ($name: ident, $inner: ident) => {
@@ -113,9 +112,8 @@ impl_hash!(Bloom, Hash2048);
 #[cfg(test)]
 mod test {
     use crate::hash::H256;
-    use ethereum_types;
-    use serde_json;
     use std::str::FromStr;
+    use {ethereum_types, serde_json};
 
     #[test]
     fn hash_deserialization() {
@@ -137,9 +135,6 @@ mod test {
 
     #[test]
     fn hash_into() {
-        assert_eq!(
-            ethereum_types::H256::zero(),
-            H256(ethereum_types::H256::zero()).into()
-        );
+        assert_eq!(ethereum_types::H256::zero(), H256(ethereum_types::H256::zero()).into());
     }
 }

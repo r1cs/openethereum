@@ -24,14 +24,15 @@ pub mod denominations;
 /// Export the ethash module.
 pub mod ethash;
 
-pub use self::{denominations::*, ethash::Ethash};
+pub use self::denominations::*;
+pub use self::ethash::Ethash;
 
 use super::spec::*;
 use machine::EthereumMachine;
 
 /// Load chain spec from `SpecParams` and JSON.
 pub fn load(b: &[u8]) -> Spec {
-	Spec::load(b).expect("chain spec is invalid")
+    Spec::load(b).expect("chain spec is invalid")
 }
 
 fn load_machine(b: &[u8]) -> EthereumMachine {
@@ -152,88 +153,64 @@ pub fn new_transition_test() -> Spec {
 
 /// Create a new Foundation Mainnet chain spec without genesis accounts.
 pub fn new_mainnet_like() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/frontier_like_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/frontier_like_test.json"))
 }
 
 /// Create a new Foundation Byzantium era spec.
 pub fn new_byzantium_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/byzantium_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/byzantium_test.json"))
 }
 
 /// Create a new Foundation Constantinople era spec.
 pub fn new_constantinople_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/constantinople_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/constantinople_test.json"))
 }
 
 /// Create a new Foundation St. Peter's (Contantinople Fix) era spec.
 pub fn new_constantinople_fix_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/st_peters_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/st_peters_test.json"))
 }
 
 /// Create a new Foundation Istanbul era spec.
 pub fn new_istanbul_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/istanbul_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/istanbul_test.json"))
 }
 
 /// Create a new BizantiumToConstaninopleFixAt5 era spec.
 pub fn new_byzantium_to_constantinoplefixat5_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/byzantium_to_constantinoplefixat5_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/byzantium_to_constantinoplefixat5_test.json"))
 }
 
 /// Create a new Foundation Berlin era spec.
 pub fn new_berlin_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/berlin_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/berlin_test.json"))
 }
 
 /// Create a new Foundation London era spec.
 pub fn new_london_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/london_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/london_test.json"))
 }
 
 /// Create a new BerlinToLondonAt5 era spec.
 pub fn new_berlin_to_london_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/berlin_to_londonat5_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/berlin_to_londonat5_test.json"))
 }
 
 /// Create a new Musicoin-MCIP3-era spec.
 pub fn new_mcip3_test() -> Spec {
-    load(
-        include_bytes!("../../res/chainspec/test/mcip3_test.json"),
-    )
+    load(include_bytes!("../../res/chainspec/test/mcip3_test.json"))
 }
 
 // For tests
 
 /// Create a new Foundation Frontier-era chain spec as though it never changes to Homestead.
 pub fn new_frontier_test_machine() -> EthereumMachine {
-    load_machine(include_bytes!(
-        "../../res/chainspec/test/frontier_test.json"
-    ))
+    load_machine(include_bytes!("../../res/chainspec/test/frontier_test.json"))
 }
 
 /// Create a new Foundation Homestead-era chain spec as though it never changed from Frontier.
 pub fn new_homestead_test_machine() -> EthereumMachine {
-    load_machine(include_bytes!(
-        "../../res/chainspec/test/homestead_test.json"
-    ))
+    load_machine(include_bytes!("../../res/chainspec/test/homestead_test.json"))
 }
 
 /// Create a new Foundation London era chain spec.
@@ -248,30 +225,22 @@ pub fn new_eip210_test_machine() -> EthereumMachine {
 
 /// Create a new Foundation Byzantium era spec.
 pub fn new_byzantium_test_machine() -> EthereumMachine {
-    load_machine(include_bytes!(
-        "../../res/chainspec/test/byzantium_test.json"
-    ))
+    load_machine(include_bytes!("../../res/chainspec/test/byzantium_test.json"))
 }
 
 /// Create a new Foundation Constantinople era spec.
 pub fn new_constantinople_test_machine() -> EthereumMachine {
-    load_machine(include_bytes!(
-        "../../res/chainspec/test/constantinople_test.json"
-    ))
+    load_machine(include_bytes!("../../res/chainspec/test/constantinople_test.json"))
 }
 
 /// Create a new Foundation St. Peter's (Contantinople Fix) era spec.
 pub fn new_constantinople_fix_test_machine() -> EthereumMachine {
-    load_machine(include_bytes!(
-        "../../res/chainspec/test/st_peters_test.json"
-    ))
+    load_machine(include_bytes!("../../res/chainspec/test/st_peters_test.json"))
 }
 
 /// Create a new Foundation Istanbul era spec.
 pub fn new_istanbul_test_machine() -> EthereumMachine {
-    load_machine(include_bytes!(
-        "../../res/chainspec/test/istanbul_test.json"
-    ))
+    load_machine(include_bytes!("../../res/chainspec/test/istanbul_test.json"))
 }
 
 /// Create a new Musicoin-MCIP3-era spec.
@@ -286,16 +255,15 @@ mod tests {
     use state::*;
     use std::str::FromStr;
     use test_helpers::get_temp_state_db;
-    use types::{view, views::BlockView};
+    use types::view;
+    use types::views::BlockView;
 
     #[test]
     fn ensure_db_good() {
         let spec = new_morden();
         let engine = &spec.engine;
         let genesis_header = spec.genesis_header();
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let s = State::from_existing(
             db,
             genesis_header.state_root().clone(),

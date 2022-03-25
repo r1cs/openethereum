@@ -81,9 +81,7 @@ impl From<Vec<FlatTrace>> for FlatTransactionTraces {
 impl FlatTransactionTraces {
     /// Returns bloom of all traces in the collection.
     pub fn bloom(&self) -> Bloom {
-        self.0
-            .iter()
-            .fold(Default::default(), |bloom, trace| bloom | trace.bloom())
+        self.0.iter().fold(Default::default(), |bloom, trace| bloom | trace.bloom())
     }
 }
 
@@ -94,9 +92,7 @@ impl Into<Vec<FlatTrace>> for FlatTransactionTraces {
 }
 
 /// Represents all traces produced by transactions in a single block.
-#[derive(
-    Debug, PartialEq, Clone, Default, RlpEncodableWrapper, RlpDecodableWrapper,
-)]
+#[derive(Debug, PartialEq, Clone, Default, RlpEncodableWrapper, RlpDecodableWrapper)]
 pub struct FlatBlockTraces(Vec<FlatTransactionTraces>);
 
 impl From<Vec<FlatTransactionTraces>> for FlatBlockTraces {
@@ -108,9 +104,7 @@ impl From<Vec<FlatTransactionTraces>> for FlatBlockTraces {
 impl FlatBlockTraces {
     /// Returns bloom of all traces in the block.
     pub fn bloom(&self) -> Bloom {
-        self.0.iter().fold(Default::default(), |bloom, tx_traces| {
-            bloom | tx_traces.bloom()
-        })
+        self.0.iter().fold(Default::default(), |bloom, tx_traces| bloom | tx_traces.bloom())
     }
 }
 
@@ -125,10 +119,8 @@ mod tests {
     use super::{FlatBlockTraces, FlatTrace, FlatTransactionTraces};
     use evm::CallType;
     use rlp::*;
-    use trace::{
-        trace::{Action, Call, CallResult, Res, Reward, Suicide},
-        RewardType,
-    };
+    use trace::trace::{Action, Call, CallResult, Res, Reward, Suicide};
+    use trace::RewardType;
 
     #[test]
     fn encode_flat_transaction_traces() {
@@ -167,10 +159,7 @@ mod tests {
                 input: vec![],
                 call_type: CallType::Call,
             }),
-            result: Res::Call(CallResult {
-                gas_used: 0.into(),
-                output: vec![],
-            }),
+            result: Res::Call(CallResult { gas_used: 0.into(), output: vec![] }),
             trace_address: Default::default(),
             subtraces: 0,
         };
@@ -184,10 +173,7 @@ mod tests {
                 input: vec![0x41, 0xc0, 0xe1, 0xb5],
                 call_type: CallType::Call,
             }),
-            result: Res::Call(CallResult {
-                gas_used: 0x0127.into(),
-                output: vec![],
-            }),
+            result: Res::Call(CallResult { gas_used: 0x0127.into(), output: vec![] }),
             trace_address: Default::default(),
             subtraces: 1,
         };

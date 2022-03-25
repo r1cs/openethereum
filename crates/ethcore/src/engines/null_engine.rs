@@ -15,17 +15,13 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use block::ExecutedBlock;
-use engines::{
-    block_reward::{self, RewardKind},
-    Engine,
-};
+use engines::block_reward::{self, RewardKind};
+use engines::Engine;
 use ethereum_types::U256;
 use machine::Machine;
-use types::{
-    ancestry_action::AncestryAction,
-    header::{ExtendedHeader, Header},
-    BlockNumber,
-};
+use types::ancestry_action::AncestryAction;
+use types::header::{ExtendedHeader, Header};
+use types::BlockNumber;
 
 /// Params for a null engine.
 #[derive(Clone, Default)]
@@ -54,10 +50,7 @@ pub struct NullEngine<M> {
 impl<M> NullEngine<M> {
     /// Returns new instance of NullEngine with default VM Factory
     pub fn new(params: NullEngineParams, machine: M) -> Self {
-        NullEngine {
-            params: params,
-            machine: machine,
-        }
+        NullEngine { params: params, machine: machine }
     }
 }
 
@@ -122,16 +115,11 @@ impl<M: Machine> Engine<M> for NullEngine<M> {
     }
 
     fn ancestry_actions(
-        &self,
-        _header: &Header,
-        ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
+        &self, _header: &Header, ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
     ) -> Vec<AncestryAction> {
         if self.params.immediate_finalization {
             // always mark parent finalized
-            ancestry
-                .take(1)
-                .map(|e| AncestryAction::MarkFinalized(e.header.hash()))
-                .collect()
+            ancestry.take(1).map(|e| AncestryAction::MarkFinalized(e.header.hash())).collect()
         } else {
             Vec::new()
         }

@@ -16,7 +16,8 @@ mod common;
 use common::{BLOCKS_SWAPPER, SNAPSHOT_SWAPPER};
 use elastic_array::ElasticArray1024;
 use rlp::{Rlp, RlpStream};
-use std::{cmp, collections::HashMap};
+use std::cmp;
+use std::collections::HashMap;
 
 pub fn snapshot_swapper() -> &'static Swapper<'static> {
     &SNAPSHOT_SWAPPER as &Swapper
@@ -43,9 +44,7 @@ pub fn compress(c: &[u8], swapper: &dyn Compressor) -> ElasticArray1024<u8> {
     let rlp = Rlp::new(c);
     if rlp.is_data() {
         ElasticArray1024::from_slice(
-            swapper
-                .compressed(rlp.as_raw())
-                .unwrap_or_else(|| rlp.as_raw()),
+            swapper.compressed(rlp.as_raw()).unwrap_or_else(|| rlp.as_raw()),
         )
     } else {
         map_rlp(&rlp, |r| compress(r.as_raw(), swapper))
@@ -57,9 +56,7 @@ pub fn decompress(c: &[u8], swapper: &dyn Decompressor) -> ElasticArray1024<u8> 
     let rlp = Rlp::new(c);
     if rlp.is_data() {
         ElasticArray1024::from_slice(
-            swapper
-                .decompressed(rlp.as_raw())
-                .unwrap_or_else(|| rlp.as_raw()),
+            swapper.decompressed(rlp.as_raw()).unwrap_or_else(|| rlp.as_raw()),
         )
     } else {
         map_rlp(&rlp, |r| decompress(r.as_raw(), swapper))
@@ -96,10 +93,7 @@ impl<'a> Swapper<'a> {
             rlp_to_compressed.insert(rlp, compressed);
         }
 
-        Swapper {
-            compressed_to_rlp,
-            rlp_to_compressed,
-        }
+        Swapper { compressed_to_rlp, rlp_to_compressed }
     }
 }
 

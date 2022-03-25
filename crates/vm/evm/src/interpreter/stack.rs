@@ -66,9 +66,7 @@ impl<S: fmt::Display> Stack<S> for VecStack<S> {
     }
 
     fn pop_back(&mut self) -> S {
-        self.stack
-            .pop()
-            .expect("instruction validation prevents from popping too many items; qed")
+        self.stack.pop().expect("instruction validation prevents from popping too many items; qed")
     }
 
     fn pop_n(&mut self, no_of_elems: usize) -> &[S] {
@@ -89,10 +87,7 @@ impl<S: fmt::Display> Stack<S> for VecStack<S> {
     }
 
     fn peek_top(&self, no_from_top: usize) -> &[S] {
-        assert!(
-            self.stack.len() >= no_from_top,
-            "peek_top asked for more items than exist."
-        );
+        assert!(self.stack.len() >= no_from_top, "peek_top asked for more items than exist.");
         &self.stack[self.stack.len() - no_from_top..self.stack.len()]
     }
 }

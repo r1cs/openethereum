@@ -29,9 +29,7 @@ pub struct InstantSealParams {
 
 impl From<::ethjson::spec::InstantSealParams> for InstantSealParams {
     fn from(p: ::ethjson::spec::InstantSealParams) -> Self {
-        InstantSealParams {
-            millisecond_timestamp: p.millisecond_timestamp,
-        }
+        InstantSealParams { millisecond_timestamp: p.millisecond_timestamp }
     }
 }
 
@@ -46,11 +44,7 @@ pub struct InstantSeal<M> {
 impl<M> InstantSeal<M> {
     /// Returns new instance of InstantSeal over the given state machine.
     pub fn new(params: InstantSealParams, machine: M) -> Self {
-        InstantSeal {
-            params,
-            machine,
-            last_sealed_block: AtomicU64::new(0),
-        }
+        InstantSeal { params, machine, last_sealed_block: AtomicU64::new(0) }
     }
 }
 
@@ -103,7 +97,7 @@ impl<M: Machine> Engine<M> for InstantSeal<M> {
     }
 
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {
-		parent_timestamp + if self.params.millisecond_timestamp { 1000 } else { 1 }
+        parent_timestamp + if self.params.millisecond_timestamp { 1000 } else { 1 }
     }
 
     fn is_timestamp_valid(&self, header_timestamp: u64, parent_timestamp: u64) -> bool {
@@ -129,9 +123,7 @@ mod tests {
     fn instant_can_seal() {
         let spec = Spec::new_instant();
         let engine = &*spec.engine;
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let genesis_header = spec.genesis_header();
         let last_hashes = Arc::new(vec![genesis_header.hash()]);
         let b = OpenBlock::new(

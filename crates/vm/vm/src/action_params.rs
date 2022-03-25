@@ -17,8 +17,8 @@
 //! Evm input params.
 extern crate alloc;
 use super::access_list::AccessList;
-use bytes::Bytes;
 use crate::CallType;
+use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
 use hash::KECCAK_EMPTY;
 

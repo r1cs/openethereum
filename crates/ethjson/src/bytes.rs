@@ -17,11 +17,11 @@
 //! Lenient bytes json deserialization for test json files.
 
 use rustc_hex::FromHex;
-use serde::{
-    de::{Error, Visitor},
-    Deserialize, Deserializer,
-};
-use std::{fmt, ops::Deref, str::FromStr};
+use serde::de::{Error, Visitor};
+use serde::{Deserialize, Deserializer};
+use std::fmt;
+use std::ops::Deref;
+use std::str::FromStr;
 
 /// Lenient bytes json deserialization for test json files.
 #[derive(Default, Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]

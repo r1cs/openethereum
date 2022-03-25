@@ -20,9 +20,9 @@ mod compute;
 mod keccak;
 mod progpow;
 
-pub use compute::{quick_get_difficulty};
-use ethereum_types::{BigEndianHash, U256, U512};
+pub use compute::quick_get_difficulty;
 use core::convert::TryFrom;
+use ethereum_types::{BigEndianHash, U256, U512};
 
 /// Convert an Ethash boundary to its original difficulty. Basically just `f(x) = 2^256 / x`.
 pub fn boundary_to_difficulty(boundary: &ethereum_types::H256) -> U256 {

@@ -17,7 +17,9 @@
 //! View onto block header rlp
 
 use super::ViewRlp;
-use crate::{bytes::Bytes, hash::keccak, BlockNumber};
+use crate::bytes::Bytes;
+use crate::hash::keccak;
+use crate::BlockNumber;
 use ethereum_types::{Address, Bloom, H256, U256};
 use rlp::{self};
 
@@ -125,11 +127,8 @@ impl<'a> HeaderView<'a> {
     /// Returns a vector of post-RLP-encoded seal fields.
     /// If eip1559 is true, seal contains also base_fee_per_gas. Otherwise, it contains only seal fields.
     pub fn seal(&self, eip1559: bool) -> Vec<Bytes> {
-        let last_seal_index = if eip1559 {
-            self.rlp.item_count() - 1
-        } else {
-            self.rlp.item_count()
-        };
+        let last_seal_index =
+            if eip1559 { self.rlp.item_count() - 1 } else { self.rlp.item_count() };
         let mut seal = vec![];
         for i in 13..last_seal_index {
             seal.push(self.rlp.at(i).as_raw().to_vec());
@@ -150,9 +149,7 @@ impl<'a> HeaderView<'a> {
     /// If eip1559 is true, seal contains also base_fee_per_gas. Otherwise, it contains only seal fields.
     pub fn decode_seal(&self, eip1559: bool) -> Result<Vec<Bytes>, rlp::DecoderError> {
         let seal = self.seal(eip1559);
-        seal.into_iter()
-            .map(|s| rlp::Rlp::new(&s).data().map(|x| x.to_vec()))
-            .collect()
+        seal.into_iter().map(|s| rlp::Rlp::new(&s).data().map(|x| x.to_vec())).collect()
     }
 }
 

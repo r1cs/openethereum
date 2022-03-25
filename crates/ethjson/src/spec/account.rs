@@ -18,7 +18,9 @@
 
 use std::collections::BTreeMap;
 
-use crate::{bytes::Bytes, spec::builtin::BuiltinCompat, uint::Uint};
+use crate::bytes::Bytes;
+use crate::spec::builtin::BuiltinCompat;
+use crate::uint::Uint;
 
 /// Spec account.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -51,7 +53,9 @@ impl Account {
 
 #[cfg(test)]
 mod tests {
-    use crate::{bytes::Bytes, spec::account::Account, uint::Uint};
+    use crate::bytes::Bytes;
+    use crate::spec::account::Account;
+    use crate::uint::Uint;
     use ethereum_types::U256;
     use serde_json;
     use std::collections::BTreeMap;
@@ -155,10 +159,7 @@ mod tests {
         assert_eq!(deserialized.nonce.unwrap(), Uint(U256::from(0)));
         assert_eq!(deserialized.code.unwrap(), Bytes::new(vec![0x12, 0x34]));
         let mut storage = BTreeMap::new();
-        storage.insert(
-            Uint(U256::from("7fffffffffffffff7fffffffffffffff")),
-            Uint(U256::from(1)),
-        );
+        storage.insert(Uint(U256::from("7fffffffffffffff7fffffffffffffff")), Uint(U256::from(1)));
         assert_eq!(deserialized.storage.unwrap(), storage);
     }
 }

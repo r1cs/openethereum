@@ -33,8 +33,11 @@ use criterion::{black_box, Bencher, Criterion};
 use ethereum_types::{Address, U256};
 use evm::Factory;
 use rustc_hex::FromHex;
-use std::{collections::BTreeMap, str::FromStr, sync::Arc};
-use vm::{tests::FakeExt, ActionParams, Ext, GasLeft, Result};
+use std::collections::BTreeMap;
+use std::str::FromStr;
+use std::sync::Arc;
+use vm::tests::FakeExt;
+use vm::{ActionParams, Ext, GasLeft, Result};
 
 criterion_group!(
     basic,
@@ -122,9 +125,7 @@ fn mem_gas_calculation_same(gas: U256, b: &mut Bencher) {
 
     b.iter(|| {
         let code = black_box(
-            "6110006001556001546000555b610fff805560016000540380600055600c57"
-                .from_hex()
-                .unwrap(),
+            "6110006001556001546000555b610fff805560016000540380600055600c57".from_hex().unwrap(),
         );
 
         let mut params = ActionParams::default();

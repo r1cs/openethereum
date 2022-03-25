@@ -16,11 +16,9 @@
 
 //! Transaction test deserialization.
 
-use crate::{
-    bytes::Bytes,
-    hash::{Address, H256},
-    spec::ForkSpec,
-};
+use crate::bytes::Bytes;
+use crate::hash::{Address, H256};
+use crate::spec::ForkSpec;
 use std::collections::BTreeMap;
 
 /// Transaction test deserialization.

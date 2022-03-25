@@ -847,15 +847,6 @@ checksum = "d23bd4e7b5eda0d0f3a307e8b381fdc8ba9000f26fbe912250c0a4cc3956364a"
 
 [[package]]
 name = "hash256-std-hasher"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5c13dbac3cc50684760f54af18545c9e80fb75e93a3e586d71ebdc13138f6a4"
-dependencies = [
- "crunchy",
-]
-
-[[package]]
-name = "hash256-std-hasher"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "663ce20dae36902c16d12c6aaae400ca40d922407a8cf2b4caf8cae9b39b4f03"
@@ -1075,17 +1066,6 @@ dependencies = [
 
 [[package]]
 name = "keccak-hasher"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb9d3670023f4c04153d90b8a557a822d1b27ed702bb015a87cf7bffead5b611"
-dependencies = [
- "hash-db 0.11.0",
- "hash256-std-hasher 0.11.0",
- "tiny-keccak 1.5.0",
-]
-
-[[package]]
-name = "keccak-hasher"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c936c737d79690593c34275faf583151a0e8c0abf34eaecad10399eed0beb7d"
@@ -1228,7 +1208,7 @@ version = "0.11.0"
 dependencies = [
  "criterion",
  "hash-db 0.12.4",
- "keccak-hasher 0.11.0",
+ "keccak-hasher 0.1.1",
 ]
 
 [[package]]

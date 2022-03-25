@@ -16,11 +16,9 @@
 
 //! Block header.
 
-use crate::{
-    bytes::Bytes,
-    hash::{keccak, KECCAK_EMPTY_LIST_RLP, KECCAK_NULL_RLP},
-    BlockNumber,
-};
+use crate::bytes::Bytes;
+use crate::hash::{keccak, KECCAK_EMPTY_LIST_RLP, KECCAK_NULL_RLP};
+use crate::BlockNumber;
 use ethereum_types::{Address, Bloom, H256, U256};
 use rlp::{DecoderError, Encodable, Rlp, RlpStream};
 
@@ -338,11 +336,7 @@ impl Header {
 
     /// Place this header into an RLP stream `s`, optionally `with_seal`.
     fn stream_rlp(&self, s: &mut RlpStream, with_seal: Seal) {
-        let stream_length_without_seal = if self.base_fee_per_gas.is_some() {
-            14
-        } else {
-            13
-        };
+        let stream_length_without_seal = if self.base_fee_per_gas.is_some() { 14 } else { 13 };
 
         if let Seal::With = with_seal {
             s.begin_list(stream_length_without_seal + self.seal.len());
@@ -423,8 +417,7 @@ impl Header {
     }
 
     pub fn decode_rlp_list(
-        rlp: &Rlp,
-        eip1559_transition: BlockNumber,
+        rlp: &Rlp, eip1559_transition: BlockNumber,
     ) -> Result<Vec<Self>, DecoderError> {
         if !rlp.is_list() {
             // at least one byte needs to be present
@@ -467,9 +460,8 @@ mod tests {
         let mix_hash = "a0a0349d8c3df71f1a48a9df7d03fd5f14aeee7d91332c009ecaff0a71ead405bd"
             .from_hex()
             .unwrap();
-        let mix_hash_decoded = "a0349d8c3df71f1a48a9df7d03fd5f14aeee7d91332c009ecaff0a71ead405bd"
-            .from_hex()
-            .unwrap();
+        let mix_hash_decoded =
+            "a0349d8c3df71f1a48a9df7d03fd5f14aeee7d91332c009ecaff0a71ead405bd".from_hex().unwrap();
         let nonce = "88ab4e252a7e8c2a23".from_hex().unwrap();
         let nonce_decoded = "ab4e252a7e8c2a23".from_hex().unwrap();
 

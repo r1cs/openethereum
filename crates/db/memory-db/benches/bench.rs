@@ -45,9 +45,7 @@ fn compare_to_null_embedded_in_struct(b: &mut Criterion) {
     struct X {
         a_hash: <KeccakHasher as Hasher>::Out,
     };
-    let x = X {
-        a_hash: KeccakHasher::hash(&[0u8][..]),
-    };
+    let x = X { a_hash: KeccakHasher::hash(&[0u8][..]) };
     let key = KeccakHasher::hash(b"abc");
 
     b.bench_function("compare_to_null_embedded_in_struct", move |b| {

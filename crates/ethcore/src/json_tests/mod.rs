@@ -26,15 +26,13 @@ mod trie;
 /// executor of ethereum/json tests
 pub mod runner;
 
-pub use self::{
-    executive::json_executive_test,
-    test_common::{debug_include_test, find_json_files_recursive, HookType},
-};
+pub use self::executive::json_executive_test;
+pub use self::test_common::{debug_include_test, find_json_files_recursive, HookType};
 
 use std::io;
 
 fn flushln(s: String) {
-	let _ = io::Write::write(&mut io::stdout(), s.as_bytes());
-	let _ = io::Write::write(&mut io::stdout(), b"\n");
-	let _ = io::Write::flush(&mut io::stdout());
+    let _ = io::Write::write(&mut io::stdout(), s.as_bytes());
+    let _ = io::Write::write(&mut io::stdout(), b"\n");
+    let _ = io::Write::flush(&mut io::stdout());
 }

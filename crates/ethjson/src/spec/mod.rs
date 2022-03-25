@@ -29,17 +29,15 @@ pub mod spec;
 pub mod state;
 pub mod step_duration;
 
-pub use self::{
-    account::Account,
-    builtin::{Builtin, Linear, Pricing},
-    engine::Engine,
-    ethash::{BlockReward, Ethash, EthashParams},
-    genesis::Genesis,
-    instant_seal::{InstantSeal, InstantSealParams},
-    null_engine::{NullEngine, NullEngineParams},
-    params::Params,
-    seal::{AuthorityRoundSeal, Ethereum, Seal, TendermintSeal},
-    spec::{ForkSpec, Spec},
-    state::State,
-    step_duration::StepDuration,
-};
+pub use self::account::Account;
+pub use self::builtin::{Builtin, Linear, Pricing};
+pub use self::engine::Engine;
+pub use self::ethash::{BlockReward, Ethash, EthashParams};
+pub use self::genesis::Genesis;
+pub use self::instant_seal::{InstantSeal, InstantSealParams};
+pub use self::null_engine::{NullEngine, NullEngineParams};
+pub use self::params::Params;
+pub use self::seal::{AuthorityRoundSeal, Ethereum, Seal, TendermintSeal};
+pub use self::spec::{ForkSpec, Spec};
+pub use self::state::State;
+pub use self::step_duration::StepDuration;

@@ -32,9 +32,9 @@ jobs:
         uses:                   actions-rs/cargo@v1
         with:
           command:              test
-          args:                 --locked --all --release --features "json-tests" --verbose --no-run
-      - name:                   Run tests for ${{ matrix.platform }}	
-        uses:                   actions-rs/cargo@v1	
-        with:	
-          command:              test	
-          args:                 --locked --all --release --features "json-tests" --verbose
+          args:                 --locked -p ethcore --features=json-tests --release --verbose --no-run
+      - name:                   Run tests for ${{ matrix.platform }}
+        uses:                   actions-rs/cargo@v1
+        with:
+          command:              test
+          args:                 --locked -p ethcore --features=json-tests --release --verbose

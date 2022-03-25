@@ -16,7 +16,8 @@
 
 //! Log entry type definition.
 
-use crate::{bytes::Bytes, BlockNumber};
+use crate::bytes::Bytes;
+use crate::BlockNumber;
 use ethereum_types::{Address, Bloom, BloomInput, H256};
 use std::ops::Deref;
 
@@ -79,14 +80,8 @@ mod tests {
     #[test]
     fn test_empty_log_bloom() {
         let bloom = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000".parse::<Bloom>().unwrap();
-        let address = "0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6"
-            .parse::<Address>()
-            .unwrap();
-        let log = LogEntry {
-            address: address,
-            topics: vec![],
-            data: vec![],
-        };
+        let address = "0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6".parse::<Address>().unwrap();
+        let log = LogEntry { address: address, topics: vec![], data: vec![] };
         assert_eq!(log.bloom(), bloom);
     }
 }

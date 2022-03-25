@@ -14,21 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::fmt::format;
-use super::{test_common::*, HookType};
+use super::test_common::*;
+use super::{flushln, HookType};
 use client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
-use ethjson::{self, spec::ForkSpec};
+use ethjson::spec::ForkSpec;
 use pod_state::PodState;
 use std::path::Path;
-use trace;
 use vm::EnvInfo;
-use super::flushln;
+use {ethjson, trace};
 
 fn skip_test(
-    test: &ethjson::test::StateTests,
-    subname: &str,
-    chain: &String,
-    number: usize,
+    test: &ethjson::test::StateTests, subname: &str, chain: &String, number: usize,
 ) -> bool {
     trace!(target: "json-tests", "[state, skip_test] subname: '{}', chain: '{}', number: {}", subname, chain, number);
     test.skip.iter().any(|state_test| {
@@ -44,16 +40,11 @@ fn skip_test(
 }
 
 pub fn json_state_test<H: FnMut(&str, HookType)>(
-    state_test: &ethjson::test::StateTests,
-    path: &Path,
-    json_data: &[u8],
-    start_stop_hook: &mut H,
+    state_test: &ethjson::test::StateTests, path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {
     let _ = ::env_logger::try_init();
-    let tests = ethjson::state::test::Test::load(json_data).expect(&format!(
-        "Could not parse JSON state test data from {}",
-        path.display()
-    ));
+    let tests = ethjson::state::test::Test::load(json_data)
+        .expect(&format!("Could not parse JSON state test data from {}", path.display()));
     let mut failed = Vec::new();
 
     for (name, test) in tests.into_iter() {
@@ -72,10 +63,7 @@ pub fn json_state_test<H: FnMut(&str, HookType)>(
                 let spec = match EvmTestClient::spec_from_json(&spec_name) {
                     Some(spec) => spec,
                     None => {
-                        panic!(
-                            "Unimplemented chainspec '{:?}' in test '{}'",
-                            spec_name, name
-                        );
+                        panic!("Unimplemented chainspec '{:?}' in test '{}'", spec_name, name);
                     }
                 };
 
@@ -88,12 +76,8 @@ pub fn json_state_test<H: FnMut(&str, HookType)>(
                 }
 
                 for (i, state) in states.into_iter().enumerate() {
-                    let info = format!(
-                        "TestState/{}/{:?}/{}/trie",
-                        path.to_string_lossy(),
-                        spec_name,
-                        i
-                    );
+                    let info =
+                        format!("TestState/{}/{:?}/{}/trie", path.to_string_lossy(), spec_name, i);
                     if skip_test(&state_test, &name, &spec.name, i + 1) {
                         println!("{}: SKIPPED", info);
                         continue;
@@ -124,11 +108,9 @@ pub fn json_state_test<H: FnMut(&str, HookType)>(
                             flushln(format!("{} fail", info));
                             failed.push(name.clone());
                         }
-                        Ok(Err(TransactErr {
-                            state_root,
-                            ref error,
-                            ..
-                        })) if state_root != post_root => {
+                        Ok(Err(TransactErr { state_root, ref error, .. }))
+                            if state_root != post_root =>
+                        {
                             println!(
                                 "{}: post state root mismatch: got {:?}, want {:?}",
                                 info, state_root, post_root

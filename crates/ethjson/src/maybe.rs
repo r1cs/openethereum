@@ -16,11 +16,10 @@
 
 //! Deserializer of empty string values into optionals.
 
-use serde::{
-    de::{Error, IntoDeserializer, Visitor},
-    Deserialize, Deserializer,
-};
-use std::{fmt, marker::PhantomData};
+use serde::de::{Error, IntoDeserializer, Visitor};
+use serde::{Deserialize, Deserializer};
+use std::fmt;
+use std::marker::PhantomData;
 
 /// Deserializer of empty string values into optionals.
 #[derive(Debug, PartialEq, Clone)]
@@ -49,9 +48,7 @@ struct MaybeEmptyVisitor<T> {
 
 impl<T> MaybeEmptyVisitor<T> {
     fn new() -> Self {
-        MaybeEmptyVisitor {
-            _phantom: PhantomData,
-        }
+        MaybeEmptyVisitor { _phantom: PhantomData }
     }
 }
 
@@ -94,10 +91,10 @@ impl<T> Into<Option<T>> for MaybeEmpty<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{hash::H256, maybe::MaybeEmpty};
-    use ethereum_types;
-    use serde_json;
+    use crate::hash::H256;
+    use crate::maybe::MaybeEmpty;
     use std::str::FromStr;
+    use {ethereum_types, serde_json};
 
     #[test]
     fn maybe_deserialization() {

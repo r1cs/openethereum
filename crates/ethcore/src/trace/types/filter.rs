@@ -134,11 +134,9 @@ impl Filter {
 mod tests {
     use ethereum_types::{Address, Bloom, BloomInput};
     use evm::CallType;
-    use trace::{
-        flat::FlatTrace,
-        trace::{Action, Call, Create, CreateResult, Res, Reward, Suicide},
-        AddressesFilter, Filter, RewardType, TraceError,
-    };
+    use trace::flat::FlatTrace;
+    use trace::trace::{Action, Call, Create, CreateResult, Res, Reward, Suicide};
+    use trace::{AddressesFilter, Filter, RewardType, TraceError};
 
     #[test]
     fn empty_trace_filter_bloom_possibilities() {
@@ -382,11 +380,7 @@ mod tests {
             to_address: vec![].into(),
         };
 
-        let f1 = Filter {
-            range: (0..0),
-            from_address: vec![].into(),
-            to_address: vec![].into(),
-        };
+        let f1 = Filter { range: (0..0), from_address: vec![].into(), to_address: vec![].into() };
 
         let f2 = Filter {
             range: (0..0),
@@ -418,11 +412,7 @@ mod tests {
             to_address: vec![].into(),
         };
 
-        let f1 = Filter {
-            range: (0..0),
-            from_address: vec![].into(),
-            to_address: vec![].into(),
-        };
+        let f1 = Filter { range: (0..0), from_address: vec![].into(), to_address: vec![].into() };
 
         let f2 = Filter {
             range: (0..0),

@@ -22,31 +22,28 @@
 
 extern crate alloc;
 
-use core::{
-    cmp::{max, min},
-	fmt,
-    convert::TryInto,
-    mem::size_of,
-};
 use alloc::collections::BTreeMap;
 use alloc::vec;
 use alloc::vec::Vec;
+use core::cmp::{max, min};
+use core::convert::TryInto;
+use core::fmt;
+use core::mem::size_of;
 #[cfg(feature = "std")]
 use core::{convert::TryFrom, str::FromStr};
 
-use byteorder::{ByteOrder, BigEndian, LittleEndian};
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
+use crypto::hash::{ripemd160, sha256};
+use crypto::publickey::{recover, Signature};
 use eip_152::compress;
 use ethereum_types::{H256, U256};
 use num_bigint::BigUint;
 use num_traits::{One, Zero};
 use parity_bytes::BytesRef;
-use crypto::hash::{sha256, ripemd160};
-use crypto::publickey::{recover, Signature};
 
 #[cfg(feature = "std")]
 use eth_pairings::public_interface::eip2537::{
-    EIP2537Executor, SCALAR_BYTE_LENGTH, SERIALIZED_G1_POINT_BYTE_LENGTH,
-    SERIALIZED_G2_POINT_BYTE_LENGTH,
+    EIP2537Executor, SCALAR_BYTE_LENGTH, SERIALIZED_G1_POINT_BYTE_LENGTH, SERIALIZED_G2_POINT_BYTE_LENGTH
 };
 
 /// Native implementation of a built-in contract.
@@ -83,44 +80,44 @@ impl Pricer for Blake2FPricer {
 /// Pricing model
 #[derive(Debug)]
 enum Pricing {
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     AltBn128Pairing(AltBn128PairingPricer),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     AltBn128ConstOperations(AltBn128ConstOperations),
     Blake2F(Blake2FPricer),
     Linear(Linear),
     Modexp(ModexpPricer),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Modexp2565(Modexp2565Pricer),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Bls12Pairing(Bls12PairingPricer),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Bls12ConstOperations(Bls12ConstOperations),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Bls12MultiexpG1(Bls12MultiexpPricerG1),
-	#[cfg(feature = "std")]
+    #[cfg(feature = "std")]
     Bls12MultiexpG2(Bls12MultiexpPricerG2),
 }
 
 impl Pricer for Pricing {
     fn cost(&self, input: &[u8]) -> U256 {
         match self {
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::AltBn128Pairing(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::AltBn128ConstOperations(inner) => inner.cost(input),
             Pricing::Blake2F(inner) => inner.cost(input),
             Pricing::Linear(inner) => inner.cost(input),
             Pricing::Modexp(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Modexp2565(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Bls12Pairing(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Bls12ConstOperations(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Bls12MultiexpG1(inner) => inner.cost(input),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             Pricing::Bls12MultiexpG2(inner) => inner.cost(input),
         }
     }
@@ -204,42 +201,40 @@ impl Pricer for ModexpPricer {
 }
 
 struct FillZeroReader<'a> {
-	buf: &'a [u8],
+    buf: &'a [u8],
 }
 
 impl<'a> FillZeroReader<'a> {
-	pub fn new(buf: &'a [u8]) -> Self {
-		Self {
-			buf,
-		}
-	}
+    pub fn new(buf: &'a [u8]) -> Self {
+        Self { buf }
+    }
 
-	pub fn read_exact(&mut self, buf: &mut [u8]) {
-		let (have, want) = (self.buf.len(), buf.len());
-		if have > want {
-			buf.copy_from_slice(&self.buf[..want]);
-			self.buf = &self.buf[want..];
-			return
-		}
-		if have > 0 {
-			buf[..have].copy_from_slice(self.buf);
-			self.buf = &[];
-		}
+    pub fn read_exact(&mut self, buf: &mut [u8]) {
+        let (have, want) = (self.buf.len(), buf.len());
+        if have > want {
+            buf.copy_from_slice(&self.buf[..want]);
+            self.buf = &self.buf[want..];
+            return;
+        }
+        if have > 0 {
+            buf[..have].copy_from_slice(self.buf);
+            self.buf = &[];
+        }
 
-		buf[have..].fill(0);
-	}
+        buf[have..].fill(0);
+    }
 }
 
 impl ModexpPricer {
     pub fn parse_input(input: &[u8]) -> (U256, U256, U256, U256) {
-		let mut reader = FillZeroReader::new(input);
-		let mut buf = [0; 32];
+        let mut reader = FillZeroReader::new(input);
+        let mut buf = [0; 32];
 
-		// read lengths as U256 here for accurate gas calculation.
-		let mut read_len = || {
-			reader.read_exact(&mut buf[..]);
-			U256::from_big_endian(&buf[..])
-		};
+        // read lengths as U256 here for accurate gas calculation.
+        let mut read_len = || {
+            reader.read_exact(&mut buf[..]);
+            U256::from_big_endian(&buf[..])
+        };
 
         let base_len_u256 = read_len();
         let exp_len_u256 = read_len();
@@ -251,12 +246,12 @@ impl ModexpPricer {
         let exp_low = if base_len.wrapping_add(96) >= input.len() as u64 {
             U256::zero()
         } else {
-			buf.iter_mut().for_each(|b| *b = 0);
-			let mut reader = FillZeroReader::new(&input[(base_len as usize).wrapping_add(96)..]);
-			let len = min(exp_len, 32) as usize;
-			reader.read_exact(&mut buf[(32 - len)..]);
-			U256::from_big_endian(&buf[..])
-		};
+            buf.iter_mut().for_each(|b| *b = 0);
+            let mut reader = FillZeroReader::new(&input[(base_len as usize).wrapping_add(96)..]);
+            let len = min(exp_len, 32) as usize;
+            reader.read_exact(&mut buf[(32 - len)..]);
+            U256::from_big_endian(&buf[..])
+        };
         (base_len_u256, exp_len_u256, exp_low, mod_len_u256)
     }
 
@@ -273,11 +268,7 @@ impl ModexpPricer {
     }
 
     fn adjusted_exp_len(len: u64, exp_low: U256) -> u64 {
-        let bit_index = if exp_low.is_zero() {
-            0
-        } else {
-            (255 - exp_low.leading_zeros()) as u64
-        };
+        let bit_index = if exp_low.is_zero() { 0 } else { (255 - exp_low.leading_zeros()) as u64 };
         if len <= 32 {
             bit_index
         } else {
@@ -647,44 +638,29 @@ impl From<ethjson::spec::builtin::Pricing> for Pricing {
             ethjson::spec::builtin::Pricing::Blake2F { gas_per_round } => {
                 Pricing::Blake2F(gas_per_round)
             }
-            ethjson::spec::builtin::Pricing::Linear(linear) => Pricing::Linear(Linear {
-                base: linear.base,
-                word: linear.word,
-            }),
+            ethjson::spec::builtin::Pricing::Linear(linear) => {
+                Pricing::Linear(Linear { base: linear.base, word: linear.word })
+            }
             ethjson::spec::builtin::Pricing::Modexp(exp) => Pricing::Modexp(ModexpPricer {
-                divisor: if exp.divisor == 0 {
-                    10
-                } else {
-                    exp.divisor
-                },
+                divisor: if exp.divisor == 0 { 10 } else { exp.divisor },
             }),
             ethjson::spec::builtin::Pricing::Modexp2565(_) => {
                 Pricing::Modexp2565(Modexp2565Pricer {})
             }
             ethjson::spec::builtin::Pricing::AltBn128Pairing(pricer) => {
                 Pricing::AltBn128Pairing(AltBn128PairingPricer {
-                    price: AltBn128PairingPrice {
-                        base: pricer.base,
-                        pair: pricer.pair,
-                    },
+                    price: AltBn128PairingPrice { base: pricer.base, pair: pricer.pair },
                 })
             }
             ethjson::spec::builtin::Pricing::AltBn128ConstOperations(pricer) => {
-                Pricing::AltBn128ConstOperations(AltBn128ConstOperations {
-                    price: pricer.price,
-                })
+                Pricing::AltBn128ConstOperations(AltBn128ConstOperations { price: pricer.price })
             }
             ethjson::spec::builtin::Pricing::Bls12ConstOperations(pricer) => {
-                Pricing::Bls12ConstOperations(Bls12ConstOperations {
-                    price: pricer.price,
-                })
+                Pricing::Bls12ConstOperations(Bls12ConstOperations { price: pricer.price })
             }
             ethjson::spec::builtin::Pricing::Bls12Pairing(pricer) => {
                 Pricing::Bls12Pairing(Bls12PairingPricer {
-                    price: Bls12PairingPrice {
-                        base: pricer.base,
-                        pair: pricer.pair,
-                    },
+                    price: Bls12PairingPrice { base: pricer.base, pair: pricer.pair },
                 })
             }
             ethjson::spec::builtin::Pricing::Bls12G1Multiexp(pricer) => {
@@ -715,44 +691,44 @@ enum EthereumBuiltin {
     Ripemd160(Ripemd160),
     /// modexp (EIP 198)
     Modexp(Modexp),
-	#[cfg(feature = "std")]
-	/// alt_bn128_add
-	Bn128Add(Bn128Add),
-	#[cfg(feature = "std")]
-	/// alt_bn128_mul
-	Bn128Mul(Bn128Mul),
-	#[cfg(feature = "std")]
-	/// alt_bn128_pairing
-	Bn128Pairing(Bn128Pairing),
-	/// blake2_f (The Blake2 compression function F, EIP-152)
+    #[cfg(feature = "std")]
+    /// alt_bn128_add
+    Bn128Add(Bn128Add),
+    #[cfg(feature = "std")]
+    /// alt_bn128_mul
+    Bn128Mul(Bn128Mul),
+    #[cfg(feature = "std")]
+    /// alt_bn128_pairing
+    Bn128Pairing(Bn128Pairing),
+    /// blake2_f (The Blake2 compression function F, EIP-152)
     Blake2F(Blake2F),
-	#[cfg(feature = "std")]
-	/// bls12_381 addition in g1
-	Bls12G1Add(Bls12G1Add),
-	#[cfg(feature = "std")]
-	/// bls12_381 multiplication in g1
-	Bls12G1Mul(Bls12G1Mul),
-	#[cfg(feature = "std")]
-	/// bls12_381 multiexponentiation in g1
-	Bls12G1MultiExp(Bls12G1MultiExp),
-	#[cfg(feature = "std")]
-	/// bls12_381 addition in g2
-	Bls12G2Add(Bls12G2Add),
-	#[cfg(feature = "std")]
-	/// bls12_381 multiplication in g2
-	Bls12G2Mul(Bls12G2Mul),
-	#[cfg(feature = "std")]
-	/// bls12_381 multiexponentiation in g2
-	Bls12G2MultiExp(Bls12G2MultiExp),
-	#[cfg(feature = "std")]
-	/// bls12_381 pairing
-	Bls12Pairing(Bls12Pairing),
-	#[cfg(feature = "std")]
-	/// bls12_381 fp to g1 mapping
-	Bls12MapFpToG1(Bls12MapFpToG1),
-	#[cfg(feature = "std")]
-	/// bls12_381 fp2 to g2 mapping
-	Bls12MapFp2ToG2(Bls12MapFp2ToG2),
+    #[cfg(feature = "std")]
+    /// bls12_381 addition in g1
+    Bls12G1Add(Bls12G1Add),
+    #[cfg(feature = "std")]
+    /// bls12_381 multiplication in g1
+    Bls12G1Mul(Bls12G1Mul),
+    #[cfg(feature = "std")]
+    /// bls12_381 multiexponentiation in g1
+    Bls12G1MultiExp(Bls12G1MultiExp),
+    #[cfg(feature = "std")]
+    /// bls12_381 addition in g2
+    Bls12G2Add(Bls12G2Add),
+    #[cfg(feature = "std")]
+    /// bls12_381 multiplication in g2
+    Bls12G2Mul(Bls12G2Mul),
+    #[cfg(feature = "std")]
+    /// bls12_381 multiexponentiation in g2
+    Bls12G2MultiExp(Bls12G2MultiExp),
+    #[cfg(feature = "std")]
+    /// bls12_381 pairing
+    Bls12Pairing(Bls12Pairing),
+    #[cfg(feature = "std")]
+    /// bls12_381 fp to g1 mapping
+    Bls12MapFpToG1(Bls12MapFpToG1),
+    #[cfg(feature = "std")]
+    /// bls12_381 fp2 to g2 mapping
+    Bls12MapFp2ToG2(Bls12MapFp2ToG2),
 }
 
 #[cfg(feature = "std")]
@@ -792,30 +768,30 @@ impl Implementation for EthereumBuiltin {
             EthereumBuiltin::Sha256(inner) => inner.execute(input, output),
             EthereumBuiltin::Ripemd160(inner) => inner.execute(input, output),
             EthereumBuiltin::Modexp(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bn128Add(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bn128Mul(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bn128Pairing(inner) => inner.execute(input, output),
             EthereumBuiltin::Blake2F(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1Add(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1Mul(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G1MultiExp(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2Add(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2Mul(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12G2MultiExp(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12Pairing(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12MapFpToG1(inner) => inner.execute(input, output),
-			#[cfg(feature = "std")]
+            #[cfg(feature = "std")]
             EthereumBuiltin::Bls12MapFp2ToG2(inner) => inner.execute(input, output),
         }
     }
@@ -943,20 +919,17 @@ impl Implementation for Blake2F {
         // state vector, h
         let mut h = [0u64; 8];
         for (i, state_word) in h.iter_mut().enumerate() {
-            *state_word = LittleEndian::read_u64(&input[4+8*i..]);
+            *state_word = LittleEndian::read_u64(&input[4 + 8 * i..]);
         }
 
         // message block vector, m
         let mut m = [0u64; 16];
         for (i, msg_word) in m.iter_mut().enumerate() {
-            *msg_word = LittleEndian::read_u64(&input[68+8*i..]);
+            *msg_word = LittleEndian::read_u64(&input[68 + 8 * i..]);
         }
 
         // 2w-bit offset counter, t
-        let t = [
-			LittleEndian::read_u64(&input[196..]),
-			LittleEndian::read_u64(&input[204..]),
-        ];
+        let t = [LittleEndian::read_u64(&input[196..]), LittleEndian::read_u64(&input[204..])];
 
         // final block indicator flag, "f"
         let f = match input.last() {
@@ -1102,9 +1075,7 @@ impl Implementation for Bls12G1Add {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G1Add error")
-            }
+            Err(_e) => Err("Bls12G1Add error"),
         }
     }
 }
@@ -1120,9 +1091,7 @@ impl Implementation for Bls12G1Mul {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G1Mul error")
-            }
+            Err(_e) => Err("Bls12G1Mul error"),
         }
     }
 }
@@ -1138,9 +1107,7 @@ impl Implementation for Bls12G1MultiExp {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G1MultiExp error")
-            }
+            Err(_e) => Err("Bls12G1MultiExp error"),
         }
     }
 }
@@ -1156,9 +1123,7 @@ impl Implementation for Bls12G2Add {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G2Add error")
-            }
+            Err(_e) => Err("Bls12G2Add error"),
         }
     }
 }
@@ -1174,9 +1139,7 @@ impl Implementation for Bls12G2Mul {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G2Mul error")
-            }
+            Err(_e) => Err("Bls12G2Mul error"),
         }
     }
 }
@@ -1192,9 +1155,7 @@ impl Implementation for Bls12G2MultiExp {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12G2MultiExp error")
-            }
+            Err(_e) => Err("Bls12G2MultiExp error"),
         }
     }
 }
@@ -1210,9 +1171,7 @@ impl Implementation for Bls12Pairing {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12Pairing error")
-            }
+            Err(_e) => Err("Bls12Pairing error"),
         }
     }
 }
@@ -1228,9 +1187,7 @@ impl Implementation for Bls12MapFpToG1 {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12MapFpToG1 error")
-            }
+            Err(_e) => Err("Bls12MapFpToG1 error"),
         }
     }
 }
@@ -1246,9 +1203,7 @@ impl Implementation for Bls12MapFp2ToG2 {
 
                 Ok(())
             }
-            Err(_e) => {
-                Err("Bls12MapFp2ToG2 error")
-            }
+            Err(_e) => Err("Bls12MapFp2ToG2 error"),
         }
     }
 }
@@ -1275,9 +1230,7 @@ fn read_point(reader: &mut FillZeroReader) -> Result<bn::G1, &'static str> {
     Ok(if px == Fq::zero() && py == Fq::zero() {
         G1::zero()
     } else {
-        AffineG1::new(px, py)
-            .map_err(|_| "Invalid curve point")?
-            .into()
+        AffineG1::new(px, py).map_err(|_| "Invalid curve point")?.into()
     })
 }
 
@@ -1399,9 +1352,7 @@ impl Bn128Pairing {
                 vals.push((a, b));
             }
 
-            let mul = vals
-                .into_iter()
-                .fold(Gt::one(), |s, (a, b)| s * pairing(a, b));
+            let mul = vals.into_iter().fold(Gt::one(), |s, (a, b)| s * pairing(a, b));
 
             if mul == Gt::one() {
                 U256::one()
@@ -1421,25 +1372,22 @@ impl Bn128Pairing {
 #[cfg(test)]
 mod tests {
     use super::{
-        modexp as me, BTreeMap, Bls12ConstOperations, Bls12PairingPrice, Bls12PairingPricer,
-        Builtin, EthereumBuiltin, FromStr, Implementation, Linear, Modexp2565Pricer, ModexpPricer,
-        Pricer, Pricing,
+        modexp as me, BTreeMap, Bls12ConstOperations, Bls12PairingPrice, Bls12PairingPricer, Builtin, EthereumBuiltin, FromStr, Implementation, Linear, Modexp2565Pricer, ModexpPricer, Pricer, Pricing
     };
     use ethereum_types::U256;
     use ethjson::spec::builtin::{
-        AltBn128Pairing as JsonAltBn128PairingPricing, Builtin as JsonBuiltin,
-        Linear as JsonLinearPricing, Pricing as JsonPricing, PricingAt,
+        AltBn128Pairing as JsonAltBn128PairingPricing, Builtin as JsonBuiltin, Linear as JsonLinearPricing, Pricing as JsonPricing, PricingAt
     };
     use hex_literal::hex;
     use macros::map;
     use maplit::btreemap;
     use num_bigint::BigUint;
+    use num_traits::{One, Zero};
     use parity_bytes::BytesRef;
     use rustc_hex::FromHex;
     use std::convert::TryFrom;
-	use num_traits::{One, Zero};
 
-	#[test]
+    #[test]
     fn blake2f_cost() {
         let f = Builtin {
             pricer: map![0 => Pricing::Blake2F(123)],
@@ -1448,8 +1396,7 @@ mod tests {
         // 5 rounds
         let input = hex!("0000000548c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001");
         let mut output = [0u8; 64];
-        f.execute(&input[..], &mut BytesRef::Fixed(&mut output[..]))
-            .unwrap();
+        f.execute(&input[..], &mut BytesRef::Fixed(&mut output[..])).unwrap();
 
         assert_eq!(f.cost(&input[..], 0), U256::from(123 * 5));
     }
@@ -1515,9 +1462,7 @@ mod tests {
         let input = hex!("0000000048c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001");
         let expected = hex!("08c9bcf367e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d282e6ad7f520e511f6c3e2b8c68059b9442be0454267ce079217e1319cde05b");
         let mut output = [0u8; 64];
-        blake2
-            .execute(&input[..], &mut BytesRef::Fixed(&mut output[..]))
-            .unwrap();
+        blake2.execute(&input[..], &mut BytesRef::Fixed(&mut output[..])).unwrap();
         assert_eq!(&output[..], &expected[..]);
     }
 
@@ -1528,9 +1473,7 @@ mod tests {
         let input = hex!("0000000c48c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001");
         let expected = hex!("ba80a53f981c4d0d6a2797b69f12f6e94c212f14685ac4b74b12bb6fdbffa2d17d87c5392aab792dc252d5de4533cc9518d38aa8dbf1925ab92386edd4009923");
         let mut out = [0u8; 64];
-        blake2
-            .execute(&input[..], &mut BytesRef::Fixed(&mut out[..]))
-            .unwrap();
+        blake2.execute(&input[..], &mut BytesRef::Fixed(&mut out[..])).unwrap();
         assert_eq!(&out[..], &expected[..]);
     }
 
@@ -1541,9 +1484,7 @@ mod tests {
         let input = hex!("0000000c48c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000");
         let expected = hex!("75ab69d3190a562c51aef8d88f1c2775876944407270c42c9844252c26d2875298743e7f6d5ea2f2d3e8d226039cd31b4e426ac4f2d3d666a610c2116fde4735");
         let mut out = [0u8; 64];
-        blake2
-            .execute(&input[..], &mut BytesRef::Fixed(&mut out[..]))
-            .unwrap();
+        blake2.execute(&input[..], &mut BytesRef::Fixed(&mut out[..])).unwrap();
         assert_eq!(&out[..], &expected[..]);
     }
 
@@ -1554,9 +1495,7 @@ mod tests {
         let input = hex!("0000000148c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001");
         let expected = hex!("b63a380cb2897d521994a85234ee2c181b5f844d2c624c002677e9703449d2fba551b3a8333bcdf5f2f7e08993d53923de3d64fcc68c034e717b9293fed7a421");
         let mut out = [0u8; 64];
-        blake2
-            .execute(&input[..], &mut BytesRef::Fixed(&mut out[..]))
-            .unwrap();
+        blake2.execute(&input[..], &mut BytesRef::Fixed(&mut out[..])).unwrap();
         assert_eq!(&out[..], &expected[..]);
     }
 
@@ -1569,9 +1508,7 @@ mod tests {
         let input = hex!("ffffffff48c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b61626300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000001");
         let expected = hex!("fc59093aafa9ab43daae0e914c57635c5402d8e3d2130eb9b3cc181de7f0ecf9b22bf99a7815ce16419e200e01846e6b5df8cc7703041bbceb571de6631d2615");
         let mut out = [0u8; 64];
-        blake2
-            .execute(&input[..], &mut BytesRef::Fixed(&mut out[..]))
-            .unwrap();
+        blake2.execute(&input[..], &mut BytesRef::Fixed(&mut out[..])).unwrap();
         assert_eq!(&out[..], &expected[..]);
     }
 
@@ -1605,10 +1542,7 @@ mod tests {
         base = BigUint::parse_bytes(b"12345", 10).unwrap();
         exp = BigUint::parse_bytes(b"789", 10).unwrap();
         modulus = BigUint::parse_bytes(b"97", 10).unwrap();
-        assert_eq!(
-            me(base, exp.to_bytes_be(), modulus),
-            BigUint::parse_bytes(b"55", 10).unwrap()
-        );
+        assert_eq!(me(base, exp.to_bytes_be(), modulus), BigUint::parse_bytes(b"55", 10).unwrap());
     }
 
     #[test]
@@ -1617,18 +1551,15 @@ mod tests {
         let i = [0u8, 1, 2, 3];
 
         let mut o2 = [255u8; 2];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o2[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o2[..])).expect("Builtin should not fail");
         assert_eq!(i[0..2], o2);
 
         let mut o4 = [255u8; 4];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o4[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o4[..])).expect("Builtin should not fail");
         assert_eq!(i, o4);
 
         let mut o8 = [255u8; 8];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o8[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o8[..])).expect("Builtin should not fail");
         assert_eq!(i, o8[..4]);
         assert_eq!([255u8; 4], o8[4..]);
     }
@@ -1639,29 +1570,25 @@ mod tests {
         let i = [0u8; 0];
 
         let mut o = [255u8; 32];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(
             &o[..],
             hex!("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
         );
 
         let mut o8 = [255u8; 8];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o8[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o8[..])).expect("Builtin should not fail");
         assert_eq!(&o8[..], hex!("e3b0c44298fc1c14"));
 
         let mut o34 = [255u8; 34];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o34[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o34[..])).expect("Builtin should not fail");
         assert_eq!(
             &o34[..],
             &hex!("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855ffff")[..]
         );
 
         let mut ov = vec![];
-        f.execute(&i[..], &mut BytesRef::Flexible(&mut ov))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Flexible(&mut ov)).expect("Builtin should not fail");
         assert_eq!(
             &ov[..],
             &hex!("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")[..]
@@ -1674,21 +1601,18 @@ mod tests {
         let i = [0u8; 0];
 
         let mut o = [255u8; 32];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(
             &o[..],
             &hex!("0000000000000000000000009c1185a5c5e9fc54612808977ee8f548b2258d31")[..]
         );
 
         let mut o8 = [255u8; 8];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o8[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o8[..])).expect("Builtin should not fail");
         assert_eq!(&o8[..], &hex!("0000000000000000")[..]);
 
         let mut o34 = [255u8; 34];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o34[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o34[..])).expect("Builtin should not fail");
         assert_eq!(
             &o34[..],
             &hex!("0000000000000000000000009c1185a5c5e9fc54612808977ee8f548b2258d31ffff")[..]
@@ -1702,21 +1626,18 @@ mod tests {
         let i = hex!("47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad000000000000000000000000000000000000000000000000000000000000001b650acf9d3f5f0a2c799776a1254355d5f4061762a237396a99a0e0e3fc2bcd6729514a0dacb2e623ac4abd157cb18163ff942280db4d5caad66ddf941ba12e03");
 
         let mut o = [255u8; 32];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(
             &o[..],
             &hex!("000000000000000000000000c08b5542d177ac6686946920409741463a15dddb")[..]
         );
 
         let mut o8 = [255u8; 8];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o8[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o8[..])).expect("Builtin should not fail");
         assert_eq!(&o8[..], &hex!("0000000000000000")[..]);
 
         let mut o34 = [255u8; 34];
-        f.execute(&i[..], &mut BytesRef::Fixed(&mut o34[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i[..], &mut BytesRef::Fixed(&mut o34[..])).expect("Builtin should not fail");
         assert_eq!(
             &o34[..],
             &hex!("000000000000000000000000c08b5542d177ac6686946920409741463a15dddbffff")[..]
@@ -1724,8 +1645,7 @@ mod tests {
 
         let i_bad = hex!("47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad000000000000000000000000000000000000000000000000000000000000001a650acf9d3f5f0a2c799776a1254355d5f4061762a237396a99a0e0e3fc2bcd6729514a0dacb2e623ac4abd157cb18163ff942280db4d5caad66ddf941ba12e03");
         let mut o = [255u8; 32];
-        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(
             &o[..],
             &hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")[..]
@@ -1733,8 +1653,7 @@ mod tests {
 
         let i_bad = hex!("47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad000000000000000000000000000000000000000000000000000000000000001b000000000000000000000000000000000000000000000000000000000000001b0000000000000000000000000000000000000000000000000000000000000000");
         let mut o = [255u8; 32];
-        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(
             &o[..],
             &hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")[..]
@@ -1742,8 +1661,7 @@ mod tests {
 
         let i_bad = hex!("47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad000000000000000000000000000000000000000000000000000000000000001b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001b");
         let mut o = [255u8; 32];
-        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(
             &o[..],
             &hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")[..]
@@ -1751,8 +1669,7 @@ mod tests {
 
         let i_bad = hex!("47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad000000000000000000000000000000000000000000000000000000000000001bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000001b");
         let mut o = [255u8; 32];
-        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(
             &o[..],
             &hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")[..]
@@ -1760,8 +1677,7 @@ mod tests {
 
         let i_bad = hex!("47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad000000000000000000000000000000000000000000000000000000000000001b000000000000000000000000000000000000000000000000000000000000001bffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         let mut o = [255u8; 32];
-        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        f.execute(&i_bad[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(
             &o[..],
             &hex!("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")[..]
@@ -2083,10 +1999,7 @@ mod tests {
         if let Some(msg) = msg_contains {
             if let Err(e) = res {
                 if !e.contains(msg) {
-                    panic!(
-                        "There should be error containing '{}' here, but got: '{}'",
-                        msg, e
-                    );
+                    panic!("There should be error containing '{}' here, but got: '{}'", msg, e);
                 }
             }
         } else {
@@ -2170,8 +2083,7 @@ mod tests {
 
         let i = [0u8, 1, 2, 3];
         let mut o = [255u8; 4];
-        b.execute(&i[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        b.execute(&i[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(i, o);
     }
 
@@ -2195,8 +2107,7 @@ mod tests {
 
         let i = [0u8, 1, 2, 3];
         let mut o = [255u8; 4];
-        b.execute(&i[..], &mut BytesRef::Fixed(&mut o[..]))
-            .expect("Builtin should not fail");
+        b.execute(&i[..], &mut BytesRef::Fixed(&mut o[..])).expect("Builtin should not fail");
         assert_eq!(i, o);
     }
 
@@ -2327,11 +2238,7 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(
-            b.cost(&[0; 2], 0),
-            U256::zero(),
-            "not activated yet; should be zero"
-        );
+        assert_eq!(b.cost(&[0; 2], 0), U256::zero(), "not activated yet; should be zero");
         assert_eq!(b.cost(&[0; 3], 10), U256::from(40_000), "use price #1");
         assert_eq!(b.cost(&[0; 4], 20), U256::from(6_000), "use price #2");
         assert_eq!(b.cost(&[0; 1], 99), U256::from(6_000), "use price #2");

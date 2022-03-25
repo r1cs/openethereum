@@ -23,10 +23,11 @@ mod body;
 mod header;
 mod typed_transaction;
 
-pub use self::{
-    block::BlockView, body::BodyView, header::HeaderView, typed_transaction::TypedTransactionView,
-    view_rlp::ViewRlp,
-};
+pub use self::block::BlockView;
+pub use self::body::BodyView;
+pub use self::header::HeaderView;
+pub use self::typed_transaction::TypedTransactionView;
+pub use self::view_rlp::ViewRlp;
 
 #[cfg(test)]
 mod tests {

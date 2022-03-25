@@ -76,14 +76,8 @@ mod tests {
 
     #[test]
     fn typed_tx_id_try_from_wire() {
-        assert_eq!(
-            Ok(TypedTxId::EIP1559Transaction),
-            TypedTxId::try_from_wire_byte(0x02)
-        );
-        assert_eq!(
-            Ok(TypedTxId::AccessList),
-            TypedTxId::try_from_wire_byte(0x01)
-        );
+        assert_eq!(Ok(TypedTxId::EIP1559Transaction), TypedTxId::try_from_wire_byte(0x02));
+        assert_eq!(Ok(TypedTxId::AccessList), TypedTxId::try_from_wire_byte(0x01));
         assert_eq!(Ok(TypedTxId::Legacy), TypedTxId::try_from_wire_byte(0x81));
         assert_eq!(Err(()), TypedTxId::try_from_wire_byte(0x00));
         assert_eq!(Err(()), TypedTxId::try_from_wire_byte(0x03));
@@ -92,14 +86,8 @@ mod tests {
     #[test]
     fn typed_tx_id_to_u64_option_id() {
         assert_eq!(Some(U64::from(0x00)), TypedTxId::Legacy.to_U64_option_id());
-        assert_eq!(
-            Some(U64::from(0x01)),
-            TypedTxId::AccessList.to_U64_option_id()
-        );
-        assert_eq!(
-            Some(U64::from(0x02)),
-            TypedTxId::EIP1559Transaction.to_U64_option_id()
-        );
+        assert_eq!(Some(U64::from(0x01)), TypedTxId::AccessList.to_U64_option_id());
+        assert_eq!(Some(U64::from(0x02)), TypedTxId::EIP1559Transaction.to_U64_option_id());
     }
 
     #[test]
@@ -120,10 +108,7 @@ mod tests {
     fn typed_tx_id_from_u8_id() {
         assert_eq!(Some(TypedTxId::Legacy), TypedTxId::from_u8_id(0));
         assert_eq!(Some(TypedTxId::AccessList), TypedTxId::from_u8_id(1));
-        assert_eq!(
-            Some(TypedTxId::EIP1559Transaction),
-            TypedTxId::from_u8_id(2)
-        );
+        assert_eq!(Some(TypedTxId::EIP1559Transaction), TypedTxId::from_u8_id(2));
         assert_eq!(None, TypedTxId::from_u8_id(3));
     }
 }

@@ -17,7 +17,7 @@
 extern crate rlp_compress;
 
 use rlp_compress::{
-    blocks_swapper, compress, decompress, snapshot_swapper, Compressor, Decompressor, Swapper,
+    blocks_swapper, compress, decompress, snapshot_swapper, Compressor, Decompressor, Swapper
 };
 
 #[test]
@@ -25,10 +25,7 @@ fn invalid_rlp_swapper() {
     let to_swap: &[&[u8]] = &[&[0x83, b'c', b'a', b't'], &[0x83, b'd', b'o', b'g']];
     let invalid_rlp: &[&[u8]] = &[&[0x81, 0x00], &[0x81, 0x01]];
     let swapper = Swapper::new(to_swap, invalid_rlp);
-    assert_eq!(
-        Some(invalid_rlp[0]),
-        swapper.compressed(&[0x83, b'c', b'a', b't'])
-    );
+    assert_eq!(Some(invalid_rlp[0]), swapper.compressed(&[0x83, b'c', b'a', b't']));
     assert_eq!(None, swapper.compressed(&[0x83, b'b', b'a', b't']));
     assert_eq!(Some(to_swap[1]), swapper.decompressed(invalid_rlp[1]));
 }
@@ -73,10 +70,7 @@ fn malformed_rlp() {
         93, 25, 76, 54, 176, 119, 230, 170, 154, 105, 47, 121, 10, 128, 128, 128, 128, 128, 128,
         128, 128, 128, 128,
     ];
-    assert_eq!(
-        decompress(&malformed, blocks_swapper()).into_vec(),
-        malformed
-    );
+    assert_eq!(decompress(&malformed, blocks_swapper()).into_vec(), malformed);
 }
 
 #[test]

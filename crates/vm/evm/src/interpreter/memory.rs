@@ -178,10 +178,7 @@ mod tests {
             let slice = "67890".as_bytes();
             mem.write_slice(U256::from(0x1), slice);
 
-            assert_eq!(
-                mem.read_slice(U256::from(0), U256::from(7)),
-                "a67890g".as_bytes()
-            );
+            assert_eq!(mem.read_slice(U256::from(0), U256::from(7)), "a67890g".as_bytes());
         }
 
         // write empty slice out of bounds

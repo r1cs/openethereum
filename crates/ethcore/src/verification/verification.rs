@@ -22,7 +22,8 @@
 //! 3. Final verification against the blockchain done before enactment.
 
 use bytes::Bytes;
-use types::{header::Header, transaction::SignedTransaction};
+use types::header::Header;
+use types::transaction::SignedTransaction;
 
 /// Preprocessed block data gathered in `verify_block_unordered` call
 pub struct PreverifiedBlock {

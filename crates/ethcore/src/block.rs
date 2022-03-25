@@ -31,7 +31,9 @@
 //! `ExecutedBlock` is an underlaying data structure used by all structs above to store block
 //! related info.
 
-use std::{cmp, collections::HashSet, ops, sync::Arc};
+use std::collections::HashSet;
+use std::sync::Arc;
+use std::{cmp, ops};
 
 use bytes::Bytes;
 use ethereum_types::{Address, Bloom, H256, U256};
@@ -49,11 +51,9 @@ use vm::{EnvInfo, LastHashes};
 
 use hash::keccak;
 use rlp::{encode_list, RlpStream};
-use types::{
-    header::Header,
-    receipt::{TransactionOutcome, TypedReceipt},
-    transaction::{Error as TransactionError, SignedTransaction},
-};
+use types::header::Header;
+use types::receipt::{TransactionOutcome, TypedReceipt};
+use types::transaction::{Error as TransactionError, SignedTransaction};
 
 /// Block that is ready for transactions to be added.
 ///
@@ -116,11 +116,7 @@ impl ExecutedBlock {
             receipts: Default::default(),
             transactions_set: Default::default(),
             state: state,
-            traces: if tracing {
-                Tracing::enabled()
-            } else {
-                Tracing::Disabled
-            },
+            traces: if tracing { Tracing::enabled() } else { Tracing::Disabled },
             last_hashes: last_hashes,
         }
     }
@@ -160,15 +156,9 @@ pub trait Drain {
 impl<'x> OpenBlock<'x> {
     /// t_nb 8.1 Create a new `OpenBlock` ready for transaction pushing.
     pub fn new<'a>(
-        engine: &'x dyn EthEngine,
-        factories: Factories,
-        tracing: bool,
-        db: StateDB,
-        parent: &Header,
-        last_hashes: Arc<LastHashes>,
-        author: Address,
-        gas_range_target: (U256, U256),
-        extra_data: Bytes,
+        engine: &'x dyn EthEngine, factories: Factories, tracing: bool, db: StateDB,
+        parent: &Header, last_hashes: Arc<LastHashes>, author: Address,
+        gas_range_target: (U256, U256), extra_data: Bytes,
     ) -> Result<Self, Error> {
         let number = parent.number() + 1;
 
@@ -179,21 +169,15 @@ impl<'x> OpenBlock<'x> {
             engine.account_start_nonce(number),
             factories,
         )?;
-        let mut r = OpenBlock {
-            block: ExecutedBlock::new(state, last_hashes, tracing),
-            engine: engine,
-        };
+        let mut r =
+            OpenBlock { block: ExecutedBlock::new(state, last_hashes, tracing), engine: engine };
 
         r.block.header.set_parent_hash(parent.hash());
         r.block.header.set_number(number);
         r.block.header.set_author(author);
-        r.block
-            .header
-            .set_timestamp(engine.open_block_header_timestamp(parent.timestamp()));
+        r.block.header.set_timestamp(engine.open_block_header_timestamp(parent.timestamp()));
         r.block.header.set_extra_data(extra_data);
-        r.block
-            .header
-            .set_base_fee(engine.calculate_base_fee(parent));
+        r.block.header.set_base_fee(engine.calculate_base_fee(parent));
 
         let gas_floor_target = cmp::max(gas_range_target.0, engine.params().min_gas_limit);
         let gas_ceil_target = cmp::max(gas_range_target.1, gas_floor_target);
@@ -251,9 +235,7 @@ impl<'x> OpenBlock<'x> {
     ///
     /// If valid, it will be executed, and archived together with the receipt.
     pub fn push_transaction(
-        &mut self,
-        t: SignedTransaction,
-        h: Option<H256>,
+        &mut self, t: SignedTransaction, h: Option<H256>,
     ) -> Result<&TypedReceipt, Error> {
         if self.block.transactions_set.contains(&t.hash()) {
             return Err(TransactionError::AlreadyImported.into());
@@ -267,19 +249,13 @@ impl<'x> OpenBlock<'x> {
             self.block.traces.is_enabled(),
         )?;
 
-        self.block
-            .transactions_set
-            .insert(h.unwrap_or_else(|| t.hash()));
+        self.block.transactions_set.insert(h.unwrap_or_else(|| t.hash()));
         self.block.transactions.push(t.into());
         if let Tracing::Enabled(ref mut traces) = self.block.traces {
             traces.push(outcome.trace.into());
         }
         self.block.receipts.push(outcome.receipt);
-        Ok(self
-            .block
-            .receipts
-            .last()
-            .expect("receipt just pushed; qed"))
+        Ok(self.block.receipts.last().expect("receipt just pushed; qed"))
     }
 
     /// Push transactions onto the block.
@@ -296,9 +272,7 @@ impl<'x> OpenBlock<'x> {
     fn push_transactions(&mut self, transactions: Vec<SignedTransaction>) -> Result<(), Error> {
         use std::time;
 
-        let slow_tx = option_env!("SLOW_TX_DURATION")
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(100);
+        let slow_tx = option_env!("SLOW_TX_DURATION").and_then(|v| v.parse().ok()).unwrap_or(100);
         for t in transactions {
             let hash = t.hash();
             let start = time::Instant::now();
@@ -325,16 +299,12 @@ impl<'x> OpenBlock<'x> {
         self.block.header.set_gas_limit(*header.gas_limit());
         self.block.header.set_timestamp(header.timestamp());
         self.block.header.set_uncles_hash(*header.uncles_hash());
-        self.block
-            .header
-            .set_transactions_root(*header.transactions_root());
+        self.block.header.set_transactions_root(*header.transactions_root());
         // TODO: that's horrible. set only for backwards compatibility
         if header.extra_data().len() > self.engine.maximum_extra_data_size() {
             warn!("Couldn't set extradata. Ignoring.");
         } else {
-            self.block
-                .header
-                .set_extra_data(header.extra_data().clone());
+            self.block.header.set_extra_data(header.extra_data().clone());
         }
     }
 
@@ -342,9 +312,7 @@ impl<'x> OpenBlock<'x> {
     pub fn close(self) -> Result<ClosedBlock, Error> {
         let locked = self.close_and_lock()?;
 
-        Ok(ClosedBlock {
-            block: locked.block,
-        })
+        Ok(ClosedBlock { block: locked.block })
     }
 
     /// t_nb 8.5 Turn this into a `LockedBlock`.
@@ -364,21 +332,16 @@ impl<'x> OpenBlock<'x> {
         let uncle_bytes = encode_list(&s.block.uncles);
         s.block.header.set_uncles_hash(keccak(&uncle_bytes));
         s.block.header.set_state_root(s.block.state.root().clone());
-        s.block.header.set_receipts_root(ordered_trie_root(
-            s.block.receipts.iter().map(|r| r.encode()),
-        ));
         s.block
             .header
-            .set_log_bloom(s.block.receipts.iter().fold(Bloom::zero(), |mut b, r| {
-                b.accrue_bloom(&r.log_bloom);
-                b
-            }));
-        s.block.header.set_gas_used(
-            s.block
-                .receipts
-                .last()
-                .map_or_else(U256::zero, |r| r.gas_used),
-        );
+            .set_receipts_root(ordered_trie_root(s.block.receipts.iter().map(|r| r.encode())));
+        s.block.header.set_log_bloom(s.block.receipts.iter().fold(Bloom::zero(), |mut b, r| {
+            b.accrue_bloom(&r.log_bloom);
+            b
+        }));
+        s.block
+            .header
+            .set_gas_used(s.block.receipts.last().map_or_else(U256::zero, |r| r.gas_used));
 
         Ok(LockedBlock { block: s.block })
     }
@@ -440,9 +403,9 @@ impl LockedBlock {
         for receipt in &mut self.block.receipts {
             receipt.outcome = TransactionOutcome::Unknown;
         }
-        self.block.header.set_receipts_root(ordered_trie_root(
-            self.block.receipts.iter().map(|r| r.encode()),
-        ));
+        self.block
+            .header
+            .set_receipts_root(ordered_trie_root(self.block.receipts.iter().map(|r| r.encode())));
     }
 
     /// Provide a valid seal in order to turn this into a `SealedBlock`.
@@ -505,15 +468,9 @@ impl Drain for SealedBlock {
 
 // t_nb 8.0 Enact the block given by block header, transactions and uncles
 pub(crate) fn enact(
-    header: Header,
-    transactions: Vec<SignedTransaction>,
-    uncles: Vec<Header>,
-    engine: &dyn EthEngine,
-    tracing: bool,
-    db: StateDB,
-    parent: &Header,
-    last_hashes: Arc<LastHashes>,
-    factories: Factories,
+    header: Header, transactions: Vec<SignedTransaction>, uncles: Vec<Header>,
+    engine: &dyn EthEngine, tracing: bool, db: StateDB, parent: &Header,
+    last_hashes: Arc<LastHashes>, factories: Factories,
 ) -> Result<LockedBlock, Error> {
     // t_nb 8.1 Created new OpenBlock
     let mut b = OpenBlock::new(
@@ -547,13 +504,8 @@ pub(crate) fn enact(
 
 /// t_nb 8.0 Enact the block given by `block_bytes` using `engine` on the database `db` with given `parent` block header
 pub fn enact_verified(
-    block: PreverifiedBlock,
-    engine: &dyn EthEngine,
-    tracing: bool,
-    db: StateDB,
-    parent: &Header,
-    last_hashes: Arc<LastHashes>,
-    factories: Factories,
+    block: PreverifiedBlock, engine: &dyn EthEngine, tracing: bool, db: StateDB, parent: &Header,
+    last_hashes: Arc<LastHashes>, factories: Factories,
 ) -> Result<LockedBlock, Error> {
     enact(
         block.header,
@@ -578,19 +530,17 @@ mod tests {
     use state_db::StateDB;
     use std::sync::Arc;
     use test_helpers::get_temp_state_db;
-    use types::{header::Header, transaction::SignedTransaction, view, views::BlockView};
+    use types::header::Header;
+    use types::transaction::SignedTransaction;
+    use types::view;
+    use types::views::BlockView;
     use verification::queue::kind::blocks::Unverified;
     use vm::LastHashes;
 
     /// Enact the block given by `block_bytes` using `engine` on the database `db` with given `parent` block header
     fn enact_bytes(
-        block_bytes: Vec<u8>,
-        engine: &dyn EthEngine,
-        tracing: bool,
-        db: StateDB,
-        parent: &Header,
-        last_hashes: Arc<LastHashes>,
-        factories: Factories,
+        block_bytes: Vec<u8>, engine: &dyn EthEngine, tracing: bool, db: StateDB, parent: &Header,
+        last_hashes: Arc<LastHashes>, factories: Factories,
     ) -> Result<LockedBlock, Error> {
         let block = Unverified::from_rlp(block_bytes, engine.params().eip1559_transition)?;
         let header = block.header;
@@ -626,26 +576,13 @@ mod tests {
 
     /// Enact the block given by `block_bytes` using `engine` on the database `db` with given `parent` block header. Seal the block aferwards
     fn enact_and_seal(
-        block_bytes: Vec<u8>,
-        engine: &dyn EthEngine,
-        tracing: bool,
-        db: StateDB,
-        parent: &Header,
-        last_hashes: Arc<LastHashes>,
-        factories: Factories,
+        block_bytes: Vec<u8>, engine: &dyn EthEngine, tracing: bool, db: StateDB, parent: &Header,
+        last_hashes: Arc<LastHashes>, factories: Factories,
     ) -> Result<SealedBlock, Error> {
         let header =
             Unverified::from_rlp(block_bytes.clone(), engine.params().eip1559_transition)?.header;
-        Ok(enact_bytes(
-            block_bytes,
-            engine,
-            tracing,
-            db,
-            parent,
-            last_hashes,
-            factories,
-        )?
-        .seal(engine, header.seal().to_vec())?)
+        Ok(enact_bytes(block_bytes, engine, tracing, db, parent, last_hashes, factories)?
+            .seal(engine, header.seal().to_vec())?)
     }
 
     #[test]
@@ -653,9 +590,7 @@ mod tests {
         use spec::*;
         let spec = Spec::new_test();
         let genesis_header = spec.genesis_header();
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let last_hashes = Arc::new(vec![genesis_header.hash()]);
         let b = OpenBlock::new(
             &*spec.engine,
@@ -680,9 +615,7 @@ mod tests {
         let engine = &*spec.engine;
         let genesis_header = spec.genesis_header();
 
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let last_hashes = Arc::new(vec![genesis_header.hash()]);
         let b = OpenBlock::new(
             engine,
@@ -702,9 +635,7 @@ mod tests {
         .unwrap();
         let orig_bytes = b.rlp_bytes();
 
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let e = enact_and_seal(
             orig_bytes.clone(),
             engine,
@@ -726,9 +657,7 @@ mod tests {
         let engine = &*spec.engine;
         let genesis_header = spec.genesis_header();
 
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let last_hashes = Arc::new(vec![genesis_header.hash()]);
         let mut open_block = OpenBlock::new(
             engine,
@@ -748,17 +677,11 @@ mod tests {
         uncle2_header.set_extra_data(b"uncle2".to_vec());
         open_block.push_uncle(uncle1_header).unwrap();
         open_block.push_uncle(uncle2_header).unwrap();
-        let b = open_block
-            .close_and_lock()
-            .unwrap()
-            .seal(engine, vec![])
-            .unwrap();
+        let b = open_block.close_and_lock().unwrap().seal(engine, vec![]).unwrap();
 
         let orig_bytes = b.rlp_bytes();
 
-        let db = spec
-            .ensure_db_good(get_temp_state_db(), &Default::default())
-            .unwrap();
+        let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
         let e = enact_and_seal(
             orig_bytes.clone(),
             engine,

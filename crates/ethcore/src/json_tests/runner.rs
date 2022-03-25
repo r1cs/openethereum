@@ -1,14 +1,11 @@
-use std::fmt::format;
 use ethjson::test::{
-    EthereumTestSuite, ExecutiveTests, LocalTests, StateTests,
-    TestTrieSpec, TransactionTests, TrieTests,
+    EthereumTestSuite, ExecutiveTests, LocalTests, StateTests, TestTrieSpec, TransactionTests, TrieTests
 };
 use globset::Glob;
 use log::info;
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 use trie::TrieSpec;
-use super::flushln;
 
 /// Result of tests execution
 pub struct TestResult {
@@ -21,24 +18,15 @@ pub struct TestResult {
 impl TestResult {
     /// Creates a new TestResult without results
     pub fn zero() -> Self {
-        TestResult {
-            success: 0,
-            failed: Vec::new(),
-        }
+        TestResult { success: 0, failed: Vec::new() }
     }
     /// Creates a new success TestResult
     pub fn success() -> Self {
-        TestResult {
-            success: 1,
-            failed: Vec::new(),
-        }
+        TestResult { success: 1, failed: Vec::new() }
     }
     /// Creates a new failed TestResult
     pub fn failed(name: &str) -> Self {
-        TestResult {
-            success: 0,
-            failed: vec![name.to_string()],
-        }
+        TestResult { success: 0, failed: vec![name.to_string()] }
     }
 }
 
@@ -74,10 +62,7 @@ impl TestRunner {
 
     /// Run the tests with one thread
     pub fn run_without_par(&self) -> TestResult {
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(1)
-            .build()
-            .unwrap();
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap();
         pool.install(|| self.run())
     }
 
@@ -141,51 +126,37 @@ impl TestRunner {
 
     fn run_local_tests(test: &LocalTests) -> TestResult {
         match test.test_type.as_str() {
-            "block_en_de" => Self::run1(
-                test,
-                &test.path,
-                |test: &LocalTests, path: &Path, json: &[u8]| {
+            "block_en_de" => {
+                Self::run1(test, &test.path, |test: &LocalTests, path: &Path, json: &[u8]| {
                     super::local::json_local_block_en_de_test(test, &path, &json, &mut |_, _| {})
-                },
-            ),
+                })
+            }
             _ => TestResult::zero(),
         }
     }
 
     fn run_state_tests(test: &StateTests) -> TestResult {
-        Self::run1(
-            test,
-            &test.path,
-            |test: &StateTests, path: &Path, json: &[u8]| {
-                for skip in &test.skip {
-                    if Self::in_set(&path, &skip.paths) {
-                        println!("   - {} ..SKIPPED", path.to_string_lossy());
-                        return Vec::new();
-                    }
+        Self::run1(test, &test.path, |test: &StateTests, path: &Path, json: &[u8]| {
+            for skip in &test.skip {
+                if Self::in_set(&path, &skip.paths) {
+                    println!("   - {} ..SKIPPED", path.to_string_lossy());
+                    return Vec::new();
                 }
-                super::state::json_state_test(&test, &path, &json, &mut |_, _| {})
-            },
-        )
+            }
+            super::state::json_state_test(&test, &path, &json, &mut |_, _| {})
+        })
     }
 
     fn run_executive_tests(test: &ExecutiveTests) -> TestResult {
-        Self::run1(
-            test,
-            &test.path,
-            |_: &ExecutiveTests, path: &Path, json: &[u8]| {
-                super::executive::json_executive_test(&path, &json, &mut |_, _| {})
-            },
-        )
+        Self::run1(test, &test.path, |_: &ExecutiveTests, path: &Path, json: &[u8]| {
+            super::executive::json_executive_test(&path, &json, &mut |_, _| {})
+        })
     }
 
     fn run_transaction_tests(test: &TransactionTests) -> TestResult {
-        Self::run1(
-            test,
-            &test.path,
-            |_: &TransactionTests, path: &Path, json: &[u8]| {
-                super::transaction::json_transaction_test(&path, &json, &mut |_, _| {})
-            },
-        )
+        Self::run1(test, &test.path, |_: &TransactionTests, path: &Path, json: &[u8]| {
+            super::transaction::json_transaction_test(&path, &json, &mut |_, _| {})
+        })
     }
 
     fn run_trie_tests(test: &TrieTests) -> TestResult {
@@ -205,6 +176,7 @@ impl TestRunner {
 
 #[test]
 fn ethereum_json_tests() {
+    use super::flushln;
     let content =
         std::fs::read("res/json_tests.json").expect("cannot open ethereum tests spec file");
     let runner =

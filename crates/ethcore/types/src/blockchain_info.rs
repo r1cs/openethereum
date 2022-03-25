@@ -18,7 +18,8 @@
 
 use std::fmt;
 
-use crate::{security_level::SecurityLevel, BlockNumber};
+use crate::security_level::SecurityLevel;
+use crate::BlockNumber;
 use ethereum_types::{H256, U256};
 
 /// Information about the blockchain gathered together.
@@ -55,9 +56,7 @@ impl BlockChainInfo {
         } else {
             SecurityLevel::PartialProofOfWork(
                 self.best_block_number
-                    - self
-                        .first_block_number
-                        .expect("Guard condition means this is not none"),
+                    - self.first_block_number.expect("Guard condition means this is not none"),
             )
         }
     }

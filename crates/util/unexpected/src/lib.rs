@@ -19,8 +19,7 @@
 
 extern crate alloc;
 
-use alloc::fmt;
-use alloc::format;
+use alloc::{fmt, format};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 /// Error indicating an expected value was not found.
@@ -33,10 +32,7 @@ pub struct Mismatch<T> {
 
 impl<T: fmt::Display> fmt::Display for Mismatch<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_fmt(format_args!(
-            "Expected {}, found {}",
-            self.expected, self.found
-        ))
+        f.write_fmt(format_args!("Expected {}, found {}", self.expected, self.found))
     }
 }
 
@@ -56,11 +52,7 @@ impl<T> OutOfBounds<T> {
     where
         F: Fn(T) -> U,
     {
-        OutOfBounds {
-            min: self.min.map(&map),
-            max: self.max.map(&map),
-            found: map(self.found),
-        }
+        OutOfBounds { min: self.min.map(&map), max: self.max.map(&map), found: map(self.found) }
     }
 }
 

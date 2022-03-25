@@ -20,12 +20,12 @@ use ethereum_types::{Address, H256, U256};
 use executive::*;
 use machine::EthereumMachine as Machine;
 use state::{Backend as StateBackend, CleanupMode, State, Substate};
-use std::{cmp, sync::Arc};
+use std::cmp;
+use std::sync::Arc;
 use trace::{Tracer, VMTracer};
 use types::transaction::UNSIGNED_SENDER;
 use vm::{
-    self, ActionParams, ActionValue, CallType, ContractCreateResult,
-    CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind,
+    self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind
 };
 
 /// Policy for handling output data on `RETURN` opcode.
@@ -83,17 +83,9 @@ where
 {
     /// Basic `Externalities` constructor.
     pub fn new(
-        state: &'a mut State<B>,
-        env_info: &'a EnvInfo,
-        machine: &'a Machine,
-        schedule: &'a Schedule,
-        depth: usize,
-        stack_depth: usize,
-        origin_info: &'a OriginInfo,
-        substate: &'a mut Substate,
-        output: OutputPolicy,
-        tracer: &'a mut T,
-        vm_tracer: &'a mut V,
+        state: &'a mut State<B>, env_info: &'a EnvInfo, machine: &'a Machine,
+        schedule: &'a Schedule, depth: usize, stack_depth: usize, origin_info: &'a OriginInfo,
+        substate: &'a mut Substate, output: OutputPolicy, tracer: &'a mut T, vm_tracer: &'a mut V,
         static_flag: bool,
     ) -> Self {
         Externalities {
@@ -120,10 +112,7 @@ where
     B: StateBackend,
 {
     fn initial_storage_at(&self, key: &H256) -> vm::Result<H256> {
-        if self
-            .state
-            .is_base_storage_root_unchanged(&self.origin_info.address)?
-        {
+        if self.state.is_base_storage_root_unchanged(&self.origin_info.address)? {
             self.state
                 .checkpoint_storage_at(0, &self.origin_info.address, key)
                 .map(|v| v.unwrap_or_default())
@@ -135,18 +124,14 @@ where
     }
 
     fn storage_at(&self, key: &H256) -> vm::Result<H256> {
-        self.state
-            .storage_at(&self.origin_info.address, key)
-            .map_err(Into::into)
+        self.state.storage_at(&self.origin_info.address, key).map_err(Into::into)
     }
 
     fn set_storage(&mut self, key: H256, value: H256) -> vm::Result<()> {
         if self.static_flag {
             Err(vm::Error::MutableCallInStaticContext)
         } else {
-            self.state
-                .set_storage(&self.origin_info.address, key, value)
-                .map_err(Into::into)
+            self.state.set_storage(&self.origin_info.address, key, value).map_err(Into::into)
         }
     }
 
@@ -170,29 +155,25 @@ where
         self.state.balance(address).map_err(Into::into)
     }
 
-	fn blockhash(&mut self, number: &U256) -> H256 {
-		match *number < U256::from(self.env_info.number)
-			&& number.low_u64() >= cmp::max(256, self.env_info.number) - 256
-		{
-			true => {
-				let index = self.env_info.number - number.low_u64() - 1;
-				assert!(
-					index < self.env_info.last_hashes.len() as u64,
-					"Inconsistent env_info, should contain at least {:?} last hashes",
-					index + 1
-				);
-				self.env_info.last_hashes[index as usize].clone()
-			}
-			false => H256::zero(),
-		}
-	}
+    fn blockhash(&mut self, number: &U256) -> H256 {
+        match *number < U256::from(self.env_info.number)
+            && number.low_u64() >= cmp::max(256, self.env_info.number) - 256
+        {
+            true => {
+                let index = self.env_info.number - number.low_u64() - 1;
+                assert!(
+                    index < self.env_info.last_hashes.len() as u64,
+                    "Inconsistent env_info, should contain at least {:?} last hashes",
+                    index + 1
+                );
+                self.env_info.last_hashes[index as usize].clone()
+            }
+            false => H256::zero(),
+        }
+    }
 
     fn create(
-        &mut self,
-        gas: &U256,
-        value: &U256,
-        code: &[u8],
-        address_scheme: CreateContractAddress,
+        &mut self, gas: &U256, value: &U256, code: &[u8], address_scheme: CreateContractAddress,
         trap: bool,
     ) -> ::std::result::Result<ContractCreateResult, TrapKind> {
         // create new contract address
@@ -263,15 +244,8 @@ where
     }
 
     fn call(
-        &mut self,
-        gas: &U256,
-        sender_address: &Address,
-        receive_address: &Address,
-        value: Option<U256>,
-        data: &[u8],
-        code_address: &Address,
-        call_type: CallType,
-        trap: bool,
+        &mut self, gas: &U256, sender_address: &Address, receive_address: &Address,
+        value: Option<U256>, data: &[u8], code_address: &Address, call_type: CallType, trap: bool,
     ) -> ::std::result::Result<MessageCallResult, TrapKind> {
         trace!(target: "externalities", "call");
 
@@ -364,8 +338,7 @@ where
                         false => Ok(*gas),
                     };
                 }
-                self.state
-                    .init_code(&self.origin_info.address, data.to_vec())?;
+                self.state.init_code(&self.origin_info.address, data.to_vec())?;
                 Ok(*gas - return_cost)
             }
             OutputPolicy::InitContract => Ok(*gas),
@@ -380,11 +353,7 @@ where
         }
 
         let address = self.origin_info.address.clone();
-        self.substate.logs.push(LogEntry {
-            address: address,
-            topics: topics,
-            data: data.to_vec(),
-        });
+        self.substate.logs.push(LogEntry { address: address, topics: topics, data: data.to_vec() });
 
         Ok(())
     }
@@ -398,8 +367,7 @@ where
         let balance = self.balance(&address)?;
         if &address == refund_address {
             // TODO [todr] To be consistent with CPP client we set balance to 0 in that case.
-            self.state
-                .sub_balance(&address, &balance, &mut CleanupMode::NoEmpty)?;
+            self.state.sub_balance(&address, &balance, &mut CleanupMode::NoEmpty)?;
         } else {
             trace!(target: "ext", "Suiciding {} -> {} (xfer: {})", address, refund_address, balance);
             self.state.transfer_balance(
@@ -410,8 +378,7 @@ where
             )?;
         }
 
-        self.tracer
-            .trace_suicide(address, balance, refund_address.clone());
+        self.tracer.trace_suicide(address, balance, refund_address.clone());
         self.substate.suicides.insert(address);
 
         Ok(())
@@ -442,20 +409,14 @@ where
     }
 
     fn trace_next_instruction(&mut self, pc: usize, instruction: u8, current_gas: U256) -> bool {
-        self.vm_tracer
-            .trace_next_instruction(pc, instruction, current_gas)
+        self.vm_tracer.trace_next_instruction(pc, instruction, current_gas)
     }
 
     fn trace_prepare_execute(
-        &mut self,
-        pc: usize,
-        instruction: u8,
-        gas_cost: U256,
-        mem_written: Option<(usize, usize)>,
+        &mut self, pc: usize, instruction: u8, gas_cost: U256, mem_written: Option<(usize, usize)>,
         store_written: Option<(U256, U256)>,
     ) {
-        self.vm_tracer
-            .trace_prepare_execute(pc, instruction, gas_cost, mem_written, store_written)
+        self.vm_tracer.trace_prepare_execute(pc, instruction, gas_cost, mem_written, store_written)
     }
 
     fn trace_failed(&mut self) {
@@ -798,10 +759,7 @@ mod tests {
             }
         };
 
-        assert_eq!(
-            address,
-            Address::from_str("bd770416a3345f91e4b34576cb804a576fa48eb1").unwrap()
-        );
+        assert_eq!(address, Address::from_str("bd770416a3345f91e4b34576cb804a576fa48eb1").unwrap());
     }
 
     #[test]
@@ -842,10 +800,7 @@ mod tests {
             }
         };
 
-        assert_eq!(
-            address,
-            Address::from_str("e33c0c7f7df4809055c3eba6c09cfe4baf1bd9e0").unwrap()
-        );
+        assert_eq!(address, Address::from_str("e33c0c7f7df4809055c3eba6c09cfe4baf1bd9e0").unwrap());
     }
 
     #[test]

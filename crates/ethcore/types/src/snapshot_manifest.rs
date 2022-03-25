@@ -54,11 +54,8 @@ impl ManifestData {
     /// Try to restore manifest data from raw bytes, interpreted as RLP.
     pub fn from_rlp(raw: &[u8]) -> Result<Self, DecoderError> {
         let decoder = Rlp::new(raw);
-        let (start, version) = if decoder.item_count()? == 5 {
-            (0, 1)
-        } else {
-            (1, decoder.val_at(0)?)
-        };
+        let (start, version) =
+            if decoder.item_count()? == 5 { (0, 1) } else { (1, decoder.val_at(0)?) };
 
         let state_hashes: Vec<H256> = decoder.list_at(start + 0)?;
         let block_hashes: Vec<H256> = decoder.list_at(start + 1)?;

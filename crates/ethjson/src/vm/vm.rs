@@ -16,13 +16,11 @@
 
 //! Vm execution env.
 
-use crate::{
-    blockchain::State,
-    bytes::Bytes,
-    hash::H256,
-    uint::Uint,
-    vm::{Call, Env, Transaction},
-};
+use crate::blockchain::State;
+use crate::bytes::Bytes;
+use crate::hash::H256;
+use crate::uint::Uint;
+use crate::vm::{Call, Env, Transaction};
 
 /// Represents vm execution environment before and after execution of transaction.
 #[derive(Debug, PartialEq, Deserialize)]

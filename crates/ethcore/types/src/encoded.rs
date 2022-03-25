@@ -23,14 +23,12 @@
 //! When the entirety of the object is needed, it's better to upgrade it to a fully
 //! decoded object where parts like the hash can be saved.
 
-use crate::{
-    block::Block as FullBlock,
-    hash::keccak,
-    header::Header as FullHeader,
-    transaction::UnverifiedTransaction,
-    views::{self, BlockView, BodyView, HeaderView},
-    BlockNumber,
-};
+use crate::block::Block as FullBlock;
+use crate::hash::keccak;
+use crate::header::Header as FullHeader;
+use crate::transaction::UnverifiedTransaction;
+use crate::views::{self, BlockView, BodyView, HeaderView};
+use crate::BlockNumber;
 
 use ethereum_types::{Address, Bloom, H256, U256};
 use rlp::{self, Rlp, RlpStream};
@@ -172,13 +170,9 @@ impl Body {
 
     /// Fully decode this block body.
     pub fn decode(
-        &self,
-        eip1559_transition: BlockNumber,
+        &self, eip1559_transition: BlockNumber,
     ) -> (Vec<UnverifiedTransaction>, Vec<FullHeader>) {
-        (
-            self.view().transactions(),
-            self.view().uncles(eip1559_transition),
-        )
+        (self.view().transactions(), self.view().uncles(eip1559_transition))
     }
 
     /// Get the RLP of this block body.
@@ -285,12 +279,7 @@ impl Block {
     /// Decode the header.
     pub fn decode_header(&self, eip1559_transition: BlockNumber) -> FullHeader {
         FullHeader::decode_rlp(&self.view().rlp().at(0).rlp, eip1559_transition).unwrap_or_else(
-            |e| {
-                panic!(
-                    "block header, view rlp is trusted and should be valid: {:?}",
-                    e
-                )
-            },
+            |e| panic!("block header, view rlp is trusted and should be valid: {:?}", e),
         )
     }
 

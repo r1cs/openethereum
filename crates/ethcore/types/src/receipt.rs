@@ -21,10 +21,8 @@ use ethereum_types::{Address, Bloom, H160, H256, U256};
 use rlp::{DecoderError, Rlp, RlpStream};
 use std::ops::{Deref, DerefMut};
 
-use crate::{
-    log_entry::{LocalizedLogEntry, LogEntry},
-    BlockNumber,
-};
+use crate::log_entry::{LocalizedLogEntry, LogEntry};
+use crate::BlockNumber;
 
 /// Transaction outcome store in the receipt.
 #[derive(Debug, Clone, PartialEq, Eq)]

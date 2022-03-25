@@ -34,9 +34,6 @@ pub trait Machine: Send + Sync {
 
     /// Increment the balance of an account in the state of the live block.
     fn add_balance(
-        &self,
-        live: &mut ExecutedBlock,
-        address: &Address,
-        amount: &U256,
+        &self, live: &mut ExecutedBlock, address: &Address, amount: &U256,
     ) -> Result<(), Self::Error>;
 }

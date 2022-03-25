@@ -18,7 +18,9 @@
 
 use crate::bytes::Bytes;
 use ethereum_types::{H256, U256};
-use std::{cmp::*, collections::BTreeMap, fmt};
+use std::cmp::*;
+use std::collections::BTreeMap;
+use std::fmt;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 /// Diff type for specifying a change (or not).
@@ -173,12 +175,9 @@ impl fmt::Display for AccountDiff {
         write!(f, "\n")?;
         for (k, dv) in &self.storage {
             match *dv {
-                Diff::Born(ref v) => write!(
-                    f,
-                    "    +  {} => {}\n",
-                    interpreted_hash(k),
-                    interpreted_hash(v)
-                )?,
+                Diff::Born(ref v) => {
+                    write!(f, "    +  {} => {}\n", interpreted_hash(k), interpreted_hash(v))?
+                }
                 Diff::Changed(ref pre, ref post) => write!(
                     f,
                     "    *  {} => {} (was {})\n",

@@ -43,11 +43,7 @@ fn heap_size_of<T: MallocSizeOf>(val: &T) -> usize {
 impl<K: Eq + Hash, V: MallocSizeOf> MemoryLruCache<K, V> {
     /// Create a new cache with a maximum size in bytes.
     pub fn new(max_size: usize) -> Self {
-        MemoryLruCache {
-            inner: LruCache::new(INITIAL_CAPACITY),
-            max_size: max_size,
-            cur_size: 0,
-        }
+        MemoryLruCache { inner: LruCache::new(INITIAL_CAPACITY), max_size: max_size, cur_size: 0 }
     }
 
     /// Insert an item.

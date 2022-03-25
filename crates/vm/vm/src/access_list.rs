@@ -5,15 +5,13 @@ use std as core_;
 
 extern crate alloc;
 
-use hashbrown::HashMap;
+use core_::borrow::Borrow;
+use core_::hash::{Hash, Hasher};
 use ethereum_types::{Address, H256};
-use core_::{
-    borrow::Borrow,
-    hash::{Hash, Hasher},
-};
+use hashbrown::HashMap;
 
-use core_::cell::RefCell;
 use alloc::rc::Rc;
+use core_::cell::RefCell;
 
 // Implementation of a hasheable borrowed pair
 trait KeyPair<A, B> {
@@ -76,10 +74,7 @@ impl Clone for AccessList {
         let mut journal = self.journal.as_ref().borrow_mut();
         let id = journal.last_id + 1;
         journal.last_id = id;
-        Self {
-            id: id,
-            journal: self.journal.clone(),
-        }
+        Self { id: id, journal: self.journal.clone() }
     }
 }
 
@@ -111,10 +106,7 @@ impl AccessList {
             addresses: HashMap::new(),
             storage_keys: HashMap::new(),
         };
-        Self {
-            id: 0,
-            journal: Rc::new(RefCell::new(journal)),
-        }
+        Self { id: 0, journal: Rc::new(RefCell::new(journal)) }
     }
 
     /// Returns if the list is enabled
@@ -133,9 +125,7 @@ impl AccessList {
     pub fn contains_storage_key(&self, address: &Address, key: &H256) -> bool {
         let journal = self.journal.as_ref().borrow();
         if journal.enabled {
-            journal
-                .storage_keys
-                .contains_key(&(address, key) as &dyn KeyPair<Address, H256>)
+            journal.storage_keys.contains_key(&(address, key) as &dyn KeyPair<Address, H256>)
         } else {
             false
         }
@@ -145,9 +135,7 @@ impl AccessList {
     pub fn insert_storage_key(&mut self, address: Address, key: H256) {
         let mut journal = self.journal.as_ref().borrow_mut();
         if journal.enabled
-            && !journal
-                .storage_keys
-                .contains_key(&(address, key) as &dyn KeyPair<Address, H256>)
+            && !journal.storage_keys.contains_key(&(address, key) as &dyn KeyPair<Address, H256>)
         {
             journal.storage_keys.insert((address, key), self.id);
         }
@@ -192,10 +180,7 @@ mod tests {
         let mut access_list = AccessList::default();
         access_list.insert_address(Address::from_low_u64_be(1));
         access_list.insert_storage_key(Address::from_low_u64_be(2), H256::from_low_u64_be(3));
-        assert_eq!(
-            false,
-            access_list.contains_address(&Address::from_low_u64_be(1))
-        );
+        assert_eq!(false, access_list.contains_address(&Address::from_low_u64_be(1)));
         assert_eq!(
             false,
             access_list
@@ -210,10 +195,7 @@ mod tests {
         assert_eq!(true, access_list.is_enabled());
         access_list.insert_address(Address::from_low_u64_be(1));
         access_list.insert_storage_key(Address::from_low_u64_be(2), H256::from_low_u64_be(3));
-        assert_eq!(
-            true,
-            access_list.contains_address(&Address::from_low_u64_be(1))
-        );
+        assert_eq!(true, access_list.contains_address(&Address::from_low_u64_be(1)));
         assert_eq!(
             true,
             access_list
@@ -230,25 +212,16 @@ mod tests {
         access_list.insert_storage_key(Address::from_low_u64_be(2), H256::from_low_u64_be(3));
 
         let access_list_call = access_list.clone();
-        assert_eq!(
-            true,
-            access_list_call.contains_address(&Address::from_low_u64_be(1))
-        );
+        assert_eq!(true, access_list_call.contains_address(&Address::from_low_u64_be(1)));
         assert_eq!(
             true,
             access_list_call
                 .contains_storage_key(&Address::from_low_u64_be(2), &H256::from_low_u64_be(3))
         );
         access_list.insert_address(Address::from_low_u64_be(4));
-        assert_eq!(
-            true,
-            access_list_call.contains_address(&Address::from_low_u64_be(4))
-        );
+        assert_eq!(true, access_list_call.contains_address(&Address::from_low_u64_be(4)));
 
-        assert_eq!(
-            true,
-            access_list.contains_address(&Address::from_low_u64_be(4))
-        );
+        assert_eq!(true, access_list.contains_address(&Address::from_low_u64_be(4)));
     }
     #[test]
     fn cloned_accesslist_rollbacks_in_parent() {
@@ -273,18 +246,9 @@ mod tests {
 
         access_list_call.rollback();
 
-        assert_eq!(
-            true,
-            access_list.contains_address(&Address::from_low_u64_be(1))
-        );
-        assert_eq!(
-            false,
-            access_list.contains_address(&Address::from_low_u64_be(4))
-        );
-        assert_eq!(
-            false,
-            access_list.contains_address(&Address::from_low_u64_be(5))
-        );
+        assert_eq!(true, access_list.contains_address(&Address::from_low_u64_be(1)));
+        assert_eq!(false, access_list.contains_address(&Address::from_low_u64_be(4)));
+        assert_eq!(false, access_list.contains_address(&Address::from_low_u64_be(5)));
         assert_eq!(
             true,
             access_list

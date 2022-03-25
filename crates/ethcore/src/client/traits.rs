@@ -18,13 +18,10 @@
 
 use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
-use types::{
-    blockchain_info::BlockChainInfo,
-    encoded,
-    header::Header,
-    ids::*,
-    BlockNumber,
-};
+use types::blockchain_info::BlockChainInfo;
+use types::header::Header;
+use types::ids::*;
+use types::{encoded, BlockNumber};
 
 use block::OpenBlock;
 use engines::EthEngine;
@@ -89,10 +86,7 @@ pub trait EngineInfo {
 pub trait PrepareOpenBlock {
     /// Returns OpenBlock prepared for closing.
     fn prepare_open_block(
-        &self,
-        author: Address,
-        gas_range_target: (U256, U256),
-        extra_data: Bytes,
+        &self, author: Address, gas_range_target: (U256, U256), extra_data: Bytes,
     ) -> Result<OpenBlock, Error>;
 }
 

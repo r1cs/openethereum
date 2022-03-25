@@ -17,11 +17,10 @@
 //! Lenient uint json deserialization for test json files.
 
 use ethereum_types::U256;
-use serde::{
-    de::{Error, Unexpected, Visitor},
-    Deserialize, Deserializer, Serialize, Serializer,
-};
-use std::{fmt, str::FromStr};
+use serde::de::{Error, Unexpected, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
+use std::str::FromStr;
 
 /// Lenient uint json deserialization for test json files.
 #[derive(Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
@@ -118,10 +117,7 @@ where
     let value = Uint::deserialize(d)?;
 
     if value == Uint(U256::from(0)) {
-        return Err(Error::invalid_value(
-            Unexpected::Unsigned(value.into()),
-            &"a non-zero value",
-        ));
+        return Err(Error::invalid_value(Unexpected::Unsigned(value.into()), &"a non-zero value"));
     }
 
     Ok(value)

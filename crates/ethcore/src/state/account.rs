@@ -23,16 +23,13 @@ use ethtrie::{Result as TrieResult, SecTrieDB, TrieDB, TrieFactory};
 use hash::{keccak, KECCAK_EMPTY, KECCAK_NULL_RLP};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
-use trie::DBValue;
 use lru::LruCache;
 use pod_account::*;
 use rlp::{encode, RlpStream};
-use std::{
-    collections::{BTreeMap, HashMap},
-    fmt,
-    sync::Arc,
-};
-use trie::{Recorder, Trie};
+use std::collections::{BTreeMap, HashMap};
+use std::fmt;
+use std::sync::Arc;
+use trie::{DBValue, Recorder, Trie};
 use types::basic_account::BasicAccount;
 
 use core::cell::{Cell, RefCell};
@@ -164,9 +161,7 @@ impl Account {
 
     /// Create a new account from RLP.
     pub fn from_rlp(rlp: &[u8]) -> Result<Account, Error> {
-        ::rlp::decode::<BasicAccount>(rlp)
-            .map(|ba| ba.into())
-            .map_err(|e| e.into())
+        ::rlp::decode::<BasicAccount>(rlp).map(|ba| ba.into()).map_err(|e| e.into())
     }
 
     /// Create a new contract account.
@@ -227,9 +222,7 @@ impl Account {
     /// Get (and cache) the contents of the trie's storage at `key`.
     /// Takes modified storage into account.
     pub fn storage_at(
-        &self,
-        db: &dyn HashDB<KeccakHasher, DBValue>,
-        key: &H256,
+        &self, db: &dyn HashDB<KeccakHasher, DBValue>, key: &H256,
     ) -> TrieResult<H256> {
         if let Some(value) = self.cached_storage_at(key) {
             return Ok(value);
@@ -245,9 +238,7 @@ impl Account {
     /// Get (and cache) the contents of the trie's storage at `key`.
     /// Does not take modified storage into account.
     pub fn original_storage_at(
-        &self,
-        db: &dyn HashDB<KeccakHasher, DBValue>,
-        key: &H256,
+        &self, db: &dyn HashDB<KeccakHasher, DBValue>, key: &H256,
     ) -> TrieResult<H256> {
         if let Some(value) = self.cached_original_storage_at(key) {
             return Ok(value);
@@ -271,17 +262,13 @@ impl Account {
     }
 
     fn get_and_cache_storage(
-        storage_root: &H256,
-        storage_cache: &mut LruCache<H256, H256>,
-        db: &dyn HashDB<KeccakHasher, DBValue>,
-        key: &H256,
+        storage_root: &H256, storage_cache: &mut LruCache<H256, H256>,
+        db: &dyn HashDB<KeccakHasher, DBValue>, key: &H256,
     ) -> TrieResult<H256> {
         let db = SecTrieDB::new(&db, storage_root)?;
         let panicky_decoder =
             |bytes: &[u8]| ::rlp::decode(&bytes).expect("decoding db value failed");
-        let item: U256 = db
-            .get_with(key.as_bytes(), panicky_decoder)?
-            .unwrap_or_else(U256::zero);
+        let item: U256 = db.get_with(key.as_bytes(), panicky_decoder)?.unwrap_or_else(U256::zero);
         let value: H256 = BigEndianHash::from_uint(&item);
         storage_cache.put(key.clone(), value.clone());
         Ok(value)
@@ -299,10 +286,9 @@ impl Account {
     /// Get cached original storage value after last state commitment. Returns `None` if the key is not in the cache.
     pub fn cached_original_storage_at(&self, key: &H256) -> Option<H256> {
         match &self.original_storage_cache {
-            Some((_, ref original_storage_cache)) => original_storage_cache
-                .borrow_mut()
-                .get_mut(key)
-                .map(|value| value.clone()),
+            Some((_, ref original_storage_cache)) => {
+                original_storage_cache.borrow_mut().get_mut(key).map(|value| value.clone())
+            }
             None => self.cached_moved_original_storage_at(key),
         }
     }
@@ -315,10 +301,7 @@ impl Account {
             return Some(H256::default());
         }
 
-        self.storage_cache
-            .borrow_mut()
-            .get_mut(key)
-            .map(|value| value.clone())
+        self.storage_cache.borrow_mut().get_mut(key).map(|value| value.clone())
     }
 
     /// return the balance associated with this account.
@@ -530,9 +513,7 @@ impl Account {
 
     /// Commit the `storage_changes` to the backing DB and update `storage_root`.
     pub fn commit_storage(
-        &mut self,
-        trie_factory: &TrieFactory,
-        db: &mut dyn HashDB<KeccakHasher, DBValue>,
+        &mut self, trie_factory: &TrieFactory, db: &mut dyn HashDB<KeccakHasher, DBValue>,
     ) -> TrieResult<()> {
         let mut t = trie_factory.from_existing(db, &mut self.storage_root)?;
         for (k, v) in self.storage_changes.drain() {
@@ -563,10 +544,7 @@ impl Account {
                 self.code_filth = Filth::Clean;
             }
             (true, false) => {
-                db.emplace(
-                    self.code_hash.clone(),
-                    DBValue::from_slice(&*self.code_cache),
-                );
+                db.emplace(self.code_hash.clone(), DBValue::from_slice(&*self.code_cache));
                 self.code_size = Some(self.code_cache.len());
                 self.code_filth = Filth::Clean;
             }
@@ -614,8 +592,10 @@ impl Account {
     /// Clone account data, dirty storage keys and cached storage keys.
     pub fn clone_all(&self) -> Account {
         let mut account = self.clone_dirty();
-		account.storage_cache = RefCell::new(Account::clone_cache(self.storage_cache.borrow().deref()));
-        account.original_storage_cache =Account::clone_original_storage_cache(self.original_storage_cache.as_ref());
+        account.storage_cache =
+            RefCell::new(Account::clone_cache(self.storage_cache.borrow().deref()));
+        account.original_storage_cache =
+            Account::clone_original_storage_cache(self.original_storage_cache.as_ref());
         account
     }
 
@@ -651,9 +631,7 @@ impl Account {
     /// `storage_key` is the hash of the desired storage key, meaning
     /// this will only work correctly under a secure trie.
     pub fn prove_storage(
-        &self,
-        db: &dyn HashDB<KeccakHasher, DBValue>,
-        storage_key: H256,
+        &self, db: &dyn HashDB<KeccakHasher, DBValue>, storage_key: H256,
     ) -> TrieResult<(Vec<Bytes>, H256)> {
         let mut recorder = Recorder::new();
 
@@ -662,8 +640,7 @@ impl Account {
             let panicky_decoder =
                 |bytes: &[u8]| ::rlp::decode(bytes).expect("decoding db value failed");
             let query = (&mut recorder, panicky_decoder);
-            trie.get_with(storage_key.as_bytes(), query)?
-                .unwrap_or_else(U256::zero)
+            trie.get_with(storage_key.as_bytes(), query)?.unwrap_or_else(U256::zero)
         };
 
         Ok((
@@ -672,22 +649,24 @@ impl Account {
         ))
     }
 
-	pub fn clone_cache(oldCache: &LruCache<H256,H256>)->LruCache<H256,H256>{
-			let mut  newCache = LruCache::new(STORAGE_CACHE_ITEMS);
-			for (k,v ) in oldCache.iter(){
-				newCache.put(k.clone(),v.clone());
-			}
-			newCache
-}
+    fn clone_cache(old_cache: &LruCache<H256, H256>) -> LruCache<H256, H256> {
+        let mut new_cache = LruCache::new(STORAGE_CACHE_ITEMS);
+        for (k, v) in old_cache.iter() {
+            new_cache.put(k.clone(), v.clone());
+        }
+        new_cache
+    }
 
-	pub fn clone_original_storage_cache(oldCache: Option<&(H256, RefCell<LruCache<H256, H256>>)>)-> Option<(H256, RefCell<LruCache<H256, H256>>)>{
-		match oldCache{
-			Some(c)=>{
-					return Some((c.0,RefCell::new(Account::clone_cache(c.1.borrow().deref()))));
-			},
-			None=>None,
-		}
-	}
+    fn clone_original_storage_cache(
+        old_cache: Option<&(H256, RefCell<LruCache<H256, H256>>)>,
+    ) -> Option<(H256, RefCell<LruCache<H256, H256>>)> {
+        match old_cache {
+            Some(c) => {
+                return Some((c.0, RefCell::new(Account::clone_cache(c.1.borrow().deref()))));
+            }
+            None => None,
+        }
+    }
 }
 
 impl fmt::Debug for Account {
@@ -696,20 +675,17 @@ impl fmt::Debug for Account {
             .field("balance", &self.balance)
             .field("nonce", &self.nonce)
             .field("code", &self.code())
-            .field(
-                "storage",
-                &self.storage_changes.iter().collect::<BTreeMap<_, _>>(),
-            )
+            .field("storage", &self.storage_changes.iter().collect::<BTreeMap<_, _>>())
             .finish()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::super::new_memory_db;
     use super::*;
     use bytes::Bytes;
-    use ethereum_types::{H256};
-    use super::super::new_memory_db;
+    use ethereum_types::H256;
     use rlp_compress::{compress, decompress, snapshot_swapper};
     use std::str::FromStr;
 
@@ -727,10 +703,7 @@ mod tests {
         let mut db = new_memory_db();
         let rlp = {
             let mut a = Account::new_contract(69.into(), 0.into(), KECCAK_NULL_RLP);
-            a.set_storage(
-                H256::from_low_u64_be(0x00u64),
-                H256::from_low_u64_be(0x1234u64),
-            );
+            a.set_storage(H256::from_low_u64_be(0x00u64), H256::from_low_u64_be(0x1234u64));
             a.commit_storage(&Default::default(), &mut db).unwrap();
             a.init_code(vec![]);
             a.commit_code(&mut db);
@@ -744,15 +717,10 @@ mod tests {
                 .unwrap()
         );
         assert_eq!(
-            a.storage_at(&db, &H256::from_low_u64_be(0x00u64))
-                .unwrap(),
+            a.storage_at(&db, &H256::from_low_u64_be(0x00u64)).unwrap(),
             H256::from_low_u64_be(0x1234u64)
         );
-        assert_eq!(
-            a.storage_at(&db, &H256::from_low_u64_be(0x01u64))
-                .unwrap(),
-            H256::default()
-        );
+        assert_eq!(a.storage_at(&db, &H256::from_low_u64_be(0x01u64)).unwrap(), H256::default());
     }
 
     #[test]

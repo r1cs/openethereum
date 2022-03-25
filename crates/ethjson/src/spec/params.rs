@@ -16,10 +16,8 @@
 
 //! Spec params deserialization.
 
-use crate::{
-    hash::{Address, H256},
-    uint::{self, Uint},
-};
+use crate::hash::{Address, H256};
+use crate::uint::{self, Uint};
 
 /// Spec params.
 #[derive(Debug, PartialEq, Deserialize)]
@@ -159,7 +157,8 @@ pub struct Params {
 
 #[cfg(test)]
 mod tests {
-    use crate::{spec::params::Params, uint::Uint};
+    use crate::spec::params::Params;
+    use crate::uint::Uint;
     use ethereum_types::U256;
     use serde_json;
 
@@ -184,20 +183,11 @@ mod tests {
         assert_eq!(deserialized.chain_id, Some(Uint(U256::from(0x15))));
         assert_eq!(deserialized.subprotocol_name, Some("exp".to_owned()));
         assert_eq!(deserialized.min_gas_limit, Uint(U256::from(0x1388)));
-        assert_eq!(
-            deserialized.account_start_nonce,
-            Some(Uint(U256::from(0x01)))
-        );
+        assert_eq!(deserialized.account_start_nonce, Some(Uint(U256::from(0x01))));
         assert_eq!(deserialized.gas_limit_bound_divisor, Uint(U256::from(0x20)));
         assert_eq!(deserialized.max_code_size, Some(Uint(U256::from(0x1000))));
-        assert_eq!(
-            deserialized.wasm_activation_transition,
-            Some(Uint(U256::from(0x1010)))
-        );
-        assert_eq!(
-            deserialized.wasm_disable_transition,
-            Some(Uint(U256::from(0x2010)))
-        );
+        assert_eq!(deserialized.wasm_activation_transition, Some(Uint(U256::from(0x1010))));
+        assert_eq!(deserialized.wasm_disable_transition, Some(Uint(U256::from(0x2010))));
     }
 
     #[test]

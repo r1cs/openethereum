@@ -42,13 +42,11 @@ pub enum RewardKind {
 impl RewardKind {
     /// Create `RewardKind::Uncle` from given current block number and uncle block number.
     pub fn uncle(number: BlockNumber, uncle: BlockNumber) -> Self {
-        RewardKind::Uncle(
-            if number > uncle && number - uncle <= u8::max_value().into() {
-                (number - uncle) as u8
-            } else {
-                0
-            },
-        )
+        RewardKind::Uncle(if number > uncle && number - uncle <= u8::max_value().into() {
+            (number - uncle) as u8
+        } else {
+            0
+        })
     }
 }
 
@@ -78,9 +76,7 @@ impl Into<trace::RewardType> for RewardKind {
 /// Applies the given block rewards, i.e. adds the given balance to each beneficiary' address.
 /// If tracing is enabled the operations are recorded.
 pub fn apply_block_rewards<M: Machine>(
-    rewards: &[(Address, RewardKind, U256)],
-    block: &mut ExecutedBlock,
-    machine: &M,
+    rewards: &[(Address, RewardKind, U256)], block: &mut ExecutedBlock, machine: &M,
 ) -> Result<(), M::Error> {
     for &(ref author, _, ref block_reward) in rewards {
         machine.add_balance(block, author, block_reward)?;

@@ -16,8 +16,8 @@
 
 //! Step duration configuration parameter
 
-use std::collections::BTreeMap;
 use crate::uint::Uint;
+use std::collections::BTreeMap;
 
 /// Step duration can be specified either as a `Uint` (in seconds), in which case it will be
 /// constant, or as a list of pairs consisting of a timestamp of type `Uint` and a duration, in

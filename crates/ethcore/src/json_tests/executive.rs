@@ -17,8 +17,6 @@
 use super::test_common::*;
 use bytes::Bytes;
 use ethereum_types::BigEndianHash;
-use ethjson;
-use ethtrie;
 use evm::Finalize;
 use executive::*;
 use externalities::*;
@@ -26,13 +24,14 @@ use hash::keccak;
 use machine::EthereumMachine as Machine;
 use rlp::RlpStream;
 use state::{Backend as StateBackend, State, Substate};
-use std::{path::Path, sync::Arc};
+use std::path::Path;
+use std::sync::Arc;
 use test_helpers::get_temp_state;
 use trace::{NoopTracer, NoopVMTracer, Tracer, VMTracer};
 use vm::{
-    self, ActionParams, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext,
-    MessageCallResult, ReturnData, Schedule,
+    self, ActionParams, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule
 };
+use {ethjson, ethtrie};
 
 use super::HookType;
 
@@ -77,17 +76,9 @@ where
     B: StateBackend,
 {
     fn new(
-        state: &'a mut State<B>,
-        info: &'a EnvInfo,
-        machine: &'a Machine,
-        schedule: &'a Schedule,
-        depth: usize,
-        origin_info: &'a OriginInfo,
-        substate: &'a mut Substate,
-        output: OutputPolicy,
-        address: Address,
-        tracer: &'a mut T,
-        vm_tracer: &'a mut V,
+        state: &'a mut State<B>, info: &'a EnvInfo, machine: &'a Machine, schedule: &'a Schedule,
+        depth: usize, origin_info: &'a OriginInfo, substate: &'a mut Substate,
+        output: OutputPolicy, address: Address, tracer: &'a mut T, vm_tracer: &'a mut V,
     ) -> ethtrie::Result<Self> {
         let static_call = false;
         Ok(TestExt {
@@ -151,11 +142,7 @@ where
     }
 
     fn create(
-        &mut self,
-        gas: &U256,
-        value: &U256,
-        code: &[u8],
-        address: CreateContractAddress,
+        &mut self, gas: &U256, value: &U256, code: &[u8], address: CreateContractAddress,
         _trap: bool,
     ) -> Result<ContractCreateResult, vm::TrapKind> {
         self.callcreates.push(CallCreate {
@@ -173,14 +160,8 @@ where
     }
 
     fn call(
-        &mut self,
-        gas: &U256,
-        _sender_address: &Address,
-        receive_address: &Address,
-        value: Option<U256>,
-        data: &[u8],
-        _code_address: &Address,
-        _call_type: CallType,
+        &mut self, gas: &U256, _sender_address: &Address, receive_address: &Address,
+        value: Option<U256>, data: &[u8], _code_address: &Address, _call_type: CallType,
         _trap: bool,
     ) -> Result<MessageCallResult, vm::TrapKind> {
         self.callcreates.push(CallCreate {
@@ -267,14 +248,10 @@ where
 
 /// run an json executive test
 pub fn json_executive_test<H: FnMut(&str, HookType)>(
-    path: &Path,
-    json_data: &[u8],
-    start_stop_hook: &mut H,
+    path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {
-    let tests = ethjson::vm::Test::load(json_data).expect(&format!(
-        "Could not parse JSON executive test data from {}",
-        path.display()
-    ));
+    let tests = ethjson::vm::Test::load(json_data)
+        .expect(&format!("Could not parse JSON executive test data from {}", path.display()));
     let mut failed = Vec::new();
 
     for (name, vm) in tests.into_iter() {
@@ -381,9 +358,7 @@ pub fn json_executive_test<H: FnMut(&str, HookType)>(
                         let code: Vec<u8> = code.into();
                         let found_code = try_fail!(state.code(&address));
                         fail_unless(
-                            found_code
-                                .as_ref()
-                                .map_or_else(|| code.is_empty(), |c| &**c == &code),
+                            found_code.as_ref().map_or_else(|| code.is_empty(), |c| &**c == &code),
                             "code is incorrect",
                         );
                     }

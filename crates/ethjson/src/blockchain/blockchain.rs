@@ -16,12 +16,12 @@
 
 //! Blockchain deserialization.
 
-use crate::{
-    blockchain::{block::Block, header::Header, state::State},
-    bytes::Bytes,
-    hash::H256,
-    spec::{Ethereum, ForkSpec, Genesis, Seal},
-};
+use crate::blockchain::block::Block;
+use crate::blockchain::header::Header;
+use crate::blockchain::state::State;
+use crate::bytes::Bytes;
+use crate::hash::H256;
+use crate::spec::{Ethereum, ForkSpec, Genesis, Seal};
 
 /// Json Block test possible engine kind.
 #[derive(Debug, PartialEq, Deserialize)]

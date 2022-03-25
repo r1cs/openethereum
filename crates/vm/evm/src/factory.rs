@@ -16,7 +16,9 @@
 
 //! Evm factory.
 //!
-use super::{interpreter::SharedCache, vm::ActionParams, vmtype::VMType};
+use super::interpreter::SharedCache;
+use super::vm::ActionParams;
+use super::vmtype::VMType;
 use ethereum_types::U256;
 use std::sync::Arc;
 use vm::{Exec, Schedule};
@@ -56,10 +58,7 @@ impl Factory {
     /// Create new instance of specific `VMType` factory, with a size in bytes
     /// for caching jump destinations.
     pub fn new(evm: VMType, cache_size: usize) -> Self {
-        Factory {
-            evm,
-            evm_cache: Arc::new(SharedCache::new(cache_size)),
-        }
+        Factory { evm, evm_cache: Arc::new(SharedCache::new(cache_size)) }
     }
 
     fn can_fit_in_usize(gas: &U256) -> bool {
@@ -70,17 +69,15 @@ impl Factory {
 impl Default for Factory {
     /// Returns native rust evm factory
     fn default() -> Factory {
-        Factory {
-            evm: VMType::Interpreter,
-            evm_cache: Arc::new(SharedCache::default()),
-        }
+        Factory { evm: VMType::Interpreter, evm_cache: Arc::new(SharedCache::default()) }
     }
 }
 
 #[test]
 fn test_create_vm() {
     use bytes::Bytes;
-    use vm::{tests::FakeExt, Ext};
+    use vm::tests::FakeExt;
+    use vm::Ext;
 
     let mut params = ActionParams::default();
     params.code = Some(Arc::new(Bytes::default()));

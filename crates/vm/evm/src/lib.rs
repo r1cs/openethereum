@@ -46,13 +46,10 @@ mod vmtype;
 #[cfg(test)]
 mod tests;
 
-pub use self::{
-    evm::{CostType, FinalizationResult, Finalize},
-    factory::Factory,
-    instructions::{Instruction, InstructionInfo},
-    vmtype::VMType,
-};
+pub use self::evm::{CostType, FinalizationResult, Finalize};
+pub use self::factory::Factory;
+pub use self::instructions::{Instruction, InstructionInfo};
+pub use self::vmtype::VMType;
 pub use vm::{
-    ActionParams, CallType, CleanDustMode, ContractCreateResult, CreateContractAddress, EnvInfo,
-    Ext, GasLeft, MessageCallResult, ReturnData, Schedule,
+    ActionParams, CallType, CleanDustMode, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, GasLeft, MessageCallResult, ReturnData, Schedule
 };

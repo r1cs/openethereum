@@ -27,7 +27,8 @@ use std::str::FromStr;
 
 use bytes::BytesRef;
 use criterion::{Bencher, Criterion};
-use ethcore::{ethereum::new_byzantium_test_machine, machine::EthereumMachine};
+use ethcore::ethereum::new_byzantium_test_machine;
+use ethcore::machine::EthereumMachine;
 use ethcore_builtin::Builtin;
 use ethereum_types::H160;
 use rustc_hex::FromHex;
@@ -42,27 +43,18 @@ impl<'a> BuiltinBenchmark<'a> {
     fn new(builtin_address: &'static str, input: &str, expected: &str) -> BuiltinBenchmark<'a> {
         let builtins = new_byzantium_test_machine().builtins();
 
-        let builtin = builtins
-            .get(&H160::from_str(builtin_address).unwrap())
-            .unwrap()
-            .clone();
+        let builtin = builtins.get(&H160::from_str(builtin_address).unwrap()).unwrap().clone();
         let input = FromHex::from_hex(input).unwrap();
         let expected = FromHex::from_hex(expected).unwrap();
 
-        BuiltinBenchmark {
-            builtin,
-            input,
-            expected,
-        }
+        BuiltinBenchmark { builtin, input, expected }
     }
 
     fn run(&self, b: &mut Bencher) {
         let mut output = vec![0; self.expected.len()];
 
         b.iter(|| {
-            self.builtin
-                .execute(&self.input, &mut BytesRef::Fixed(&mut output))
-                .unwrap();
+            self.builtin.execute(&self.input, &mut BytesRef::Fixed(&mut output)).unwrap();
         });
 
         assert_eq!(self.expected[..], output[..]);

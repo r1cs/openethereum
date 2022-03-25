@@ -17,14 +17,12 @@
 //! View onto block body rlp.
 
 use super::ViewRlp;
-use crate::{
-    bytes::Bytes,
-    hash::keccak,
-    header::Header,
-    transaction::{LocalizedTransaction, TypedTransaction, UnverifiedTransaction},
-    views::{HeaderView, TypedTransactionView},
-    BlockNumber,
-};
+use crate::bytes::Bytes;
+use crate::hash::keccak;
+use crate::header::Header;
+use crate::transaction::{LocalizedTransaction, TypedTransaction, UnverifiedTransaction};
+use crate::views::{HeaderView, TypedTransactionView};
+use crate::BlockNumber;
 use ethereum_types::H256;
 
 /// View onto block rlp.
@@ -61,18 +59,13 @@ impl<'a> BodyView<'a> {
     /// Return List of transactions in given block.
     pub fn transactions(&self) -> Vec<UnverifiedTransaction> {
         TypedTransaction::decode_rlp_list(&self.rlp.at(0).rlp).unwrap_or_else(|e| {
-            panic!(
-                "body transactions, view rlp is trusted and should be valid: {:?}",
-                e
-            )
+            panic!("body transactions, view rlp is trusted and should be valid: {:?}", e)
         })
     }
 
     /// Return List of transactions with additional localization info.
     pub fn localized_transactions(
-        &self,
-        block_hash: &H256,
-        block_number: BlockNumber,
+        &self, block_hash: &H256, block_number: BlockNumber,
     ) -> Vec<LocalizedTransaction> {
         self.transactions()
             .into_iter()
@@ -98,39 +91,26 @@ impl<'a> BodyView<'a> {
     }
     /// Return List of transactions in given block.
     pub fn transaction_views(&self) -> Vec<TypedTransactionView<'a>> {
-        self.transactions_rlp()
-            .iter()
-            .map(TypedTransactionView::new)
-            .collect()
+        self.transactions_rlp().iter().map(TypedTransactionView::new).collect()
     }
 
     /// Return transaction hashes.
     pub fn transaction_hashes(&self) -> Vec<H256> {
-        self.transactions_rlp()
-            .iter()
-            .map(TypedTransactionView::new)
-            .map(|t| t.hash())
-            .collect()
+        self.transactions_rlp().iter().map(TypedTransactionView::new).map(|t| t.hash()).collect()
     }
 
     /// Returns transaction at given index without deserializing unnecessary data.
     pub fn transaction_at(&self, index: usize) -> Option<UnverifiedTransaction> {
         self.transactions_rlp().iter().nth(index).map(|rlp| {
             TypedTransaction::decode_rlp(&rlp.rlp).unwrap_or_else(|e| {
-                panic!(
-                    "body transaction_a, view rlp is trusted and should be valid: {:?}",
-                    e
-                )
+                panic!("body transaction_a, view rlp is trusted and should be valid: {:?}", e)
             })
         })
     }
 
     /// Returns localized transaction at given index.
     pub fn localized_transaction_at(
-        &self,
-        block_hash: &H256,
-        block_number: BlockNumber,
-        index: usize,
+        &self, block_hash: &H256, block_number: BlockNumber, index: usize,
     ) -> Option<LocalizedTransaction> {
         self.transaction_at(index).map(|t| LocalizedTransaction {
             signed: t,
@@ -149,10 +129,7 @@ impl<'a> BodyView<'a> {
     /// Return list of uncles of given block.
     pub fn uncles(&self, eip1559_transition: BlockNumber) -> Vec<Header> {
         Header::decode_rlp_list(&self.rlp.at(1).rlp, eip1559_transition).unwrap_or_else(|e| {
-            panic!(
-                "block uncles, view rlp is trusted and should be valid: {:?}",
-                e
-            )
+            panic!("block uncles, view rlp is trusted and should be valid: {:?}", e)
         })
     }
 
@@ -168,37 +145,29 @@ impl<'a> BodyView<'a> {
 
     /// Return list of uncle hashes of given block.
     pub fn uncle_hashes(&self) -> Vec<H256> {
-        self.uncles_rlp()
-            .iter()
-            .map(|rlp| keccak(rlp.as_raw()))
-            .collect()
+        self.uncles_rlp().iter().map(|rlp| keccak(rlp.as_raw())).collect()
     }
 
     /// Return nth uncle.
     pub fn uncle_at(&self, index: usize, eip1559_transition: BlockNumber) -> Option<Header> {
         self.uncles_rlp().iter().nth(index).map(|rlp| {
             Header::decode_rlp(&rlp.rlp, eip1559_transition).unwrap_or_else(|e| {
-                panic!(
-                    "block uncle_at, view rlp is trusted and should be valid.{:?}",
-                    e
-                )
+                panic!("block uncle_at, view rlp is trusted and should be valid.{:?}", e)
             })
         })
     }
 
     /// Return nth uncle rlp.
     pub fn uncle_rlp_at(&self, index: usize) -> Option<Bytes> {
-        self.uncles_rlp()
-            .iter()
-            .nth(index)
-            .map(|rlp| rlp.as_raw().to_vec())
+        self.uncles_rlp().iter().nth(index).map(|rlp| rlp.as_raw().to_vec())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::BodyView;
-    use crate::{bytes::Bytes, views::BlockView};
+    use crate::bytes::Bytes;
+    use crate::views::BlockView;
     use rlp::RlpStream;
     use rustc_hex::FromHex;
 

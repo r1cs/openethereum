@@ -16,7 +16,10 @@
 
 //! Transaction test transaction deserialization.
 
-use crate::{bytes::Bytes, hash::Address, maybe::MaybeEmpty, uint::Uint};
+use crate::bytes::Bytes;
+use crate::hash::Address;
+use crate::maybe::MaybeEmpty;
+use crate::uint::Uint;
 
 /// Transaction test transaction deserialization.
 #[derive(Debug, PartialEq, Deserialize)]

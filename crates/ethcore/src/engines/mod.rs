@@ -21,27 +21,21 @@ mod null_engine;
 
 pub mod block_reward;
 
-pub use self::{
-    instant_seal::{InstantSeal, InstantSealParams},
-    null_engine::NullEngine,
-};
+pub use self::instant_seal::{InstantSeal, InstantSealParams};
+pub use self::null_engine::NullEngine;
 
 pub use types::engines::ForkChoice;
 
-use std::{
-    collections::{BTreeMap, HashMap},
-    error, fmt,
-    sync::{Arc, Weak},
-};
+use std::collections::{BTreeMap, HashMap};
+use std::sync::{Arc, Weak};
+use std::{error, fmt};
 
 use builtin::Builtin;
 use error::Error;
 use spec::CommonParams;
-use types::{
-    header::{ExtendedHeader, Header},
-    transaction::{self, SignedTransaction, UnverifiedTransaction},
-    BlockNumber,
-};
+use types::header::{ExtendedHeader, Header};
+use types::transaction::{self, SignedTransaction, UnverifiedTransaction};
+use types::BlockNumber;
 use vm::{CreateContractAddress, EnvInfo, Schedule};
 
 use block::ExecutedBlock;
@@ -119,12 +113,9 @@ impl fmt::Display for EngineError {
                 len
             ),
             CliqueCheckpointNoSigner => format!("Checkpoint block list of signers was empty"),
-            CliqueInvalidNonce(ref mis) => format!(
-                "Unexpected nonce {} expected {} or {}",
-                mis,
-                0_u64,
-                u64::max_value()
-            ),
+            CliqueInvalidNonce(ref mis) => {
+                format!("Unexpected nonce {} expected {} or {}", mis, 0_u64, u64::max_value())
+            }
             CliqueWrongAuthorCheckpoint(ref oob) => {
                 format!("Unexpected checkpoint author: {}", oob)
             }
@@ -336,9 +327,7 @@ pub trait Engine<M: Machine>: Sync + Send {
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {
         use std::{cmp, time};
 
-        let now = time::SystemTime::now()
-            .duration_since(time::UNIX_EPOCH)
-            .unwrap_or_default();
+        let now = time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap_or_default();
         cmp::max(now.as_secs() as u64, parent_timestamp + 1)
     }
 
@@ -350,9 +339,7 @@ pub trait Engine<M: Machine>: Sync + Send {
     // t_nb 9.1 Gather all ancestry actions. Called at the last stage when a block is committed. The Engine must guarantee that
     /// the ancestry exists.
     fn ancestry_actions(
-        &self,
-        _header: &Header,
-        _ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
+        &self, _header: &Header, _ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
     ) -> Vec<AncestryAction> {
         Vec::new()
     }
@@ -436,9 +423,7 @@ pub trait EthEngine: Engine<::machine::EthereumMachine> {
     /// NOTE This function consumes an `UnverifiedTransaction` and produces `SignedTransaction`
     /// which implies that a heavy check of the signature is performed here.
     fn verify_transaction_unordered(
-        &self,
-        t: UnverifiedTransaction,
-        header: &Header,
+        &self, t: UnverifiedTransaction, header: &Header,
     ) -> Result<SignedTransaction, transaction::Error> {
         self.machine().verify_transaction_unordered(t, header)
     }
@@ -454,9 +439,7 @@ pub trait EthEngine: Engine<::machine::EthereumMachine> {
     /// TODO: Add flags for which bits of the transaction to check.
     /// TODO: consider including State in the params.
     fn verify_transaction_basic(
-        &self,
-        t: &UnverifiedTransaction,
-        header: &Header,
+        &self, t: &UnverifiedTransaction, header: &Header,
     ) -> Result<(), transaction::Error> {
         self.machine().verify_transaction_basic(t, header)
     }
@@ -468,9 +451,7 @@ pub trait EthEngine: Engine<::machine::EthereumMachine> {
 
     /// Performs pre-validation of RLP decoded transaction before other processing
     fn decode_transaction(
-        &self,
-        transaction: &[u8],
-        best_block_number: BlockNumber,
+        &self, transaction: &[u8], best_block_number: BlockNumber,
     ) -> Result<UnverifiedTransaction, transaction::Error> {
         let schedule = self.schedule(best_block_number);
         self.machine().decode_transaction(transaction, &schedule)

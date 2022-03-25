@@ -18,7 +18,9 @@
 
 use crate::account_diff::*;
 use ethereum_types::Address;
-use std::{collections::BTreeMap, fmt, ops::*};
+use std::collections::BTreeMap;
+use std::fmt;
+use std::ops::*;
 
 /// Expression for the delta between two system states. Encoded the
 /// delta of every altered account.

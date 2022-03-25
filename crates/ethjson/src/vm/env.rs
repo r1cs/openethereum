@@ -15,7 +15,8 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Vm environment.
-use crate::{hash::Address, uint::Uint};
+use crate::hash::Address;
+use crate::uint::Uint;
 
 /// Vm environment.
 #[derive(Debug, PartialEq, Deserialize)]

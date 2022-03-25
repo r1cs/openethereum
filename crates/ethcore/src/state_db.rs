@@ -16,9 +16,7 @@
 
 //! State database abstraction. For more info, see the doc for `StateDB`
 
-use std::{
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
@@ -43,7 +41,7 @@ use trie::DBValue;
 /// `StateDB` is propagated into the global cache.
 pub struct StateDB {
     /// Backing database.
-	db: Box<dyn HashDB<KeccakHasher, DBValue>>,
+    db: Box<dyn HashDB<KeccakHasher, DBValue>>,
     /// Hash of the block on top of which this instance was created or
     /// `None` if cache is disabled
     parent_hash: Option<H256>,
@@ -55,12 +53,8 @@ impl StateDB {
     // TODO: make the cache size actually accurate by moving the account storage cache
     // into the `AccountCache` structure as its own `LruCache<(Address, H256), H256>`.
     pub fn new(db: Box<dyn HashDB<KeccakHasher, DBValue>>, cache_size: usize) -> StateDB {
-        StateDB {
-            db: db,
-            parent_hash: None,
-        }
+        StateDB { db: db, parent_hash: None }
     }
-
 
     /// Conversion method to interpret self as `HashDB` reference
     pub fn as_hash_db(&self) -> &dyn HashDB<KeccakHasher, DBValue> {
@@ -76,7 +70,6 @@ impl StateDB {
     pub fn journal_db(&self) -> &dyn HashDB<KeccakHasher, DBValue> {
         &*self.db
     }
-
 }
 
 impl state::Backend for StateDB {
@@ -89,22 +82,22 @@ impl state::Backend for StateDB {
     }
 
     fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) {
-        return
+        return;
     }
 
     fn cache_code(&self, hash: H256, code: Arc<Vec<u8>>) {
-       return
+        return;
     }
 
     fn get_cached_account(&self, addr: &Address) -> Option<Option<Account>> {
-       None
+        None
     }
 
     fn get_cached<F, U>(&self, a: &Address, f: F) -> Option<U>
     where
         F: FnOnce(Option<&mut Account>) -> U,
     {
-       None
+        None
     }
 
     fn get_cached_code(&self, hash: &H256) -> Option<Arc<Vec<u8>>> {

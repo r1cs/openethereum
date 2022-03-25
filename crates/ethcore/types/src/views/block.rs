@@ -19,13 +19,11 @@
 use crate::BlockNumber;
 
 use super::ViewRlp;
-use crate::{
-    bytes::Bytes,
-    hash::keccak,
-    header::Header,
-    transaction::{LocalizedTransaction, TypedTransaction, UnverifiedTransaction},
-    views::{HeaderView, TypedTransactionView},
-};
+use crate::bytes::Bytes;
+use crate::hash::keccak;
+use crate::header::Header;
+use crate::transaction::{LocalizedTransaction, TypedTransaction, UnverifiedTransaction};
+use crate::views::{HeaderView, TypedTransactionView};
 
 use ethereum_types::H256;
 
@@ -68,10 +66,7 @@ impl<'a> BlockView<'a> {
     /// Create new Header object from header rlp.
     pub fn header(&self, eip1559_transition: BlockNumber) -> Header {
         Header::decode_rlp(&self.rlp.at(0).rlp, eip1559_transition).unwrap_or_else(|e| {
-            panic!(
-                "block header, view rlp is trusted and should be valid: {:?}",
-                e
-            )
+            panic!("block header, view rlp is trusted and should be valid: {:?}", e)
         })
     }
 
@@ -88,10 +83,7 @@ impl<'a> BlockView<'a> {
     /// Return List of transactions in given block.
     pub fn transactions(&self) -> Vec<UnverifiedTransaction> {
         TypedTransaction::decode_rlp_list(&self.rlp.at(1).rlp).unwrap_or_else(|e| {
-            panic!(
-                "block transactions, view rlp is trusted and should be valid: {:?}",
-                e
-            )
+            panic!("block transactions, view rlp is trusted and should be valid: {:?}", e)
         })
     }
 
@@ -125,29 +117,19 @@ impl<'a> BlockView<'a> {
 
     /// Return List of transactions in given block.
     pub fn transaction_views(&self) -> Vec<TypedTransactionView<'a>> {
-        self.transactions_rlp()
-            .iter()
-            .map(TypedTransactionView::new)
-            .collect()
+        self.transactions_rlp().iter().map(TypedTransactionView::new).collect()
     }
 
     /// Return transaction hashes.
     pub fn transaction_hashes(&self) -> Vec<H256> {
-        self.transactions_rlp()
-            .iter()
-            .map(TypedTransactionView::new)
-            .map(|t| t.hash())
-            .collect()
+        self.transactions_rlp().iter().map(TypedTransactionView::new).map(|t| t.hash()).collect()
     }
 
     /// Returns transaction at given index without deserializing unnecessary data.
     pub fn transaction_at(&self, index: usize) -> Option<UnverifiedTransaction> {
         self.transactions_rlp().iter().nth(index).map(|rlp| {
             TypedTransaction::decode_rlp(&rlp.rlp).unwrap_or_else(|e| {
-                panic!(
-                    "block transaction_at, view rlp is trusted and should be valid.{:?}",
-                    e
-                )
+                panic!("block transaction_at, view rlp is trusted and should be valid.{:?}", e)
             })
         })
     }
@@ -174,10 +156,7 @@ impl<'a> BlockView<'a> {
     /// Return list of uncles of given block.
     pub fn uncles(&self, eip1559_transition: BlockNumber) -> Vec<Header> {
         Header::decode_rlp_list(&self.rlp.at(2).rlp, eip1559_transition).unwrap_or_else(|e| {
-            panic!(
-                "block uncles, view rlp is trusted and should be valid: {:?}",
-                e
-            )
+            panic!("block uncles, view rlp is trusted and should be valid: {:?}", e)
         })
     }
 
@@ -193,30 +172,21 @@ impl<'a> BlockView<'a> {
 
     /// Return list of uncle hashes of given block.
     pub fn uncle_hashes(&self) -> Vec<H256> {
-        self.uncles_rlp()
-            .iter()
-            .map(|rlp| keccak(rlp.as_raw()))
-            .collect()
+        self.uncles_rlp().iter().map(|rlp| keccak(rlp.as_raw())).collect()
     }
 
     /// Return nth uncle.
     pub fn uncle_at(&self, index: usize, eip1559_transition: BlockNumber) -> Option<Header> {
         self.uncles_rlp().iter().nth(index).map(|rlp| {
             Header::decode_rlp(&rlp.rlp, eip1559_transition).unwrap_or_else(|e| {
-                panic!(
-                    "block uncle_at, view rlp is trusted and should be valid.{:?}",
-                    e
-                )
+                panic!("block uncle_at, view rlp is trusted and should be valid.{:?}", e)
             })
         })
     }
 
     /// Return nth uncle rlp.
     pub fn uncle_rlp_at(&self, index: usize) -> Option<Bytes> {
-        self.uncles_rlp()
-            .iter()
-            .nth(index)
-            .map(|rlp| rlp.as_raw().to_vec())
+        self.uncles_rlp().iter().nth(index).map(|rlp| rlp.as_raw().to_vec())
     }
 }
 

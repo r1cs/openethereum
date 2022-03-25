@@ -16,7 +16,10 @@
 
 //! Vm call deserialization.
 
-use crate::{bytes::Bytes, hash::Address, maybe::MaybeEmpty, uint::Uint};
+use crate::bytes::Bytes;
+use crate::hash::Address;
+use crate::maybe::MaybeEmpty;
+use crate::uint::Uint;
 
 /// Vm call deserialization.
 #[derive(Debug, PartialEq, Deserialize)]
@@ -34,7 +37,10 @@ pub struct Call {
 
 #[cfg(test)]
 mod tests {
-    use crate::{hash::Address, maybe::MaybeEmpty, uint::Uint, vm::Call};
+    use crate::hash::Address;
+    use crate::maybe::MaybeEmpty;
+    use crate::uint::Uint;
+    use crate::vm::Call;
     use ethereum_types::{H160 as Hash160, U256};
 
     use serde_json;

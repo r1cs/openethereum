@@ -18,7 +18,8 @@
 
 use crate::blockchain::blockchain::BlockChain;
 use serde_json::{self, Error};
-use std::{collections::BTreeMap, io::Read};
+use std::collections::BTreeMap;
+use std::io::Read;
 
 /// Blockchain test deserializer.
 #[derive(Debug, PartialEq, Deserialize)]

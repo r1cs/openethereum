@@ -21,12 +21,10 @@ use core as core_;
 #[cfg(feature = "std")]
 use std as core_;
 
-use bytes::Bytes;
-use crate::{CallType, Schedule};
-use crate::EnvInfo;
 use crate::error::{Result, TrapKind};
+use crate::{CallType, EnvInfo, ReturnData, Schedule};
+use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
-use crate::ReturnData;
 extern crate alloc;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -99,11 +97,7 @@ pub trait Ext {
     ///
     /// Returns gas_left and contract address if contract creation was successful.
     fn create(
-        &mut self,
-        gas: &U256,
-        value: &U256,
-        code: &[u8],
-        address: CreateContractAddress,
+        &mut self, gas: &U256, value: &U256, code: &[u8], address: CreateContractAddress,
         trap: bool,
     ) -> core_::result::Result<ContractCreateResult, TrapKind>;
 
@@ -116,15 +110,8 @@ pub trait Ext {
     /// Otherwise returns call_result which contains gas left
     /// and true if subcall was successfull.
     fn call(
-        &mut self,
-        gas: &U256,
-        sender_address: &Address,
-        receive_address: &Address,
-        value: Option<U256>,
-        data: &[u8],
-        code_address: &Address,
-        call_type: CallType,
-        trap: bool,
+        &mut self, gas: &U256, sender_address: &Address, receive_address: &Address,
+        value: Option<U256>, data: &[u8], code_address: &Address, call_type: CallType, trap: bool,
     ) -> core_::result::Result<MessageCallResult, TrapKind>;
 
     /// Returns code at given address
@@ -176,12 +163,8 @@ pub trait Ext {
     /// Prepare to trace an operation. Passthrough for the VM trace.
     /// For each call of `trace_prepare_execute` either `trace_failed` or `trace_executed` MUST be called.
     fn trace_prepare_execute(
-        &mut self,
-        _pc: usize,
-        _instruction: u8,
-        _gas_cost: U256,
-        _mem_written: Option<(usize, usize)>,
-        _store_written: Option<(U256, U256)>,
+        &mut self, _pc: usize, _instruction: u8, _gas_cost: U256,
+        _mem_written: Option<(usize, usize)>, _store_written: Option<(U256, U256)>,
     ) {
     }
 

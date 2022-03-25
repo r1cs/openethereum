@@ -16,12 +16,10 @@
 
 //! State test transaction deserialization.
 
-use crate::{
-    bytes::Bytes,
-    hash::{Address, H256},
-    maybe::MaybeEmpty,
-    uint::Uint,
-};
+use crate::bytes::Bytes;
+use crate::hash::{Address, H256};
+use crate::maybe::MaybeEmpty;
+use crate::uint::Uint;
 
 /// State test transaction deserialization.
 #[derive(Debug, PartialEq, Deserialize)]

@@ -1,25 +1,19 @@
 use super::HookType;
 use ethereum_types::U256;
-use ethjson::{self, blockchain::Block};
+use ethjson;
+use ethjson::blockchain::Block;
 use log::warn;
 use rlp::RlpStream;
 use std::path::Path;
-use types::{
-    transaction::{TypedTransaction, TypedTxId, UnverifiedTransaction},
-    BlockNumber,
-};
+use types::transaction::{TypedTransaction, TypedTxId, UnverifiedTransaction};
+use types::BlockNumber;
 use verification::queue::kind::blocks::Unverified;
 
 pub fn json_local_block_en_de_test<H: FnMut(&str, HookType)>(
-    _test: &ethjson::test::LocalTests,
-    path: &Path,
-    json_data: &[u8],
-    start_stop_hook: &mut H,
+    _test: &ethjson::test::LocalTests, path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {
-    let tests = ethjson::local_tests::BlockEnDeTest::load(json_data).expect(&format!(
-        "Could not parse JSON chain test data from {}",
-        path.display()
-    ));
+    let tests = ethjson::local_tests::BlockEnDeTest::load(json_data)
+        .expect(&format!("Could not parse JSON chain test data from {}", path.display()));
     let mut failed = Vec::new();
 
     for (name, ref_block) in tests.into_iter() {
@@ -63,45 +57,21 @@ pub fn is_same_block(ref_block: &Block, block: &Unverified) -> bool {
 
     let header_ok = if let Some(ref header) = ref_block.header {
         test_exp(*block.header.gas_used() == header.gas_used.0, "Gas used")
-            && test_exp(
-                *block.header.uncles_hash() == header.uncles_hash.0,
-                "Uncles hash",
-            )
+            && test_exp(*block.header.uncles_hash() == header.uncles_hash.0, "Uncles hash")
             && test_exp(
                 *block.header.transactions_root() == header.transactions_root.0,
                 "Transaction Root",
             )
-            && test_exp(
-                block.header.timestamp() == header.timestamp.0.as_u64(),
-                "Timestamp",
-            )
-            && test_exp(
-                *block.header.state_root() == header.state_root.0,
-                "StateRoot",
-            )
-            && test_exp(
-                *block.header.receipts_root() == header.receipts_root.0,
-                "ReceiptsRoot",
-            )
-            && test_exp(
-                *block.header.parent_hash() == header.parent_hash.0,
-                "ParentHash",
-            )
-            && test_exp(
-                block.header.number() == header.number.0.as_u64(),
-                "Blocn Number",
-            )
+            && test_exp(block.header.timestamp() == header.timestamp.0.as_u64(), "Timestamp")
+            && test_exp(*block.header.state_root() == header.state_root.0, "StateRoot")
+            && test_exp(*block.header.receipts_root() == header.receipts_root.0, "ReceiptsRoot")
+            && test_exp(*block.header.parent_hash() == header.parent_hash.0, "ParentHash")
+            && test_exp(block.header.number() == header.number.0.as_u64(), "Blocn Number")
             && test_exp(block.header.hash() == header.hash.0, "Header hash")
             && test_exp(*block.header.gas_limit() == header.gas_limit.0, "GasLimit")
             && test_exp(*block.header.gas_used() == header.gas_used.0, "GasUsed")
-            && test_exp(
-                *block.header.extra_data() == header.extra_data.0,
-                "ExtraData",
-            )
-            && test_exp(
-                *block.header.difficulty() == header.difficulty.0,
-                "Difficulty",
-            )
+            && test_exp(*block.header.extra_data() == header.extra_data.0, "ExtraData")
+            && test_exp(*block.header.difficulty() == header.difficulty.0, "Difficulty")
             && test_exp(*block.header.author() == header.author.0, "Author")
             && test_exp(*block.header.log_bloom() == header.bloom.0, "Bloom")
     } else {
@@ -201,10 +171,7 @@ pub fn is_same_block(ref_block: &Block, block: &Unverified) -> bool {
                 };
 
             if !is_ok {
-                println!(
-                    "Transaction not valid got: {:?} \n expected:{:?}\n",
-                    tx, ref_tx
-                );
+                println!("Transaction not valid got: {:?} \n expected:{:?}\n", tx, ref_tx);
             }
             is_all_ok = is_ok && is_all_ok;
         }

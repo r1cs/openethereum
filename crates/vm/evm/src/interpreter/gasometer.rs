@@ -55,10 +55,7 @@ pub struct Gasometer<Gas> {
 
 impl<Gas: evm::CostType> Gasometer<Gas> {
     pub fn new(current_gas: Gas) -> Self {
-        Gasometer {
-            current_gas: current_gas,
-            current_mem_gas: Gas::from(0),
-        }
+        Gasometer { current_gas: current_gas, current_mem_gas: Gas::from(0) }
     }
 
     pub fn verify_gas(&self, gas_cost: &Gas) -> vm::Result<()> {
@@ -71,10 +68,7 @@ impl<Gas: evm::CostType> Gasometer<Gas> {
     /// How much gas is provided to a CALL/CREATE, given that we need to deduct `needed` for this operation
     /// and that we `requested` some.
     pub fn gas_provided(
-        &self,
-        schedule: &Schedule,
-        needed: Gas,
-        requested: Option<U256>,
+        &self, schedule: &Schedule, needed: Gas, requested: Option<U256>,
     ) -> vm::Result<Gas> {
         // Try converting requested gas to `Gas` (`U256/u64`)
         // but in EIP150 even if we request more we should never fail from OOG
@@ -112,13 +106,8 @@ impl<Gas: evm::CostType> Gasometer<Gas> {
     /// iff the `instruction` is one of `CREATE`, or any of the `CALL` variants. In this case,
     /// it will be the amount of gas that the current context provides to the child context.
     pub fn requirements(
-        &mut self,
-        ext: &dyn vm::Ext,
-        instruction: Instruction,
-        info: &InstructionInfo,
-        stack: &VecStack<U256>,
-        current_address: &Address,
-        current_mem_size: usize,
+        &mut self, ext: &dyn vm::Ext, instruction: Instruction, info: &InstructionInfo,
+        stack: &VecStack<U256>, current_address: &Address, current_mem_size: usize,
     ) -> vm::Result<InstructionRequirements<Gas>> {
         let schedule = ext.schedule();
 
@@ -381,10 +370,7 @@ impl<Gas: evm::CostType> Gasometer<Gas> {
     }
 
     fn mem_gas_cost(
-        &self,
-        schedule: &Schedule,
-        current_mem_size: usize,
-        mem_size: &Gas,
+        &self, schedule: &Schedule, current_mem_size: usize, mem_size: &Gas,
     ) -> vm::Result<(Gas, Gas, usize)> {
         let gas_for_mem = |mem_size: Gas| {
             let s = mem_size >> 5;
@@ -442,11 +428,7 @@ fn to_word_size<Gas: evm::CostType>(value: Gas) -> (Gas, bool) {
 
 #[inline]
 fn calculate_eip1283_eip2929_sstore_gas<Gas: evm::CostType>(
-    schedule: &Schedule,
-    is_cold: bool,
-    original: &U256,
-    current: &U256,
-    new: &U256,
+    schedule: &Schedule, is_cold: bool, original: &U256, current: &U256, new: &U256,
 ) -> Gas {
     Gas::from(
         if current == new {
@@ -477,10 +459,7 @@ fn calculate_eip1283_eip2929_sstore_gas<Gas: evm::CostType>(
 }
 
 pub fn handle_eip1283_sstore_clears_refund(
-    ext: &mut dyn vm::Ext,
-    original: &U256,
-    current: &U256,
-    new: &U256,
+    ext: &mut dyn vm::Ext, original: &U256, current: &U256, new: &U256,
 ) {
     let sstore_clears_schedule = ext.schedule().sstore_refund_gas;
 
@@ -555,9 +534,8 @@ fn test_calculate_mem_cost() {
     let mem_size = 5;
 
     // when
-    let (mem_cost, new_mem_gas, mem_size) = gasometer
-        .mem_gas_cost(&schedule, current_mem_size, &mem_size)
-        .unwrap();
+    let (mem_cost, new_mem_gas, mem_size) =
+        gasometer.mem_gas_cost(&schedule, current_mem_size, &mem_size).unwrap();
 
     // then
     assert_eq!(mem_cost, 3);

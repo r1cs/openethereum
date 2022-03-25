@@ -16,18 +16,14 @@
 
 //! Ethereum-like state machine definition.
 
-use std::{
-    cmp::{self, max},
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-};
+use std::cmp::{self, max};
+use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 
 use ethereum_types::{Address, U256};
-use types::{
-    header::Header,
-    transaction::{self, SignedTransaction, TypedTransaction, UnverifiedTransaction},
-    BlockNumber,
-};
+use types::header::Header;
+use types::transaction::{self, SignedTransaction, TypedTransaction, UnverifiedTransaction};
+use types::BlockNumber;
 use vm::{CreateContractAddress, EnvInfo, Schedule};
 
 use block::ExecutedBlock;
@@ -53,9 +49,7 @@ impl From<::ethjson::spec::EthashParams> for EthashExtensions {
     fn from(p: ::ethjson::spec::EthashParams) -> Self {
         EthashExtensions {
             homestead_transition: p.homestead_transition.map_or(0, Into::into),
-            dao_hardfork_transition: p
-                .dao_hardfork_transition
-                .map_or(u64::max_value(), Into::into),
+            dao_hardfork_transition: p.dao_hardfork_transition.map_or(u64::max_value(), Into::into),
             dao_hardfork_beneficiary: p
                 .dao_hardfork_beneficiary
                 .map_or_else(Address::default, Into::into),
@@ -94,9 +88,7 @@ impl EthereumMachine {
     /// Ethereum machine with ethash extensions.
     // TODO: either unify or specify to mainnet specifically and include other specific-chain HFs?
     pub fn with_ethash_extensions(
-        params: CommonParams,
-        builtins: BTreeMap<Address, Builtin>,
-        extensions: EthashExtensions,
+        params: CommonParams, builtins: BTreeMap<Address, Builtin>, extensions: EthashExtensions,
     ) -> EthereumMachine {
         let mut machine = EthereumMachine::regular(params, builtins);
         machine.ethash_extensions = Some(extensions);
@@ -137,21 +129,14 @@ impl EthereumMachine {
     /// Usually implements the chain scoring rule based on weight.
     /// The gas floor target must not be lower than the engine's minimum gas limit.
     pub fn populate_from_parent(
-        &self,
-        header: &mut Header,
-        parent: &Header,
-        gas_floor_target: U256,
-        gas_ceil_target: U256,
+        &self, header: &mut Header, parent: &Header, gas_floor_target: U256, gas_ceil_target: U256,
     ) {
         header.set_difficulty(parent.difficulty().clone());
         let gas_limit = parent.gas_limit() * self.schedule(header.number()).eip1559_gas_limit_bump;
         assert!(!gas_limit.is_zero(), "Gas limit should be > 0");
 
-        let gas_limit_target = if self.schedule(header.number()).eip1559 {
-            gas_ceil_target
-        } else {
-            gas_floor_target
-        };
+        let gas_limit_target =
+            if self.schedule(header.number()).eip1559 { gas_ceil_target } else { gas_floor_target };
 
         header.set_gas_limit({
             let bound_divisor = self.params().gas_limit_bound_divisor;
@@ -206,13 +191,7 @@ impl EthereumMachine {
     // TODO: builtin contract routing - to do this properly, it will require removing the built-in configuration-reading logic
     // from Spec into here and removing the Spec::builtins field.
     pub fn builtin(&self, a: &Address, block_number: BlockNumber) -> Option<&Builtin> {
-        self.builtins().get(a).and_then(|b| {
-            if b.is_active(block_number) {
-                Some(b)
-            } else {
-                None
-            }
-        })
+        self.builtins().get(a).and_then(|b| if b.is_active(block_number) { Some(b) } else { None })
     }
 
     /// Some intrinsic operation parameters; by default they take their value from the `spec()`'s `engine_params`.
@@ -249,9 +228,7 @@ impl EthereumMachine {
 
     /// Verify a particular transaction is valid, regardless of order.
     pub fn verify_transaction_unordered(
-        &self,
-        t: UnverifiedTransaction,
-        header: &Header,
+        &self, t: UnverifiedTransaction, header: &Header,
     ) -> Result<SignedTransaction, transaction::Error> {
         // ensure that the user was willing to at least pay the base fee
         if t.tx().gas_price < header.base_fee().unwrap_or_default() && !t.has_zero_gas_price() {
@@ -266,9 +243,7 @@ impl EthereumMachine {
 
     /// Does basic verification of the transaction.
     pub fn verify_transaction_basic(
-        &self,
-        t: &UnverifiedTransaction,
-        header: &Header,
+        &self, t: &UnverifiedTransaction, header: &Header,
     ) -> Result<(), transaction::Error> {
         let check_low_s = match self.ethash_extensions {
             Some(ref ext) => header.number() >= ext.homestead_transition,
@@ -296,15 +271,10 @@ impl EthereumMachine {
 
     /// Performs pre-validation of RLP decoded transaction before other processing
     pub fn decode_transaction(
-        &self,
-        transaction: &[u8],
-        schedule: &Schedule,
+        &self, transaction: &[u8], schedule: &Schedule,
     ) -> Result<UnverifiedTransaction, transaction::Error> {
         if transaction.len() > self.params().max_transaction_size {
-            debug!(
-                "Rejected oversized transaction of {} bytes",
-                transaction.len()
-            );
+            debug!("Rejected oversized transaction of {} bytes", transaction.len());
             return Err(transaction::Error::TooBig);
         }
 
@@ -350,10 +320,7 @@ impl EthereumMachine {
 
         // Block eip1559_transition has base_fee = self.params().eip1559_base_fee_initial_value
         if parent.number() + 1 == self.params().eip1559_transition {
-            return Some(max(
-                self.params().eip1559_base_fee_initial_value,
-                base_fee_min_value,
-            ));
+            return Some(max(self.params().eip1559_base_fee_initial_value, base_fee_min_value));
         }
 
         // Block eip1559_transition + 1 has base_fee = calculated
@@ -426,14 +393,9 @@ impl super::Machine for EthereumMachine {
     }
 
     fn add_balance(
-        &self,
-        live: &mut ExecutedBlock,
-        address: &Address,
-        amount: &U256,
+        &self, live: &mut ExecutedBlock, address: &Address, amount: &U256,
     ) -> Result<(), Error> {
-        live.state_mut()
-            .add_balance(address, amount, CleanupMode::NoEmpty)
-            .map_err(Into::into)
+        live.state_mut().add_balance(address, amount, CleanupMode::NoEmpty).map_err(Into::into)
     }
 }
 
@@ -457,8 +419,8 @@ mod tests {
     #[test]
     fn should_disallow_unsigned_transactions() {
         let rlp = "ea80843b9aca0083015f90948921ebb5f79e9e3920abe571004d0b1d5119c154865af3107a400080038080";
-		let raw_tx: Vec<u8> = ::rustc_hex::FromHex::from_hex(rlp).unwrap();
-		let transaction: UnverifiedTransaction = TypedTransaction::decode(&raw_tx).unwrap();
+        let raw_tx: Vec<u8> = ::rustc_hex::FromHex::from_hex(rlp).unwrap();
+        let transaction: UnverifiedTransaction = TypedTransaction::decode(&raw_tx).unwrap();
         let spec = ::ethereum::new_ropsten_test();
         let ethparams = get_default_ethash_extensions();
 
@@ -471,10 +433,7 @@ mod tests {
         header.set_number(15);
 
         let res = machine.verify_transaction_basic(&transaction, &header);
-        assert_eq!(
-            res,
-            Err(transaction::Error::InvalidSignature)
-        );
+        assert_eq!(res, Err(transaction::Error::InvalidSignature));
     }
 
     #[test]

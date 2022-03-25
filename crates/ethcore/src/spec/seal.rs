@@ -65,10 +65,7 @@ impl Into<Generic> for AuthorityRound {
 impl Into<Generic> for Tendermint {
     fn into(self) -> Generic {
         let mut stream = RlpStream::new_list(3);
-        stream
-            .append(&self.round)
-            .append(&self.proposal)
-            .append_list(&self.precommits);
+        stream.append(&self.round).append(&self.proposal).append_list(&self.precommits);
         Generic(stream.out())
     }
 }
@@ -90,10 +87,9 @@ pub enum Seal {
 impl From<ethjson::spec::Seal> for Seal {
     fn from(s: ethjson::spec::Seal) -> Self {
         match s {
-            ethjson::spec::Seal::Ethereum(eth) => Seal::Ethereum(Ethereum {
-                nonce: eth.nonce.into(),
-                mix_hash: eth.mix_hash.into(),
-            }),
+            ethjson::spec::Seal::Ethereum(eth) => {
+                Seal::Ethereum(Ethereum { nonce: eth.nonce.into(), mix_hash: eth.mix_hash.into() })
+            }
             ethjson::spec::Seal::AuthorityRound(ar) => Seal::AuthorityRound(AuthorityRound {
                 step: ar.step.into(),
                 signature: ar.signature.into(),

@@ -15,7 +15,9 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Executed transaction.
-use crate::{bytes::Bytes, hash::Address, uint::Uint};
+use crate::bytes::Bytes;
+use crate::hash::Address;
+use crate::uint::Uint;
 
 /// Executed transaction.
 #[derive(Debug, PartialEq, Deserialize)]

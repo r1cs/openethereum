@@ -29,4 +29,4 @@ hash-db = {path = "../hash-db-0.12.4"}
 version = "0.2.8"
 
 [dev-dependencies.keccak-hasher]
-version = "0.11.0"
+path = "../../util/keccak-hasher"

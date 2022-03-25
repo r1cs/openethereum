@@ -16,9 +16,12 @@
 
 //! Additional test structures deserialization.
 
-use crate::{hash::H256, uint::Uint};
+use crate::hash::H256;
+use crate::uint::Uint;
 use serde_json::{self, Error};
-use std::{collections::BTreeMap, io::Read, path::PathBuf};
+use std::collections::BTreeMap;
+use std::io::Read;
+use std::path::PathBuf;
 
 /// Blockchain test header deserializer.
 #[derive(Debug, PartialEq, Deserialize)]
@@ -112,10 +115,7 @@ impl SkipStates {
 
     /// Empty skip states.
     pub fn empty() -> Self {
-        SkipStates {
-            block: Vec::new(),
-            state: Vec::new(),
-        }
+        SkipStates { block: Vec::new(), state: Vec::new() }
     }
 }
 

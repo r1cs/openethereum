@@ -16,7 +16,6 @@
 
 //! `NodeCodec` implementation for Rlp
 
-
 #[cfg(not(feature = "std"))]
 use alloc::vec::Vec;
 
@@ -28,7 +27,8 @@ use ethereum_types::H256;
 use hash_db::Hasher;
 use keccak_hasher::KeccakHasher;
 use rlp::{DecoderError, Prototype, Rlp, RlpStream};
-use trie::{node::Node, ChildReference, NibbleSlice, NodeCodec};
+use trie::node::Node;
+use trie::{ChildReference, NibbleSlice, NodeCodec};
 
 /// Concrete implementation of a `NodeCodec` with Rlp encoding, generic over the `Hasher`
 #[derive(Default, Clone)]
@@ -75,11 +75,7 @@ impl NodeCodec<KeccakHasher> for RlpNodeCodec<KeccakHasher> {
                 }
                 Ok(Node::Branch(
                     nodes,
-                    if r.at(16)?.is_empty() {
-                        None
-                    } else {
-                        Some(r.at(16)?.data()?)
-                    },
+                    if r.at(16)?.is_empty() { None } else { Some(r.at(16)?.data()?) },
                 ))
             }
             // an empty branch index.
@@ -113,8 +109,7 @@ impl NodeCodec<KeccakHasher> for RlpNodeCodec<KeccakHasher> {
     }
 
     fn ext_node(
-        partial: &[u8],
-        child_ref: ChildReference<<KeccakHasher as Hasher>::Out>,
+        partial: &[u8], child_ref: ChildReference<<KeccakHasher as Hasher>::Out>,
     ) -> Vec<u8> {
         let mut stream = RlpStream::new_list(2);
         stream.append(&partial);

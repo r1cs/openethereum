@@ -16,22 +16,21 @@
 
 //! General test deserialization.
 
-use crate::{
-    bytes::Bytes,
-    crypto::publickey::Secret,
-    hash::{Address, H256},
-    maybe::MaybeEmpty,
-    spec::ForkSpec,
-    state::{AccountState, Env},
-    uint::Uint,
-};
+use crate::bytes::Bytes;
+use crate::crypto::publickey::Secret;
+use crate::hash::{Address, H256};
+use crate::maybe::MaybeEmpty;
+use crate::spec::ForkSpec;
+use crate::state::{AccountState, Env};
+use crate::uint::Uint;
 
 use common_types::transaction::{
-    AccessListTx, Action, EIP1559TransactionTx, SignedTransaction, Transaction, TypedTransaction,
+    AccessListTx, Action, EIP1559TransactionTx, SignedTransaction, Transaction, TypedTransaction
 };
 
 use serde_json::{self, Error};
-use std::{collections::BTreeMap, io::Read};
+use std::collections::BTreeMap;
+use std::io::Read;
 
 use crate::blockchain::transaction::AccessList;
 
@@ -145,10 +144,7 @@ impl MultiTransaction {
                         })
                         .collect();
 
-                    let al_tx = AccessListTx {
-                        transaction,
-                        access_list,
-                    };
+                    let al_tx = AccessListTx { transaction, access_list };
 
                     match self.gas_price {
                         Some(_) => {

@@ -16,11 +16,9 @@
 
 //! State test deserialization.
 
-use crate::{
-    bytes::Bytes,
-    hash::H256,
-    state::{AccountState, Env, Log, Transaction},
-};
+use crate::bytes::Bytes;
+use crate::hash::H256;
+use crate::state::{AccountState, Env, Log, Transaction};
 
 /// State test deserialization.
 #[derive(Debug, PartialEq, Deserialize)]

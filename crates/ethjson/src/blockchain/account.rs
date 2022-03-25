@@ -16,7 +16,8 @@
 
 //! Blockchain test account deserializer.
 
-use crate::{bytes::Bytes, uint::Uint};
+use crate::bytes::Bytes;
+use crate::uint::Uint;
 use std::collections::BTreeMap;
 
 /// Blockchain test account deserializer.

@@ -18,11 +18,9 @@
 
 /// The blocks verification module.
 pub mod blocks {
-    use types::{
-        header::Header,
-        transaction::{TypedTransaction, UnverifiedTransaction},
-        BlockNumber,
-    };
+    use types::header::Header;
+    use types::transaction::{TypedTransaction, UnverifiedTransaction};
+    use types::BlockNumber;
 
     use bytes::Bytes;
 
@@ -42,8 +40,7 @@ pub mod blocks {
     impl Unverified {
         /// Create an `Unverified` from raw bytes.
         pub fn from_rlp(
-            bytes: Bytes,
-            eip1559_transition: BlockNumber,
+            bytes: Bytes, eip1559_transition: BlockNumber,
         ) -> Result<Self, ::rlp::DecoderError> {
             use rlp::Rlp;
             let (header, transactions, uncles) = {
@@ -54,12 +51,7 @@ pub mod blocks {
                 (header, transactions, uncles)
             };
 
-            Ok(Unverified {
-                header,
-                transactions,
-                uncles,
-                bytes,
-            })
+            Ok(Unverified { header, transactions, uncles, bytes })
         }
     }
 }

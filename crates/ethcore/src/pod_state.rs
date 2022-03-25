@@ -20,7 +20,8 @@ use ethereum_types::{Address, H256};
 use ethjson;
 use itertools::Itertools;
 use pod_account::{self, PodAccount};
-use std::{collections::BTreeMap, fmt};
+use std::collections::BTreeMap;
+use std::fmt;
 use triehash::sec_trie_root;
 use types::state_diff::StateDiff;
 
@@ -57,10 +58,7 @@ impl PodState {
 
 impl From<ethjson::blockchain::State> for PodState {
     fn from(s: ethjson::blockchain::State) -> PodState {
-        let state = s
-            .into_iter()
-            .map(|(addr, acc)| (addr.into(), PodAccount::from(acc)))
-            .collect();
+        let state = s.into_iter().map(|(addr, acc)| (addr.into(), PodAccount::from(acc))).collect();
         PodState(state)
     }
 }
@@ -106,7 +104,8 @@ mod test {
     use ethereum_types::H160;
     use pod_account::PodAccount;
     use std::collections::BTreeMap;
-    use types::{account_diff::*, state_diff::*};
+    use types::account_diff::*;
+    use types::state_diff::*;
 
     #[test]
     fn create_delete() {

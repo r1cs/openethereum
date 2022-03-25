@@ -33,20 +33,12 @@ where
 {
     #[doc(hidden)]
     pub fn new(bytes: &'a [u8], file: &'a str, line: u32) -> Self {
-        ViewRlp {
-            rlp: Rlp::new(bytes),
-            file,
-            line,
-        }
+        ViewRlp { rlp: Rlp::new(bytes), file, line }
     }
 
     /// Returns a new instance replacing existing rlp with new rlp, maintaining debug info
     fn new_from_rlp(&self, rlp: Rlp<'a>) -> Self {
-        ViewRlp {
-            rlp,
-            file: self.file,
-            line: self.line,
-        }
+        ViewRlp { rlp, file: self.file, line: self.line }
     }
 
     fn maybe_at(&self, index: usize) -> Option<ViewRlp<'a>> {
@@ -125,10 +117,7 @@ where
     type IntoIter = ViewRlpIterator<'a, 'view>;
 
     fn into_iter(self) -> Self::IntoIter {
-        ViewRlpIterator {
-            rlp: self,
-            index: 0,
-        }
+        ViewRlpIterator { rlp: self, index: 0 }
     }
 }
 

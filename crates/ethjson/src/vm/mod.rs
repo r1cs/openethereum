@@ -22,4 +22,8 @@ pub mod test;
 pub mod transaction;
 pub mod vm;
 
-pub use self::{call::Call, env::Env, test::Test, transaction::Transaction, vm::Vm};
+pub use self::call::Call;
+pub use self::env::Env;
+pub use self::test::Test;
+pub use self::transaction::Transaction;
+pub use self::vm::Vm;

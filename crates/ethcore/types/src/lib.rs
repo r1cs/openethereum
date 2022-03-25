@@ -34,8 +34,7 @@
 #![allow(missing_docs)]
 #![warn(unused_extern_crates)]
 
-pub use keccak_hash as hash;
-pub use parity_bytes as bytes;
+pub use {keccak_hash as hash, parity_bytes as bytes};
 
 #[macro_use]
 extern crate rlp_derive;

@@ -23,20 +23,13 @@ pub fn impl_encodable(ast: &syn::DeriveInput) -> TokenStream {
         _ => panic!("#[derive(RlpEncodable)] is only defined for structs."),
     };
 
-    let stmts: Vec<_> = body
-        .fields
-        .iter()
-        .enumerate()
-        .map(encodable_field_map)
-        .collect();
+    let stmts: Vec<_> = body.fields.iter().enumerate().map(encodable_field_map).collect();
     let name = &ast.ident;
 
     let stmts_len = stmts.len();
     let stmts_len = quote! { #stmts_len };
-    let dummy_const = syn::Ident::new(
-        &format!("_IMPL_RLP_ENCODABLE_FOR_{}", name),
-        Span::call_site(),
-    );
+    let dummy_const =
+        syn::Ident::new(&format!("_IMPL_RLP_ENCODABLE_FOR_{}", name), Span::call_site());
     let impl_block = quote! {
         impl rlp::Encodable for #name {
             fn rlp_append(&self, stream: &mut rlp::RlpStream) {
@@ -73,10 +66,8 @@ pub fn impl_encodable_wrapper(ast: &syn::DeriveInput) -> TokenStream {
 
     let name = &ast.ident;
 
-    let dummy_const = syn::Ident::new(
-        &format!("_IMPL_RLP_ENCODABLE_FOR_{}", name),
-        Span::call_site(),
-    );
+    let dummy_const =
+        syn::Ident::new(&format!("_IMPL_RLP_ENCODABLE_FOR_{}", name), Span::call_site());
     let impl_block = quote! {
         impl rlp::Encodable for #name {
             fn rlp_append(&self, stream: &mut rlp::RlpStream) {
@@ -111,19 +102,13 @@ fn encodable_field(index: usize, field: &syn::Field) -> TokenStream {
 
     match field.ty {
         syn::Type::Path(ref path) => {
-            let top_segment = path
-                .path
-                .segments
-                .first()
-                .expect("there must be at least 1 segment");
+            let top_segment = path.path.segments.first().expect("there must be at least 1 segment");
             let ident = &top_segment.value().ident;
             if &ident.to_string() == "Vec" {
                 let inner_ident = match top_segment.value().arguments {
                     syn::PathArguments::AngleBracketed(ref angle) => {
-                        let ty = angle
-                            .args
-                            .first()
-                            .expect("Vec has only one angle bracketed type; qed");
+                        let ty =
+                            angle.args.first().expect("Vec has only one angle bracketed type; qed");
                         match **ty.value() {
                             syn::GenericArgument::Type(syn::Type::Path(ref path)) => {
                                 &path

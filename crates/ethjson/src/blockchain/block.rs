@@ -16,10 +16,9 @@
 
 //! Blockchain test block deserializer.
 
-use crate::{
-    blockchain::{header::Header, transaction::Transaction},
-    bytes::Bytes,
-};
+use crate::blockchain::header::Header;
+use crate::blockchain::transaction::Transaction;
+use crate::bytes::Bytes;
 
 /// Blockchain test block deserializer.
 #[derive(Debug, PartialEq, Deserialize)]

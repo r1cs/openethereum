@@ -202,11 +202,8 @@ impl Encodable for Reward {
 
 impl Decodable for Reward {
     fn decode(rlp: &Rlp) -> Result<Self, DecoderError> {
-        let res = Reward {
-            author: rlp.val_at(0)?,
-            value: rlp.val_at(1)?,
-            reward_type: rlp.val_at(2)?,
-        };
+        let res =
+            Reward { author: rlp.val_at(0)?, value: rlp.val_at(1)?, reward_type: rlp.val_at(2)? };
 
         Ok(res)
     }

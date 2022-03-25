@@ -16,7 +16,8 @@
 
 //! Blockchain test transaction deserialization.
 
-use crate::{bytes::Bytes, uint::Uint};
+use crate::bytes::Bytes;
+use crate::uint::Uint;
 use ethereum_types::{H160, H256};
 
 /// Blockchain test transaction deserialization.

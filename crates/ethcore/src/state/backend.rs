@@ -21,10 +21,8 @@
 //! should become general over time to the point where not even a
 //! merkle trie is strictly necessary.
 
-use std::{
-    collections::{HashSet},
-    sync::Arc,
-};
+use std::collections::HashSet;
+use std::sync::Arc;
 
 use ethereum_types::{Address, H256};
 use hash_db::{AsHashDB, HashDB};
@@ -226,11 +224,7 @@ impl<H: AsHashDB<KeccakHasher, DBValue>> Proving<H> {
     /// Create a new `Proving` over a base database.
     /// This will store all values ever fetched from that base.
     pub fn new(base: H) -> Self {
-        Proving {
-            base: base,
-            changed: super::new_memory_db(),
-            proof: Mutex::new(HashSet::new()),
-        }
+        Proving { base: base, changed: super::new_memory_db(), proof: Mutex::new(HashSet::new()) }
     }
 
     /// Consume the backend, extracting the gathered proof in lexicographical order

@@ -16,7 +16,8 @@
 
 //! Blockchain filter
 
-use crate::{ids::BlockId, log_entry::LogEntry};
+use crate::ids::BlockId;
+use crate::log_entry::LogEntry;
 use ethereum_types::{Address, Bloom, BloomInput, H256};
 
 /// Blockchain Filter.
@@ -103,22 +104,20 @@ impl Filter {
         };
 
         matches
-            && self
-                .topics
-                .iter()
-                .enumerate()
-                .all(|(i, topic)| match *topic {
-                    Some(ref topics) if !topics.is_empty() => {
-                        topics.iter().any(|topic| log.topics.get(i) == Some(topic))
-                    }
-                    _ => true,
-                })
+            && self.topics.iter().enumerate().all(|(i, topic)| match *topic {
+                Some(ref topics) if !topics.is_empty() => {
+                    topics.iter().any(|topic| log.topics.get(i) == Some(topic))
+                }
+                _ => true,
+            })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{filter::Filter, ids::BlockId, log_entry::LogEntry};
+    use crate::filter::Filter;
+    use crate::ids::BlockId;
+    use crate::log_entry::LogEntry;
     use ethereum_types::{Bloom, H160, H256};
     use std::str::FromStr;
 
@@ -143,10 +142,9 @@ mod tests {
         let filter = Filter {
             from_block: BlockId::Earliest,
             to_block: BlockId::Latest,
-            address: Some(vec![H160::from_str(
-                "b372018f3be9e171df0581136b59d2faf73a7d5d",
-            )
-            .unwrap()]),
+            address: Some(
+                vec![H160::from_str("b372018f3be9e171df0581136b59d2faf73a7d5d").unwrap()],
+            ),
             topics: vec![
                 Some(vec![H256::from_str(
                     "ff74e91598aed6ae5d2fdcf8b24cd2c7be49a0808112a305069355b7160f23f9",
@@ -168,10 +166,9 @@ mod tests {
         let filter = Filter {
             from_block: BlockId::Earliest,
             to_block: BlockId::Latest,
-            address: Some(vec![H160::from_str(
-                "b372018f3be9e171df0581136b59d2faf73a7d5d",
-            )
-            .unwrap()]),
+            address: Some(
+                vec![H160::from_str("b372018f3be9e171df0581136b59d2faf73a7d5d").unwrap()],
+            ),
             topics: vec![
                 Some(vec![H256::from_str(
                     "ff74e91598aed6ae5d2fdcf8b24cd2c7be49a0808112a305069355b7160f23f9",
@@ -241,10 +238,9 @@ mod tests {
         let filter = Filter {
             from_block: BlockId::Earliest,
             to_block: BlockId::Latest,
-            address: Some(vec![H160::from_str(
-                "b372018f3be9e171df0581136b59d2faf73a7d5d",
-            )
-            .unwrap()]),
+            address: Some(
+                vec![H160::from_str("b372018f3be9e171df0581136b59d2faf73a7d5d").unwrap()],
+            ),
             topics: vec![
                 Some(vec![H256::from_str(
                     "ff74e91598aed6ae5d2fdcf8b24cd2c7be49a0808112a305069355b7160f23f9",

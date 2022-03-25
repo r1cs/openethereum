@@ -19,8 +19,8 @@
 use ethereum_types::{Address, H256, U256};
 extern crate alloc;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use alloc::vec;
+use alloc::vec::Vec;
 
 type BlockNumber = u64;
 

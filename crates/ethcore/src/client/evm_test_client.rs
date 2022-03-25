@@ -16,21 +16,14 @@
 
 //! Simple Client used for EVM tests.
 
-use client;
 use ethereum_types::{H160, H256, U256};
-use ethtrie;
 use evm::{FinalizationResult, VMType};
-use executive;
 use factory::{self, Factories};
-use pod_state;
-use spec;
-use state;
-use state_db;
-use std::{fmt, sync::Arc};
-use trace;
-use trie;
+use std::fmt;
+use std::sync::Arc;
 use types::{log_entry, receipt, transaction};
 use vm::{self, ActionParams};
+use {client, ethtrie, executive, pod_state, spec, state, state_db, trace, trie};
 
 /// EVM test Error.
 #[derive(Debug)]
@@ -115,8 +108,7 @@ impl<'a> EvmTestClient<'a> {
 
     /// Change default function for dump state (default does not dump)
     pub fn set_dump_state_fn(
-        &mut self,
-        dump_state: fn(&state::State<state_db::StateDB>) -> Option<pod_state::PodState>,
+        &mut self, dump_state: fn(&state::State<state_db::StateDB>) -> Option<pod_state::PodState>,
     ) {
         self.dump_state = dump_state;
     }
@@ -124,24 +116,17 @@ impl<'a> EvmTestClient<'a> {
     /// Creates new EVM test client with an in-memory DB initialized with given PodState.
     /// Takes a `TrieSpec` to set the type of trie.
     pub fn from_pod_state_with_trie(
-        spec: &'a spec::Spec,
-        pod_state: pod_state::PodState,
-        trie_spec: trie::TrieSpec,
+        spec: &'a spec::Spec, pod_state: pod_state::PodState, trie_spec: trie::TrieSpec,
     ) -> Result<Self, EvmTestError> {
         let factories = Self::factories(trie_spec);
         let state = Self::state_from_pod(spec, &factories, pod_state)?;
 
-        Ok(EvmTestClient {
-            state,
-            spec,
-            dump_state: no_dump_state,
-        })
+        Ok(EvmTestClient { state, spec, dump_state: no_dump_state })
     }
 
     /// Creates new EVM test client with an in-memory DB initialized with given PodState.
     pub fn from_pod_state(
-        spec: &'a spec::Spec,
-        pod_state: pod_state::PodState,
+        spec: &'a spec::Spec, pod_state: pod_state::PodState,
     ) -> Result<Self, EvmTestError> {
         Self::from_pod_state_with_trie(spec, pod_state, trie::TrieSpec::Secure)
     }
@@ -155,17 +140,15 @@ impl<'a> EvmTestClient<'a> {
     }
 
     fn state_from_pod(
-        spec: &'a spec::Spec,
-        factories: &Factories,
-        pod_state: pod_state::PodState,
+        spec: &'a spec::Spec, factories: &Factories, pod_state: pod_state::PodState,
     ) -> Result<state::State<state_db::StateDB>, EvmTestError> {
-		let hashdb = Box::new(memory_db::MemoryDB::from_null_node(&rlp::NULL_RLP, rlp::NULL_RLP.as_ref().into()));
+        let hashdb = Box::new(memory_db::MemoryDB::from_null_node(
+            &rlp::NULL_RLP,
+            rlp::NULL_RLP.as_ref().into(),
+        ));
         let state_db = state_db::StateDB::new(hashdb, 5 * 1024 * 1024);
-        let mut state = state::State::new(
-            state_db,
-            spec.engine.account_start_nonce(0),
-            factories.clone(),
-        );
+        let mut state =
+            state::State::new(state_db, spec.engine.account_start_nonce(0), factories.clone());
         state.populate_from(pod_state);
         state.commit()?;
         Ok(state)
@@ -179,10 +162,7 @@ impl<'a> EvmTestClient<'a> {
     /// Execute the VM given ActionParams and tracer.
     /// Returns amount of gas left and the output.
     pub fn call<T: trace::Tracer, V: trace::VMTracer>(
-        &mut self,
-        params: ActionParams,
-        tracer: &mut T,
-        vm_tracer: &mut V,
+        &mut self, params: ActionParams, tracer: &mut T, vm_tracer: &mut V,
     ) -> Result<FinalizationResult, EvmTestError> {
         let genesis = self.spec.genesis_header();
         let info = client::EnvInfo {
@@ -201,29 +181,20 @@ impl<'a> EvmTestClient<'a> {
     /// Execute the VM given envinfo, ActionParams and tracer.
     /// Returns amount of gas left and the output.
     pub fn call_envinfo<T: trace::Tracer, V: trace::VMTracer>(
-        &mut self,
-        params: ActionParams,
-        tracer: &mut T,
-        vm_tracer: &mut V,
-        info: client::EnvInfo,
+        &mut self, params: ActionParams, tracer: &mut T, vm_tracer: &mut V, info: client::EnvInfo,
     ) -> Result<FinalizationResult, EvmTestError> {
         let mut substate = state::Substate::new();
         let machine = self.spec.engine.machine();
         let schedule = machine.schedule(info.number);
         let mut executive = executive::Executive::new(&mut self.state, &info, &machine, &schedule);
-        executive
-            .call(params, &mut substate, tracer, vm_tracer)
-            .map_err(EvmTestError::Evm)
+        executive.call(params, &mut substate, tracer, vm_tracer).map_err(EvmTestError::Evm)
     }
 
     /// Executes a SignedTransaction within context of the provided state and `EnvInfo`.
     /// Returns the state root, gas left and the output.
     pub fn transact<T: trace::Tracer, V: trace::VMTracer>(
-        &mut self,
-        env_info: &client::EnvInfo,
-        transaction: transaction::SignedTransaction,
-        tracer: T,
-        vm_tracer: V,
+        &mut self, env_info: &client::EnvInfo, transaction: transaction::SignedTransaction,
+        tracer: T, vm_tracer: V,
     ) -> std::result::Result<TransactSuccess<T::Output, V::Output>, TransactErr> {
         let initial_gas = transaction.tx().gas;
         // Verify transaction
@@ -244,11 +215,7 @@ impl<'a> EvmTestClient<'a> {
             tracer,
             vm_tracer,
         );
-        let scheme = self
-            .spec
-            .engine
-            .machine()
-            .create_address_scheme(env_info.number);
+        let scheme = self.spec.engine.machine().create_address_scheme(env_info.number);
 
         // Touch the coinbase at the end of the test to simulate
         // miner reward.
@@ -306,11 +273,7 @@ impl<'a> EvmTestClient<'a> {
                 },
                 end_state,
             }),
-            Err(error) => Err(TransactErr {
-                state_root,
-                error,
-                end_state,
-            }),
+            Err(error) => Err(TransactErr { state_root, error, end_state }),
         }
     }
 }

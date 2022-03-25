@@ -50,16 +50,12 @@ impl SharedCache {
     /// Create a jump destinations cache with a maximum size in bytes
     /// to cache.
     pub fn new(max_size: usize) -> Self {
-        SharedCache {
-            jump_destinations: Mutex::new(MemoryLruCache::new(max_size)),
-        }
+        SharedCache { jump_destinations: Mutex::new(MemoryLruCache::new(max_size)) }
     }
 
     /// Get jump destinations bitmap for a contract.
     pub fn jump_and_sub_destinations(
-        &self,
-        code_hash: &Option<H256>,
-        code: &[u8],
+        &self, code_hash: &Option<H256>, code: &[u8],
     ) -> (Arc<BitSet>, Arc<BitSet>) {
         if let Some(ref code_hash) = code_hash {
             if code_hash == &KECCAK_EMPTY {
@@ -142,11 +138,7 @@ mod test {
         let cache_item = SharedCache::find_jump_and_sub_destinations(&code);
 
         // then
-        assert!(cache_item
-            .jump_destination
-            .0
-            .iter()
-            .eq(vec![66].into_iter()));
+        assert!(cache_item.jump_destination.0.iter().eq(vec![66].into_iter()));
         assert!(cache_item.sub_entrypoint.0.is_empty());
     }
 
@@ -183,11 +175,7 @@ mod test {
 
         // then
         assert!(cache_item.jump_destination.0.is_empty());
-        assert!(cache_item
-            .sub_entrypoint
-            .0
-            .iter()
-            .eq(vec![12, 17].into_iter()));
+        assert!(cache_item.sub_entrypoint.0.iter().eq(vec![12, 17].into_iter()));
     }
 
     #[test]

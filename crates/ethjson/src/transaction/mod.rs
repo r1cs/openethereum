@@ -20,4 +20,6 @@ mod test;
 mod transaction;
 mod txtest;
 
-pub use self::{test::Test, transaction::Transaction, txtest::TransactionTest};
+pub use self::test::Test;
+pub use self::transaction::Transaction;
+pub use self::txtest::TransactionTest;

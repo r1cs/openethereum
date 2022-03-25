@@ -18,7 +18,8 @@
 
 use crate::transaction::TransactionTest;
 use serde_json::{self, Error};
-use std::{collections::BTreeMap, io::Read};
+use std::collections::BTreeMap;
+use std::io::Read;
 
 /// TransactionTest test deserializer.
 #[derive(Debug, Deserialize)]

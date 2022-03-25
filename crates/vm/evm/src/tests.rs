@@ -19,18 +19,13 @@ use ethereum_types::{Address, H256, U256};
 use factory::Factory;
 use hex_literal::hex;
 use rustc_hex::FromHex;
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Debug,
-    hash::Hash,
-    str::FromStr,
-    sync::Arc,
-};
-use vm::{
-    self,
-    tests::{test_finalize, FakeCall, FakeCallType, FakeExt},
-    ActionParams, ActionValue, Ext,
-};
+use std::collections::{HashMap, HashSet};
+use std::fmt::Debug;
+use std::hash::Hash;
+use std::str::FromStr;
+use std::sync::Arc;
+use vm::tests::{test_finalize, FakeCall, FakeCallType, FakeExt};
+use vm::{self, ActionParams, ActionValue, Ext};
 use vmtype::VMType;
 
 evm_test! {test_add: test_add_int}
@@ -50,11 +45,7 @@ fn test_add(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_988));
-    assert_store(
-        &ext,
-        0,
-        "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
-    );
+    assert_store(&ext, 0, "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe");
 }
 
 evm_test! {test_sha3: test_sha3_int}
@@ -74,11 +65,7 @@ fn test_sha3(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_961));
-    assert_store(
-        &ext,
-        0,
-        "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
-    );
+    assert_store(&ext, 0, "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470");
 }
 
 evm_test! {test_address: test_address_int}
@@ -98,11 +85,7 @@ fn test_address(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000f572e5295c57f15886f9b263e2f6d2d6c7b5ec6",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000f572e5295c57f15886f9b263e2f6d2d6c7b5ec6");
 }
 
 evm_test! {test_origin: test_origin_int}
@@ -124,11 +107,7 @@ fn test_origin(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "000000000000000000000000cd1722f2947def4cf144679da39c4c32bdc35681",
-    );
+    assert_store(&ext, 0, "000000000000000000000000cd1722f2947def4cf144679da39c4c32bdc35681");
 }
 
 evm_test! {test_selfbalance: test_selfbalance_int}
@@ -154,11 +133,7 @@ fn test_selfbalance(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
     assert_eq!(gas_left, U256::from(79_992)); // TODO[dvdplm]: do the sums here, SELFBALANCE-5 + PUSH1-3 + ONEBYTE-4 + SSTORE-?? = 100_000 - 79_992
-    assert_store(
-        &ext,
-        0xff,
-        "0000000000000000000000000000000000000000000000000000000000000401",
-    );
+    assert_store(&ext, 0xff, "0000000000000000000000000000000000000000000000000000000000000401");
 }
 
 evm_test! {test_sender: test_sender_int}
@@ -180,11 +155,7 @@ fn test_sender(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "000000000000000000000000cd1722f2947def4cf144679da39c4c32bdc35681",
-    );
+    assert_store(&ext, 0, "000000000000000000000000cd1722f2947def4cf144679da39c4c32bdc35681");
 }
 
 evm_test! {test_chain_id: test_chain_id_int}
@@ -205,11 +176,7 @@ fn test_chain_id(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000009",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000009");
 }
 
 evm_test! {test_extcodecopy: test_extcodecopy_int}
@@ -244,11 +211,7 @@ fn test_extcodecopy(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_935));
-    assert_store(
-        &ext,
-        0,
-        "6005600055000000000000000000000000000000000000000000000000000000",
-    );
+    assert_store(&ext, 0, "6005600055000000000000000000000000000000000000000000000000000000");
 }
 
 evm_test! {test_log_empty: test_log_empty_int}
@@ -308,9 +271,7 @@ fn test_log_sender(factory: super::Factory) {
     );
     assert_eq!(
         ext.logs[0].data,
-        "ff00000000000000000000000000000000000000000000000000000000000000"
-            .from_hex()
-            .unwrap()
+        "ff00000000000000000000000000000000000000000000000000000000000000".from_hex().unwrap()
     );
 }
 
@@ -341,9 +302,8 @@ evm_test! {test_calldataload: test_calldataload_int}
 fn test_calldataload(factory: super::Factory) {
     let address = Address::from_str("0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6").unwrap();
     let code = "600135600055".from_hex().unwrap();
-    let data = "0123ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23"
-        .from_hex()
-        .unwrap();
+    let data =
+        "0123ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23".from_hex().unwrap();
 
     let mut params = ActionParams::default();
     params.address = address.clone();
@@ -358,11 +318,7 @@ fn test_calldataload(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_991));
-    assert_store(
-        &ext,
-        0,
-        "23ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23",
-    );
+    assert_store(&ext, 0, "23ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff23");
 }
 
 evm_test! {test_author: test_author_int}
@@ -382,11 +338,7 @@ fn test_author(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000f572e5295c57f15886f9b263e2f6d2d6c7b5ec6",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000f572e5295c57f15886f9b263e2f6d2d6c7b5ec6");
 }
 
 evm_test! {test_timestamp: test_timestamp_int}
@@ -406,11 +358,7 @@ fn test_timestamp(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000001234",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000001234");
 }
 
 evm_test! {test_number: test_number_int}
@@ -430,11 +378,7 @@ fn test_number(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000001234",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000001234");
 }
 
 evm_test! {test_difficulty: test_difficulty_int}
@@ -454,11 +398,7 @@ fn test_difficulty(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000001234",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000001234");
 }
 
 evm_test! {test_base_fee: test_base_fee_int}
@@ -483,11 +423,7 @@ fn test_base_fee(factory: super::Factory) {
 
     assert_eq!(gas_left, U256::from(77_895));
     println!("elements {}", ext.store.len());
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000007",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000007");
 }
 
 evm_test! {test_gas_limit: test_gas_limit_int}
@@ -507,11 +443,7 @@ fn test_gas_limit(factory: super::Factory) {
     };
 
     assert_eq!(gas_left, U256::from(79_995));
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000001234",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000001234");
 }
 
 evm_test! {test_mul: test_mul_int}
@@ -528,11 +460,7 @@ fn test_mul(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "000000000000000000000000000000000000000000000000734349397b853383",
-    );
+    assert_store(&ext, 0, "000000000000000000000000000000000000000000000000734349397b853383");
     assert_eq!(gas_left, U256::from(79_983));
 }
 
@@ -550,11 +478,7 @@ fn test_sub(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000012364ad0302",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000012364ad0302");
     assert_eq!(gas_left, U256::from(79_985));
 }
 
@@ -572,11 +496,7 @@ fn test_div(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "000000000000000000000000000000000000000000000000000000000002e0ac",
-    );
+    assert_store(&ext, 0, "000000000000000000000000000000000000000000000000000000000002e0ac");
     assert_eq!(gas_left, U256::from(79_983));
 }
 
@@ -594,19 +514,13 @@ fn test_div_zero(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000000");
     assert_eq!(gas_left, U256::from(94_983));
 }
 
 evm_test! {test_mod: test_mod_int}
 fn test_mod(factory: super::Factory) {
-    let code = "650123651246236265432290066000556501236512462360009006600155"
-        .from_hex()
-        .unwrap();
+    let code = "650123651246236265432290066000556501236512462360009006600155".from_hex().unwrap();
 
     let mut params = ActionParams::default();
     params.gas = U256::from(100_000);
@@ -618,24 +532,14 @@ fn test_mod(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000076b4b",
-    );
-    assert_store(
-        &ext,
-        1,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000076b4b");
+    assert_store(&ext, 1, "0000000000000000000000000000000000000000000000000000000000000000");
     assert_eq!(gas_left, U256::from(74_966));
 }
 
 evm_test! {test_smod: test_smod_int}
 fn test_smod(factory: super::Factory) {
-    let code = "650123651246236265432290076000556501236512462360009007600155"
-        .from_hex()
-        .unwrap();
+    let code = "650123651246236265432290076000556501236512462360009007600155".from_hex().unwrap();
 
     let mut params = ActionParams::default();
     params.gas = U256::from(100_000);
@@ -647,24 +551,14 @@ fn test_smod(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000076b4b",
-    );
-    assert_store(
-        &ext,
-        1,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000076b4b");
+    assert_store(&ext, 1, "0000000000000000000000000000000000000000000000000000000000000000");
     assert_eq!(gas_left, U256::from(74_966));
 }
 
 evm_test! {test_sdiv: test_sdiv_int}
 fn test_sdiv(factory: super::Factory) {
-    let code = "650123651246236265432290056000556501236512462360009005600155"
-        .from_hex()
-        .unwrap();
+    let code = "650123651246236265432290056000556501236512462360009005600155".from_hex().unwrap();
 
     let mut params = ActionParams::default();
     params.gas = U256::from(100_000);
@@ -676,16 +570,8 @@ fn test_sdiv(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "000000000000000000000000000000000000000000000000000000000002e0ac",
-    );
-    assert_store(
-        &ext,
-        1,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
+    assert_store(&ext, 0, "000000000000000000000000000000000000000000000000000000000002e0ac");
+    assert_store(&ext, 1, "0000000000000000000000000000000000000000000000000000000000000000");
     assert_eq!(gas_left, U256::from(74_966));
 }
 
@@ -705,21 +591,9 @@ fn test_exp(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "90fd23767b60204c3d6fc8aec9e70a42a3f127140879c133a20129a597ed0c59",
-    );
-    assert_store(
-        &ext,
-        1,
-        "0000000000000000000000000000000000000000000000000000012365124623",
-    );
-    assert_store(
-        &ext,
-        2,
-        "0000000000000000000000000000000000000000000000000000000000000001",
-    );
+    assert_store(&ext, 0, "90fd23767b60204c3d6fc8aec9e70a42a3f127140879c133a20129a597ed0c59");
+    assert_store(&ext, 1, "0000000000000000000000000000000000000000000000000000012365124623");
+    assert_store(&ext, 2, "0000000000000000000000000000000000000000000000000000000000000001");
     assert_eq!(gas_left, U256::from(39_923));
 }
 
@@ -739,34 +613,17 @@ fn test_comparison(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
-    assert_store(
-        &ext,
-        1,
-        "0000000000000000000000000000000000000000000000000000000000000001",
-    );
-    assert_store(
-        &ext,
-        2,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
-    assert_store(
-        &ext,
-        3,
-        "0000000000000000000000000000000000000000000000000000000000000001",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000000");
+    assert_store(&ext, 1, "0000000000000000000000000000000000000000000000000000000000000001");
+    assert_store(&ext, 2, "0000000000000000000000000000000000000000000000000000000000000000");
+    assert_store(&ext, 3, "0000000000000000000000000000000000000000000000000000000000000001");
     assert_eq!(gas_left, U256::from(49_952));
 }
 
 evm_test! {test_signed_comparison: test_signed_comparison_int}
 fn test_signed_comparison(factory: super::Factory) {
-    let code = "60106000036010818112600055136001556010601060000381811260025513600355"
-        .from_hex()
-        .unwrap();
+    let code =
+        "60106000036010818112600055136001556010601060000381811260025513600355".from_hex().unwrap();
 
     let mut params = ActionParams::default();
     params.gas = U256::from(100_000);
@@ -778,26 +635,10 @@ fn test_signed_comparison(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
-    assert_store(
-        &ext,
-        1,
-        "0000000000000000000000000000000000000000000000000000000000000001",
-    );
-    assert_store(
-        &ext,
-        2,
-        "0000000000000000000000000000000000000000000000000000000000000001",
-    );
-    assert_store(
-        &ext,
-        3,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000000");
+    assert_store(&ext, 1, "0000000000000000000000000000000000000000000000000000000000000001");
+    assert_store(&ext, 2, "0000000000000000000000000000000000000000000000000000000000000001");
+    assert_store(&ext, 3, "0000000000000000000000000000000000000000000000000000000000000000");
     assert_eq!(gas_left, U256::from(49_940));
 }
 
@@ -817,36 +658,12 @@ fn test_bitops(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "00000000000000000000000000000000000000000000000000000000000000f0",
-    );
-    assert_store(
-        &ext,
-        1,
-        "0000000000000000000000000000000000000000000000000000000000000fff",
-    );
-    assert_store(
-        &ext,
-        2,
-        "0000000000000000000000000000000000000000000000000000000000000f0f",
-    );
-    assert_store(
-        &ext,
-        3,
-        "0000000000000000000000000000000000000000000000000000000000000001",
-    );
-    assert_store(
-        &ext,
-        4,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
-    assert_store(
-        &ext,
-        5,
-        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    );
+    assert_store(&ext, 0, "00000000000000000000000000000000000000000000000000000000000000f0");
+    assert_store(&ext, 1, "0000000000000000000000000000000000000000000000000000000000000fff");
+    assert_store(&ext, 2, "0000000000000000000000000000000000000000000000000000000000000f0f");
+    assert_store(&ext, 3, "0000000000000000000000000000000000000000000000000000000000000001");
+    assert_store(&ext, 4, "0000000000000000000000000000000000000000000000000000000000000000");
+    assert_store(&ext, 5, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     assert_eq!(gas_left, U256::from(44_937));
 }
 
@@ -866,26 +683,10 @@ fn test_addmod_mulmod(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000001",
-    );
-    assert_store(
-        &ext,
-        1,
-        "000000000000000000000000000000000000000000000000000000000000000f",
-    );
-    assert_store(
-        &ext,
-        2,
-        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    );
-    assert_store(
-        &ext,
-        3,
-        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000001");
+    assert_store(&ext, 1, "000000000000000000000000000000000000000000000000000000000000000f");
+    assert_store(&ext, 2, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+    assert_store(&ext, 3, "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     assert_eq!(gas_left, U256::from(19_914));
 }
 
@@ -903,16 +704,8 @@ fn test_byte(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    );
-    assert_store(
-        &ext,
-        1,
-        "00000000000000000000000000000000000000000000000000000000000000ff",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000000");
+    assert_store(&ext, 1, "00000000000000000000000000000000000000000000000000000000000000ff");
     assert_eq!(gas_left, U256::from(74_976));
 }
 
@@ -930,16 +723,8 @@ fn test_signextend(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000fff",
-    );
-    assert_store(
-        &ext,
-        1,
-        "00000000000000000000000000000000000000000000000000000000000000ff",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000fff");
+    assert_store(&ext, 1, "00000000000000000000000000000000000000000000000000000000000000ff");
     assert_eq!(gas_left, U256::from(59_972));
 }
 
@@ -978,19 +763,14 @@ fn test_pop(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "00000000000000000000000000000000000000000000000000000000000000f0",
-    );
+    assert_store(&ext, 0, "00000000000000000000000000000000000000000000000000000000000000f0");
     assert_eq!(gas_left, U256::from(79_989));
 }
 
 evm_test! {test_extops: test_extops_int}
 fn test_extops(factory: super::Factory) {
-    let code = "5a6001555836553a600255386003553460045560016001526016590454600555"
-        .from_hex()
-        .unwrap();
+    let code =
+        "5a6001555836553a600255386003553460045560016001526016590454600555".from_hex().unwrap();
 
     let mut params = ActionParams::default();
     params.gas = U256::from(150_000);
@@ -1004,36 +784,12 @@ fn test_extops(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap()).unwrap()
     };
 
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000004",
-    ); // PC / CALLDATASIZE
-    assert_store(
-        &ext,
-        1,
-        "00000000000000000000000000000000000000000000000000000000000249ee",
-    ); // GAS
-    assert_store(
-        &ext,
-        2,
-        "0000000000000000000000000000000000000000000000000000000000000032",
-    ); // GASPRICE
-    assert_store(
-        &ext,
-        3,
-        "0000000000000000000000000000000000000000000000000000000000000020",
-    ); // CODESIZE
-    assert_store(
-        &ext,
-        4,
-        "0000000000000000000000000000000000000000000000000000000000000099",
-    ); // CALLVALUE
-    assert_store(
-        &ext,
-        5,
-        "0000000000000000000000000000000000000000000000000000000000000032",
-    );
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000004"); // PC / CALLDATASIZE
+    assert_store(&ext, 1, "00000000000000000000000000000000000000000000000000000000000249ee"); // GAS
+    assert_store(&ext, 2, "0000000000000000000000000000000000000000000000000000000000000032"); // GASPRICE
+    assert_store(&ext, 3, "0000000000000000000000000000000000000000000000000000000000000020"); // CODESIZE
+    assert_store(&ext, 4, "0000000000000000000000000000000000000000000000000000000000000099"); // CALLVALUE
+    assert_store(&ext, 5, "0000000000000000000000000000000000000000000000000000000000000032");
     assert_eq!(gas_left, U256::from(29_898));
 }
 
@@ -1054,16 +810,8 @@ fn test_jumps(factory: super::Factory) {
     };
 
     assert_eq!(ext.sstore_clears, ext.schedule().sstore_refund_gas as i128);
-    assert_store(
-        &ext,
-        0,
-        "0000000000000000000000000000000000000000000000000000000000000000",
-    ); // 5!
-    assert_store(
-        &ext,
-        1,
-        "0000000000000000000000000000000000000000000000000000000000000078",
-    ); // 5!
+    assert_store(&ext, 0, "0000000000000000000000000000000000000000000000000000000000000000"); // 5!
+    assert_store(&ext, 1, "0000000000000000000000000000000000000000000000000000000000000078"); // 5!
     assert_eq!(gas_left, U256::from(54_117));
 }
 
@@ -1137,10 +885,7 @@ fn test_subs_shallow_return_stack(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap())
     };
 
-    let expected = Result::Err(vm::Error::SubStackUnderflow {
-        wanted: 1,
-        on_stack: 0,
-    });
+    let expected = Result::Err(vm::Error::SubStackUnderflow { wanted: 1, on_stack: 0 });
     assert_eq!(current, expected);
 }
 
@@ -1190,10 +935,7 @@ fn test_subs_substack_out(factory: super::Factory) {
         test_finalize(vm.exec(&mut ext).ok().unwrap())
     };
 
-    let expected = Result::Err(vm::Error::OutOfSubStack {
-        wanted: 1,
-        limit: MAX_SUB_STACK_SIZE,
-    });
+    let expected = Result::Err(vm::Error::OutOfSubStack { wanted: 1, limit: MAX_SUB_STACK_SIZE });
     assert_eq!(current, expected);
 }
 
@@ -1726,10 +1468,7 @@ fn test_refund_post_london(factory: super::Factory) {
 }
 
 fn london_refund_test(
-    factory: &super::Factory,
-    code: Vec<u8>,
-    fill: &[u64],
-    expected_refund: i128,
+    factory: &super::Factory, code: Vec<u8>, fill: &[u64], expected_refund: i128,
 ) {
     let mut params = ActionParams::default();
     params.gas = U256::from(22318);
@@ -1746,11 +1485,7 @@ fn london_refund_test(
 }
 
 fn push_two_pop_one_constantinople_test(
-    factory: &super::Factory,
-    opcode: u8,
-    push1: &str,
-    push2: &str,
-    result: &str,
+    factory: &super::Factory, opcode: u8, push1: &str, push2: &str, result: &str,
 ) {
     let mut push1 = push1.from_hex().unwrap();
     let mut push2 = push2.from_hex().unwrap();
@@ -1788,8 +1523,5 @@ fn assert_set_contains<T: Debug + Eq + PartialEq + Hash>(set: &HashSet<T>, val: 
 }
 
 fn assert_store(ext: &FakeExt, pos: u64, val: &str) {
-    assert_eq!(
-        ext.store.get(&H256::from_low_u64_be(pos)).unwrap(),
-        &H256::from_str(val).unwrap()
-    );
+    assert_eq!(ext.store.get(&H256::from_low_u64_be(pos)).unwrap(), &H256::from_str(val).unwrap());
 }

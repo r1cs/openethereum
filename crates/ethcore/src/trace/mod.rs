@@ -22,24 +22,19 @@ mod import;
 mod noop_tracer;
 mod types;
 
-pub use self::{
-    config::Config,
-    executive_tracer::{ExecutiveTracer, ExecutiveVMTracer},
-    import::ImportRequest,
-    localized::LocalizedTrace,
-    noop_tracer::{NoopTracer, NoopVMTracer},
-};
+pub use self::config::Config;
+pub use self::executive_tracer::{ExecutiveTracer, ExecutiveVMTracer};
+pub use self::import::ImportRequest;
+pub use self::localized::LocalizedTrace;
+pub use self::noop_tracer::{NoopTracer, NoopVMTracer};
 
-pub use self::types::{
-    error::Error as TraceError,
-    filter,
-    filter::{AddressesFilter, Filter},
-    flat,
-    flat::{FlatBlockTraces, FlatTrace, FlatTransactionTraces},
-    localized, trace,
-    trace::{MemoryDiff, RewardType, StorageDiff, VMExecutedOperation, VMOperation, VMTrace},
-    Tracing,
+pub use self::types::error::Error as TraceError;
+pub use self::types::filter::{AddressesFilter, Filter};
+pub use self::types::flat::{FlatBlockTraces, FlatTrace, FlatTransactionTraces};
+pub use self::types::trace::{
+    MemoryDiff, RewardType, StorageDiff, VMExecutedOperation, VMOperation, VMTrace
 };
+pub use self::types::{filter, flat, localized, trace, Tracing};
 
 use ethereum_types::{Address, H256, U256};
 use types::BlockNumber;
@@ -89,12 +84,8 @@ pub trait VMTracer: Send {
 
     /// Trace the preparation to execute a single valid instruction.
     fn trace_prepare_execute(
-        &mut self,
-        _pc: usize,
-        _instruction: u8,
-        _gas_cost: U256,
-        _mem_written: Option<(usize, usize)>,
-        _store_written: Option<(U256, U256)>,
+        &mut self, _pc: usize, _instruction: u8, _gas_cost: U256,
+        _mem_written: Option<(usize, usize)>, _store_written: Option<(U256, U256)>,
     ) {
     }
 
