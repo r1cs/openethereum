@@ -57,7 +57,11 @@ pub fn generate_block(
             .and_then(|_| open_block.push_transaction(transaction, None));
 
         match result {
-            Err(Error::Execution(ExecutionError::BlockGasLimitReached { gas_limit, gas_used, gas })) => {
+            Err(Error::Execution(ExecutionError::BlockGasLimitReached {
+                gas_limit,
+                gas_used,
+                gas,
+            })) => {
                 debug!(target: "miner", "Skipping adding transaction to block because of gas limit: {:?} (limit: {:?}, used: {:?}, gas: {:?})", hash, gas_limit, gas_used, gas);
                 // Exit early if gas left is smaller then min_tx_gas
                 let gas_left = gas_limit - gas_used;
