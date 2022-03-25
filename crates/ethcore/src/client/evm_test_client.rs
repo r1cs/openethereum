@@ -16,11 +16,11 @@
 
 //! Simple Client used for EVM tests.
 
+use alloc::sync::Arc;
+use core::fmt;
 use ethereum_types::{H160, H256, U256};
 use evm::{FinalizationResult, VMType};
 use factory::{self, Factories};
-use std::fmt;
-use std::sync::Arc;
 use types::{log_entry, receipt, transaction};
 use vm::{self, ActionParams};
 use {client, ethtrie, executive, pod_state, spec, state, state_db, trace, trie};

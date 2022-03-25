@@ -1,6 +1,8 @@
+use alloc::sync::Arc;
 use block::OpenBlock;
 use bytes::Bytes;
 use client::PrepareOpenBlock;
+use core::cell::RefCell;
 use engines::EthEngine;
 use error::Error;
 use ethereum_types::{Address, U256};
@@ -10,8 +12,6 @@ use factory::{Factories, VmFactory};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
 use state_db::StateDB;
-use std::cell::RefCell;
-use std::sync::Arc;
 use trie::{DBValue, TrieSpec};
 use types::header::Header;
 use vm::LastHashes;
