@@ -18,54 +18,19 @@
 //! Ethcore library
 
 extern crate common_types as types;
-extern crate core;
-extern crate crypto;
-extern crate ethash;
 extern crate ethcore_builtin as builtin;
-extern crate ethereum_types;
-extern crate ethjson;
-extern crate hash_db;
-extern crate itertools;
 extern crate keccak_hash as hash;
-extern crate keccak_hasher;
-extern crate lru;
-extern crate maplit;
-extern crate memory_db;
 extern crate parity_bytes as bytes;
-extern crate parking_lot;
 extern crate patricia_trie_ethereum as ethtrie;
-#[cfg(feature = "json-tests")]
-extern crate rayon;
-extern crate rlp;
-extern crate rustc_hex;
-extern crate serde;
 extern crate trie_db as trie;
 extern crate triehash_ethereum as triehash;
-extern crate unexpected;
-extern crate vm;
 
-#[cfg(any(test, feature = "env_logger"))]
-extern crate env_logger;
-#[cfg(feature = "json-tests")]
-extern crate globset;
-#[cfg(test)]
-extern crate rlp_compress;
-#[cfg(feature = "json-tests")]
-extern crate walkdir;
-
-#[macro_use]
-extern crate error_chain;
-#[macro_use]
-extern crate log;
 #[macro_use]
 extern crate macros;
 #[macro_use]
 extern crate rlp_derive;
 #[macro_use]
 extern crate serde_derive;
-
-#[cfg_attr(test, macro_use)]
-extern crate evm;
 
 pub mod block;
 pub mod client;

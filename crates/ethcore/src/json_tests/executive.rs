@@ -15,23 +15,23 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::test_common::*;
+use crate::ethereum;
+use crate::executive::*;
+use crate::externalities::*;
+use crate::machine::EthereumMachine as Machine;
+use crate::state::{Backend as StateBackend, State, Substate};
+use crate::test_helpers::get_temp_state;
+use crate::trace::{NoopTracer, NoopVMTracer, Tracer, VMTracer};
 use bytes::Bytes;
 use ethereum_types::BigEndianHash;
 use evm::Finalize;
-use executive::*;
-use externalities::*;
 use hash::keccak;
-use machine::EthereumMachine as Machine;
 use rlp::RlpStream;
-use state::{Backend as StateBackend, State, Substate};
 use std::path::Path;
 use std::sync::Arc;
-use test_helpers::get_temp_state;
-use trace::{NoopTracer, NoopVMTracer, Tracer, VMTracer};
 use vm::{
     self, ActionParams, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule
 };
-use {ethjson, ethtrie};
 
 use super::HookType;
 
@@ -288,7 +288,7 @@ pub fn json_executive_test<H: FnMut(&str, HookType)>(
         state.populate_from(From::from(vm.pre_state.clone()));
         let info: EnvInfo = From::from(vm.env);
         let machine = {
-            let mut machine = ::ethereum::new_frontier_test_machine();
+            let mut machine = ethereum::new_frontier_test_machine();
             machine.set_schedule_creation_rules(Box::new(move |s, _| s.max_depth = 1));
             machine
         };

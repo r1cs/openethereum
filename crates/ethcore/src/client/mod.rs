@@ -18,15 +18,13 @@
 
 #[cfg(any(test, feature = "test-helpers"))]
 mod evm_test_client;
-mod riscv;
-pub use self::riscv::RiscvEnv;
 
 #[cfg(any(test, feature = "test-helpers"))]
 pub use self::evm_test_client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
 pub use self::traits::{
     BlockInfo, ChainInfo, EngineClient, EngineInfo, PrepareOpenBlock, StateOrBlock
 };
-pub use state::StateInfo;
+pub use crate::state::StateInfo;
 
 pub use vm::{EnvInfo, LastHashes};
 

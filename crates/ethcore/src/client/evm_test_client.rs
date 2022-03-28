@@ -16,14 +16,15 @@
 
 //! Simple Client used for EVM tests.
 
+use crate::factory::{self, Factories};
+use crate::{client, error, executive, pod_state, spec, state, state_db, trace};
 use ethereum_types::{H160, H256, U256};
 use evm::{FinalizationResult, VMType};
-use factory::{self, Factories};
 use std::fmt;
 use std::sync::Arc;
 use types::{log_entry, receipt, transaction};
 use vm::{self, ActionParams};
-use {client, ethtrie, executive, pod_state, spec, state, state_db, trace, trie};
+use {ethtrie, trie_db as trie};
 
 /// EVM test Error.
 #[derive(Debug)]
@@ -33,12 +34,12 @@ pub enum EvmTestError {
     /// EVM error.
     Evm(vm::Error),
     /// Initialization error.
-    ClientError(::error::Error),
+    ClientError(error::Error),
     /// Post-condition failure,
     PostCondition(String),
 }
 
-impl<E: Into<::error::Error>> From<E> for EvmTestError {
+impl<E: Into<error::Error>> From<E> for EvmTestError {
     fn from(err: E) -> Self {
         EvmTestError::ClientError(err.into())
     }
@@ -57,7 +58,7 @@ impl fmt::Display for EvmTestError {
     }
 }
 
-use ethereum::{self};
+use crate::ethereum::{self};
 use ethjson::spec::ForkSpec;
 
 /// Simplified, single-block EVM test client.
@@ -309,7 +310,7 @@ pub struct TransactErr {
     /// State root
     pub state_root: H256,
     /// Execution error
-    pub error: ::error::Error,
+    pub error: error::Error,
     /// end state if needed
     pub end_state: Option<pod_state::PodState>,
 }

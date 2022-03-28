@@ -16,15 +16,15 @@
 
 //! Single account in the system.
 
+use crate::error::Error;
+use crate::pod_account::*;
 use bytes::{Bytes, ToPretty};
-use error::Error;
 use ethereum_types::{Address, BigEndianHash, H256, U256};
 use ethtrie::{Result as TrieResult, SecTrieDB, TrieDB, TrieFactory};
 use hash::{keccak, KECCAK_EMPTY, KECCAK_NULL_RLP};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
 use lru::LruCache;
-use pod_account::*;
 use rlp::{encode, RlpStream};
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
@@ -131,13 +131,7 @@ impl Account {
             code_hash: pod.code.as_ref().map_or(KECCAK_EMPTY, |c| keccak(c)),
             code_filth: Filth::Dirty,
             code_size: Some(pod.code.as_ref().map_or(0, |c| c.len())),
-            code_cache: Arc::new(pod.code.map_or_else(
-                || {
-                    warn!("POD account with unknown code is being created! Assuming no code.");
-                    vec![]
-                },
-                |c| c,
-            )),
+            code_cache: Arc::new(pod.code.map_or_else(|| vec![], |c| c)),
             address_hash: Cell::new(None),
         }
     }
@@ -368,13 +362,6 @@ impl Account {
     #[must_use]
     pub fn cache_code(&mut self, db: &dyn HashDB<KeccakHasher, DBValue>) -> Option<Arc<Bytes>> {
         // TODO: fill out self.code_cache;
-        trace!(
-            "Account::cache_code: ic={}; self.code_hash={:?}, self.code_cache={}",
-            self.is_cached(),
-            self.code_hash,
-            self.code_cache.pretty()
-        );
-
         if self.is_cached() {
             return Some(self.code_cache.clone());
         }
@@ -385,22 +372,12 @@ impl Account {
                 self.code_cache = Arc::new(x.into_vec());
                 Some(self.code_cache.clone())
             }
-            _ => {
-                warn!("Failed reverse get of {}", self.code_hash);
-                None
-            }
+            _ => None,
         }
     }
 
     /// Provide code to cache. For correctness, should be the correct code for the account.
     pub fn cache_given_code(&mut self, code: Arc<Bytes>) {
-        trace!(
-            "Account::cache_given_code: ic={}; self.code_hash={:?}, self.code_cache={}",
-            self.is_cached(),
-            self.code_hash,
-            self.code_cache.pretty()
-        );
-
         self.code_size = Some(code.len());
         self.code_cache = code;
     }
@@ -410,12 +387,6 @@ impl Account {
     #[must_use]
     pub fn cache_code_size(&mut self, db: &dyn HashDB<KeccakHasher, DBValue>) -> bool {
         // TODO: fill out self.code_cache;
-        trace!(
-            "Account::cache_code_size: ic={}; self.code_hash={:?}, self.code_cache={}",
-            self.is_cached(),
-            self.code_hash,
-            self.code_cache.pretty()
-        );
         self.code_size.is_some()
             || if self.code_hash != KECCAK_EMPTY {
                 match db.get(&self.code_hash) {
@@ -423,10 +394,7 @@ impl Account {
                         self.code_size = Some(x.len());
                         true
                     }
-                    _ => {
-                        warn!("Failed reverse get of {}", self.code_hash);
-                        false
-                    }
+                    _ => false,
                 }
             } else {
                 // If the code hash is empty hash, then the code size is zero.
@@ -532,12 +500,6 @@ impl Account {
 
     /// Commit any unsaved code. `code_hash` will always return the hash of the `code_cache` after this.
     pub fn commit_code(&mut self, db: &mut dyn HashDB<KeccakHasher, DBValue>) {
-        trace!(
-            "Commiting code of {:?} - {:?}, {:?}",
-            self,
-            self.code_filth == Filth::Dirty,
-            self.code_cache.is_empty()
-        );
         match (self.code_filth == Filth::Dirty, self.code_cache.is_empty()) {
             (true, true) => {
                 self.code_size = Some(0);

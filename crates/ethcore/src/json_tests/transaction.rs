@@ -15,10 +15,11 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use super::test_common::*;
-use client::EvmTestClient;
+use crate::client::EvmTestClient;
+use crate::error;
+use crate::transaction_ext::Transaction;
 use ethjson;
 use std::path::Path;
-use transaction_ext::Transaction;
 use types::header::Header;
 use types::transaction::{TypedTransaction, UnverifiedTransaction};
 
@@ -58,7 +59,7 @@ pub fn json_transaction_test<H: FnMut(&str, HookType)>(
             };
 
             let rlp: Vec<u8> = test.rlp.clone().into();
-            let res = TypedTransaction::decode(&rlp).map_err(::error::Error::from).and_then(
+            let res = TypedTransaction::decode(&rlp).map_err(error::Error::from).and_then(
                 |t: UnverifiedTransaction| {
                     let mut header: Header = Default::default();
                     // Use high enough number to activate all required features.

@@ -16,9 +16,9 @@
 
 //! Account system expressed in Plain Old Data.
 
+use crate::state::Account;
 use bytes::Bytes;
 use ethereum_types::{BigEndianHash, H256, U256};
-use ethjson;
 use ethtrie::RlpCodec;
 use hash::keccak;
 use hash_db::HashDB;
@@ -27,7 +27,6 @@ use keccak_hasher::KeccakHasher;
 use rlp::{self, RlpStream};
 use rustc_hex::ToHex;
 use serde::Serializer;
-use state::Account;
 use std::collections::BTreeMap;
 use std::fmt;
 use trie::{DBValue, TrieFactory};
@@ -101,12 +100,13 @@ impl PodAccount {
         let mut t = factory.create(db, &mut r);
         for (k, v) in &self.storage {
             if let Err(e) = t.insert(k.as_bytes(), &rlp::encode(&v.into_uint())) {
-                warn!("Encountered potential DB corruption: {}", e);
+                //warn!("Encountered potential DB corruption: {}", e);
             }
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::blockchain::Account> for PodAccount {
     fn from(a: ethjson::blockchain::Account) -> Self {
         PodAccount {
@@ -126,6 +126,7 @@ impl From<ethjson::blockchain::Account> for PodAccount {
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::spec::Account> for PodAccount {
     fn from(a: ethjson::spec::Account) -> Self {
         PodAccount {

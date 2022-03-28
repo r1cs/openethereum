@@ -117,10 +117,10 @@ impl Into<Vec<FlatTransactionTraces>> for FlatBlockTraces {
 #[cfg(test)]
 mod tests {
     use super::{FlatBlockTraces, FlatTrace, FlatTransactionTraces};
+    use crate::trace::trace::{Action, Call, CallResult, Res, Reward, Suicide};
+    use crate::trace::RewardType;
     use evm::CallType;
     use rlp::*;
-    use trace::trace::{Action, Call, CallResult, Res, Reward, Suicide};
-    use trace::RewardType;
 
     #[test]
     fn encode_flat_transaction_traces() {

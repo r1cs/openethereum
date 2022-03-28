@@ -17,33 +17,33 @@
 //! Consensus engine specification and basic implementations.
 
 mod instant_seal;
+mod l2_engine;
 mod null_engine;
 
 pub mod block_reward;
 
 pub use self::instant_seal::{InstantSeal, InstantSealParams};
+pub use self::l2_engine::L2Seal;
 pub use self::null_engine::NullEngine;
 
 pub use types::engines::ForkChoice;
 
 use std::collections::{BTreeMap, HashMap};
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
 use std::{error, fmt};
 
+use crate::error::Error;
+use crate::spec::CommonParams;
 use builtin::Builtin;
-use error::Error;
-use spec::CommonParams;
 use types::header::{ExtendedHeader, Header};
 use types::transaction::{self, SignedTransaction, UnverifiedTransaction};
 use types::BlockNumber;
 use vm::{CreateContractAddress, EnvInfo, Schedule};
 
-use block::ExecutedBlock;
+use crate::block::ExecutedBlock;
+use crate::machine::{self, Machine};
 use bytes::Bytes;
-use crypto::publickey::Signature;
 use ethereum_types::{Address, H256, H64, U256};
-use machine::{self, Machine};
-use types::ancestry_action::AncestryAction;
 use unexpected::{Mismatch, OutOfBounds};
 
 /// The number of generations back that uncles can be.
@@ -221,11 +221,6 @@ pub trait Engine<M: Machine>: Sync + Send {
         0
     }
 
-    /// Optional maximum gas limit.
-    fn maximum_gas_limit(&self) -> Option<U256> {
-        None
-    }
-
     /// Block transformation functions, after the transactions.
     fn on_close_block(&self, _block: &mut ExecutedBlock) -> Result<(), M::Error> {
         Ok(())
@@ -234,19 +229,6 @@ pub trait Engine<M: Machine>: Sync + Send {
     /// Allow mutating the header during seal generation. Currently only used by Clique.
     fn on_seal_block(&self, _block: &mut ExecutedBlock) -> Result<(), Error> {
         Ok(())
-    }
-
-    /// Returns the engine's current sealing state.
-    fn sealing_state(&self) -> SealingState {
-        SealingState::External
-    }
-
-    /// Called in `miner.chain_new_blocks` if the engine wishes to `update_sealing`
-    /// after a block was recently sealed.
-    ///
-    /// returns false by default
-    fn should_reseal_on_update(&self) -> bool {
-        false
     }
 
     /// Attempt to seal the block internally.
@@ -291,12 +273,6 @@ pub trait Engine<M: Machine>: Sync + Send {
         Ok(())
     }
 
-    /// Phase 4 verification. Verify block header against potentially external data.
-    /// Should only be called when `register_client` has been called previously.
-    fn verify_block_external(&self, _header: &Header) -> Result<(), M::Error> {
-        Ok(())
-    }
-
     /// Populate a header's fields based on its parent's header.
     /// Usually implements the chain scoring rule based on weight.
     fn populate_from_parent(&self, _header: &mut Header, _parent: &Header) {}
@@ -307,28 +283,9 @@ pub trait Engine<M: Machine>: Sync + Send {
         Err(EngineError::UnexpectedMessage)
     }
 
-    /// Returns whether the current node is a validator and
-    /// actually may seal a block if AuRa engine is used.
-    ///
-    /// Used by `eth_mining` rpc call.
-    fn is_allowed_to_seal(&self) -> bool {
-        true
-    }
-
-    /// Sign using the EngineSigner, to be used for consensus tx signing.
-    fn sign(&self, _hash: H256) -> Result<Signature, M::Error> {
-        unimplemented!()
-    }
-
-    /// Add Client which can be used for sealing, potentially querying the state and sending messages.
-    fn register_client(&self, _client: Weak<M::EngineClient>) {}
-
     /// Return a new open block header timestamp based on the parent timestamp.
     fn open_block_header_timestamp(&self, parent_timestamp: u64) -> u64 {
-        use std::{cmp, time};
-
-        let now = time::SystemTime::now().duration_since(time::UNIX_EPOCH).unwrap_or_default();
-        cmp::max(now.as_secs() as u64, parent_timestamp + 1)
+        parent_timestamp + 1
     }
 
     /// Check whether the parent timestamp is valid.
@@ -336,26 +293,9 @@ pub trait Engine<M: Machine>: Sync + Send {
         header_timestamp > parent_timestamp
     }
 
-    // t_nb 9.1 Gather all ancestry actions. Called at the last stage when a block is committed. The Engine must guarantee that
-    /// the ancestry exists.
-    fn ancestry_actions(
-        &self, _header: &Header, _ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
-    ) -> Vec<AncestryAction> {
-        Vec::new()
-    }
-
-    /// Check whether the given new block is the best block, after finalization check.
-    fn fork_choice(&self, new: &ExtendedHeader, best: &ExtendedHeader) -> ForkChoice;
-
     /// Returns author should used when executing tx's for this block.
     fn executive_author(&self, header: &Header) -> Result<Address, Error> {
         Ok(*header.author())
-    }
-
-    /// Overrides the block gas limit. Whenever this returns `Some` for a header, the next block's gas limit must be
-    /// exactly that value. used by AuRa engine.
-    fn gas_limit_override(&self, _header: &Header) -> Option<U256> {
-        None
     }
 }
 
@@ -372,7 +312,7 @@ pub fn total_difficulty_fork_choice(new: &ExtendedHeader, best: &ExtendedHeader)
 // TODO: make this a _trait_ alias when those exist.
 // fortunately the effect is largely the same since engines are mostly used
 // via trait objects.
-pub trait EthEngine: Engine<::machine::EthereumMachine> {
+pub trait EthEngine: Engine<machine::EthereumMachine> {
     /// Get the general parameters of the chain.
     fn params(&self) -> &CommonParams {
         self.machine().params()
@@ -480,4 +420,4 @@ pub trait EthEngine: Engine<::machine::EthereumMachine> {
 }
 
 // convenience wrappers for existing functions.
-impl<T> EthEngine for T where T: Engine<::machine::EthereumMachine> {}
+impl<T> EthEngine for T where T: Engine<machine::EthereumMachine> {}

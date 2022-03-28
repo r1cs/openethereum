@@ -16,20 +16,20 @@
 
 use super::test_common::*;
 use super::{flushln, HookType};
-use client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
+use crate::client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
+use crate::pod_state::PodState;
+use crate::trace;
 use ethjson::spec::ForkSpec;
-use pod_state::PodState;
 use std::path::Path;
 use vm::EnvInfo;
-use {ethjson, trace};
 
 fn skip_test(
     test: &ethjson::test::StateTests, subname: &str, chain: &String, number: usize,
 ) -> bool {
-    trace!(target: "json-tests", "[state, skip_test] subname: '{}', chain: '{}', number: {}", subname, chain, number);
+    //trace!(target: "json-tests", "[state, skip_test] subname: '{}', chain: '{}', number: {}", subname, chain, number);
     test.skip.iter().any(|state_test| {
         if let Some(subtest) = state_test.names.get(subname) {
-            trace!(target: "json-tests", "[state, skip_test] Maybe skipping {:?}", subtest);
+            //trace!(target: "json-tests", "[state, skip_test] Maybe skipping {:?}", subtest);
             chain == &subtest.chain
                 && (subtest.subnumbers[0] == "*"
                     || subtest.subnumbers.contains(&number.to_string()))
@@ -42,7 +42,6 @@ fn skip_test(
 pub fn json_state_test<H: FnMut(&str, HookType)>(
     state_test: &ethjson::test::StateTests, path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {
-    let _ = ::env_logger::try_init();
     let tests = ethjson::state::test::Test::load(json_data)
         .expect(&format!("Could not parse JSON state test data from {}", path.display()));
     let mut failed = Vec::new();

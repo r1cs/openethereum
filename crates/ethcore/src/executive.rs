@@ -15,21 +15,21 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Transaction Execution environment.
+use crate::executed::ExecutionError;
+pub use crate::executed::{Executed, ExecutionResult};
+use crate::externalities::*;
+use crate::factory::VmFactory;
+use crate::machine::EthereumMachine as Machine;
+use crate::state::{Backend as StateBackend, CleanupMode, State, Substate};
+use crate::trace::{self, Tracer, VMTracer};
+use crate::transaction_ext::Transaction;
 use bytes::{Bytes, BytesRef};
 use ethereum_types::{Address, H256, U256, U512};
 use evm::{CallType, FinalizationResult, Finalize};
-use executed::ExecutionError;
-pub use executed::{Executed, ExecutionResult};
-use externalities::*;
-use factory::VmFactory;
 use hash::keccak;
-use machine::EthereumMachine as Machine;
-use state::{Backend as StateBackend, CleanupMode, State, Substate};
 use std::cmp;
 use std::convert::TryFrom;
 use std::sync::Arc;
-use trace::{self, Tracer, VMTracer};
-use transaction_ext::Transaction;
 use types::transaction::{Action, SignedTransaction, TypedTransaction};
 use vm::{
     self, AccessList, ActionParams, ActionValue, CleanDustMode, CreateContractAddress, EnvInfo, ResumeCall, ResumeCreate, ReturnData, Schedule, TrapError
@@ -231,12 +231,7 @@ impl<'a> CallCreateExecutive<'a> {
         params: ActionParams, info: &'a EnvInfo, machine: &'a Machine, schedule: &'a Schedule,
         factory: &'a VmFactory, depth: usize, stack_depth: usize, parent_static_flag: bool,
     ) -> Self {
-        trace!(
-            "Executive::call(params={:?}) self.env_info={:?}, parent_static={}",
-            params,
-            info,
-            parent_static_flag
-        );
+        //trace!( "Executive::call(params={:?}) self.env_info={:?}, parent_static={}", params, info, parent_static_flag );
 
         let gas = params.gas;
         let static_flag = parent_static_flag || params.call_type == CallType::StaticCall;
@@ -281,12 +276,7 @@ impl<'a> CallCreateExecutive<'a> {
         params: ActionParams, info: &'a EnvInfo, machine: &'a Machine, schedule: &'a Schedule,
         factory: &'a VmFactory, depth: usize, stack_depth: usize, static_flag: bool,
     ) -> Self {
-        trace!(
-            "Executive::create(params={:?}) self.env_info={:?}, static={}",
-            params,
-            info,
-            static_flag
-        );
+        // trace!( "Executive::create(params={:?}) self.env_info={:?}, static={}", params, info, static_flag );
 
         let gas = params.gas;
 
@@ -1357,7 +1347,7 @@ impl<'a, B: 'a + StateBackend> Executive<'a, B> {
         // real amount to refund
         let gas_left_prerefund = match result {
             Ok(FinalizationResult { gas_left, .. }) => gas_left,
-            _ => 0.into(),
+            _ => 0u32.into(),
         };
         let refunded = if refunds_bound.is_zero() {
             refunds_bound
@@ -1388,30 +1378,25 @@ impl<'a, B: 'a + StateBackend> Executive<'a, B> {
             }
             fee
         } else {
-            U256::from(0)
+            U256::from(0u32)
         };
 
         let fees_value = fees_value.saturating_sub(burnt_fee);
 
-        trace!("exec::finalize: t.gas={}, sstore_refunds={}, suicide_refunds={}, refunds_bound={}, gas_left_prerefund={}, refunded={}, gas_left={}, gas_used={}, refund_value={}, fees_value={}\n",
-			t.tx().gas, sstore_refunds, suicide_refunds, refunds_bound, gas_left_prerefund, refunded, gas_left, gas_used, refund_value, fees_value);
+        //trace!("exec::finalize: t.gas={}, sstore_refunds={}, suicide_refunds={}, refunds_bound={}, gas_left_prerefund={}, refunded={}, gas_left={}, gas_used={}, refund_value={}, fees_value={}\n", t.tx().gas, sstore_refunds, suicide_refunds, refunds_bound, gas_left_prerefund, refunded, gas_left, gas_used, refund_value, fees_value);
 
         let sender = t.sender();
-        trace!("exec::finalize: Refunding refund_value={}, sender={}\n", refund_value, sender);
+        //trace!("exec::finalize: Refunding refund_value={}, sender={}\n", refund_value, sender);
         // Below: NoEmpty is safe since the sender must already be non-null to have sent this transaction
         self.state.add_balance(&sender, &refund_value, CleanupMode::NoEmpty)?;
-        trace!(
-            "exec::finalize: Compensating author: fees_value={}, author={}\n",
-            fees_value,
-            &self.info.author
-        );
+        //trace!( "exec::finalize: Compensating author: fees_value={}, author={}\n", fees_value, &self.info.author );
         self.state.add_balance(
             &self.info.author,
             &fees_value,
             substate.to_cleanup_mode(&schedule),
         )?;
 
-        if burnt_fee > U256::from(0)
+        if burnt_fee > U256::from(0u32)
             && self.machine.params().eip1559_fee_collector.is_some()
             && self.info.number >= self.machine.params().eip1559_fee_collector_transition
         {
@@ -1480,39 +1465,40 @@ impl<'a, B: 'a + StateBackend> Executive<'a, B> {
 #[allow(dead_code)]
 mod tests {
     use super::*;
-    use bytes::Bytes;
-    use crypto::publickey::{Generator, Random};
-    use error::ExecutionError;
-    use ethereum_types::{Address, BigEndianHash, H160, H256, U256, U512};
-    use evm::{Factory, VMType};
-    use machine::EthereumMachine;
-    use rustc_hex::FromHex;
-    use state::{CleanupMode, Substate};
-    use std::str::FromStr;
-    use std::sync::Arc;
-    use test_helpers::{get_temp_state, get_temp_state_with_factory};
-    use trace::{
+    use crate::error::ExecutionError;
+    use crate::ethereum;
+    use crate::machine::EthereumMachine;
+    use crate::state::{CleanupMode, Substate};
+    use crate::test_helpers::{get_temp_state, get_temp_state_with_factory};
+    use crate::trace::{
         trace, ExecutiveTracer, ExecutiveVMTracer, FlatTrace, MemoryDiff, NoopTracer, NoopVMTracer, StorageDiff, Tracer, VMExecutedOperation, VMOperation, VMTrace, VMTracer
     };
+    use bytes::Bytes;
+    use crypto::publickey::{Generator, Random};
+    use ethereum_types::{Address, BigEndianHash, H160, H256, U256, U512};
+    use evm::{evm_test, evm_test_ignore, Factory, VMType};
+    use rustc_hex::FromHex;
+    use std::str::FromStr;
+    use std::sync::Arc;
     use types::transaction::{
         AccessListTx, Action, EIP1559TransactionTx, Transaction, TypedTransaction
     };
     use vm::{ActionParams, ActionValue, CallType, CreateContractAddress, EnvInfo};
 
     fn make_frontier_machine(max_depth: usize) -> EthereumMachine {
-        let mut machine = ::ethereum::new_frontier_test_machine();
+        let mut machine = ethereum::new_frontier_test_machine();
         machine.set_schedule_creation_rules(Box::new(move |s, _| s.max_depth = max_depth));
         machine
     }
 
     fn make_byzantium_machine(max_depth: usize) -> EthereumMachine {
-        let mut machine = ::ethereum::new_byzantium_test_machine();
+        let mut machine = ethereum::new_byzantium_test_machine();
         machine.set_schedule_creation_rules(Box::new(move |s, _| s.max_depth = max_depth));
         machine
     }
 
     fn make_london_machine(max_depth: usize) -> EthereumMachine {
-        let mut machine = ::ethereum::new_london_test_machine();
+        let mut machine = ethereum::new_london_test_machine();
         machine.set_schedule_creation_rules(Box::new(move |s, _| s.max_depth = max_depth));
         machine
     }
@@ -1892,7 +1878,7 @@ mod tests {
         let mut state = get_temp_state();
         state.add_balance(&sender, &U256::from(100), CleanupMode::NoEmpty).unwrap();
         let info = EnvInfo::default();
-        let machine = ::ethereum::new_byzantium_test_machine();
+        let machine = ethereum::new_byzantium_test_machine();
         let schedule = machine.schedule(info.number);
         let mut substate = Substate::new();
         let mut tracer = ExecutiveTracer::default();
@@ -2753,7 +2739,7 @@ mod tests {
         params.code = Some(Arc::new(code));
         params.value = ActionValue::Transfer(U256::zero());
         let info = EnvInfo::default();
-        let machine = ::ethereum::new_byzantium_test_machine();
+        let machine = ethereum::new_byzantium_test_machine();
         let schedule = machine.schedule(info.number);
         let mut substate = Substate::new();
 
@@ -2792,7 +2778,7 @@ mod tests {
         state.init_code(&y2, "600060006000600061100162fffffff4".from_hex().unwrap()).unwrap();
 
         let info = EnvInfo::default();
-        let machine = ::ethereum::new_constantinople_test_machine();
+        let machine = ethereum::new_constantinople_test_machine();
         let schedule = machine.schedule(info.number);
 
         assert_eq!(

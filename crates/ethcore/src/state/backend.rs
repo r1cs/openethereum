@@ -21,19 +21,19 @@
 //! should become general over time to the point where not even a
 //! merkle trie is strictly necessary.
 
+use std::cell::RefCell;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use crate::state::Account;
 use ethereum_types::{Address, H256};
 use hash_db::{AsHashDB, HashDB};
 use keccak_hasher::KeccakHasher;
 use memory_db::MemoryDB;
-use parking_lot::Mutex;
-use state::Account;
 use trie::DBValue;
 
 /// State backend. See module docs for more details.
-pub trait Backend: Send {
+pub trait Backend {
     /// Treat the backend as a read-only hashdb.
     fn as_hash_db(&self) -> &dyn HashDB<KeccakHasher, DBValue>;
 
@@ -144,7 +144,7 @@ impl Backend for ProofCheck {
 pub struct Proving<H> {
     base: H,                                  // state we're proving values from.
     changed: MemoryDB<KeccakHasher, DBValue>, // changed state via insertions.
-    proof: Mutex<HashSet<DBValue>>,
+    proof: RefCell<HashSet<DBValue>>,
 }
 
 impl<AH: AsHashDB<KeccakHasher, DBValue> + Send + Sync> AsHashDB<KeccakHasher, DBValue>
@@ -164,7 +164,7 @@ impl<H: AsHashDB<KeccakHasher, DBValue> + Send + Sync> HashDB<KeccakHasher, DBVa
     fn get(&self, key: &H256) -> Option<DBValue> {
         match self.base.as_hash_db().get(key) {
             Some(val) => {
-                self.proof.lock().insert(val.clone());
+                self.proof.borrow_mut().insert(val.clone());
                 Some(val)
             }
             None => self.changed.get(key),
@@ -224,7 +224,7 @@ impl<H: AsHashDB<KeccakHasher, DBValue>> Proving<H> {
     /// Create a new `Proving` over a base database.
     /// This will store all values ever fetched from that base.
     pub fn new(base: H) -> Self {
-        Proving { base: base, changed: super::new_memory_db(), proof: Mutex::new(HashSet::new()) }
+        Proving { base: base, changed: super::new_memory_db(), proof: RefCell::new(HashSet::new()) }
     }
 
     /// Consume the backend, extracting the gathered proof in lexicographical order
@@ -239,7 +239,7 @@ impl<H: AsHashDB<KeccakHasher, DBValue> + Clone> Clone for Proving<H> {
         Proving {
             base: self.base.clone(),
             changed: self.changed.clone(),
-            proof: Mutex::new(self.proof.lock().clone()),
+            proof: RefCell::new(self.proof.borrow().clone()),
         }
     }
 }

@@ -2,7 +2,6 @@ use ethjson::test::{
     EthereumTestSuite, ExecutiveTests, LocalTests, StateTests, TestTrieSpec, TransactionTests, TrieTests
 };
 use globset::Glob;
-use log::info;
 use rayon::prelude::*;
 use std::path::{Path, PathBuf};
 use trie::TrieSpec;
@@ -95,7 +94,6 @@ impl TestRunner {
         let result = super::find_json_files_recursive(&base_path)
             .into_par_iter()
             .map(|path| {
-                info!("{:?}", path);
                 let json = std::fs::read(&path).unwrap();
                 let faileds = f(test, &path, &json);
                 if faileds.len() > 0 {
@@ -177,6 +175,7 @@ impl TestRunner {
 #[test]
 fn ethereum_json_tests() {
     use super::flushln;
+    let _ = ::env_logger::try_init();
     let content =
         std::fs::read("res/json_tests.json").expect("cannot open ethereum tests spec file");
     let runner =

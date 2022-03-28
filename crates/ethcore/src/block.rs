@@ -38,15 +38,15 @@ use std::{cmp, ops};
 use bytes::Bytes;
 use ethereum_types::{Address, Bloom, H256, U256};
 
-use engines::EthEngine;
-use error::{BlockError, Error};
-use factory::Factories;
-use state::State;
-use state_db::StateDB;
-use trace::Tracing;
+use crate::engines::EthEngine;
+use crate::error::{BlockError, Error};
+use crate::factory::Factories;
+use crate::state::State;
+use crate::state_db::StateDB;
+use crate::trace::Tracing;
+use crate::verification::PreverifiedBlock;
 use triehash::ordered_trie_root;
 use unexpected::{Mismatch, OutOfBounds};
-use verification::PreverifiedBlock;
 use vm::{EnvInfo, LastHashes};
 
 use hash::keccak;
@@ -280,14 +280,9 @@ impl<'x> OpenBlock<'x> {
             let took = start.elapsed();
             let took_ms = took.as_secs() * 1000 + took.subsec_nanos() as u64 / 1000000;
             if took > time::Duration::from_millis(slow_tx) {
-                warn!(
-                    "Heavy ({} ms) transaction in block {:?}: {:?}",
-                    took_ms,
-                    self.block.header.number(),
-                    hash
-                );
+                //warn!( "Heavy ({} ms) transaction in block {:?}: {:?}", took_ms, self.block.header.number(), hash );
             }
-            debug!(target: "tx", "Transaction {:?} took: {} ms", hash, took_ms);
+            //debug!(target: "tx", "Transaction {:?} took: {} ms", hash, took_ms);
         }
 
         Ok(())
@@ -302,7 +297,7 @@ impl<'x> OpenBlock<'x> {
         self.block.header.set_transactions_root(*header.transactions_root());
         // TODO: that's horrible. set only for backwards compatibility
         if header.extra_data().len() > self.engine.maximum_extra_data_size() {
-            warn!("Couldn't set extradata. Ignoring.");
+            //warn!("Couldn't set extradata. Ignoring.");
         } else {
             self.block.header.set_extra_data(header.extra_data().clone());
         }
@@ -523,18 +518,19 @@ pub fn enact_verified(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use engines::EthEngine;
-    use error::Error;
+    use crate::engines::EthEngine;
+    use crate::error::Error;
+    use crate::factory::Factories;
+    use crate::spec::Spec;
+    use crate::state_db::StateDB;
+    use crate::test_helpers::get_temp_state_db;
+    use crate::verification::queue::kind::blocks::Unverified;
     use ethereum_types::Address;
-    use factory::Factories;
-    use state_db::StateDB;
     use std::sync::Arc;
-    use test_helpers::get_temp_state_db;
     use types::header::Header;
     use types::transaction::SignedTransaction;
     use types::view;
     use types::views::BlockView;
-    use verification::queue::kind::blocks::Unverified;
     use vm::LastHashes;
 
     /// Enact the block given by `block_bytes` using `engine` on the database `db` with given `parent` block header
@@ -587,7 +583,6 @@ mod tests {
 
     #[test]
     fn open_block() {
-        use spec::*;
         let spec = Spec::new_test();
         let genesis_header = spec.genesis_header();
         let db = spec.ensure_db_good(get_temp_state_db(), &Default::default()).unwrap();
@@ -610,7 +605,6 @@ mod tests {
 
     #[test]
     fn enact_block() {
-        use spec::*;
         let spec = Spec::new_test();
         let engine = &*spec.engine;
         let genesis_header = spec.genesis_header();
@@ -652,7 +646,6 @@ mod tests {
 
     #[test]
     fn enact_block_with_uncle() {
-        use spec::*;
         let spec = Spec::new_test();
         let engine = &*spec.engine;
         let genesis_header = spec.genesis_header();

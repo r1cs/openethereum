@@ -23,10 +23,10 @@ use types::header::Header;
 use types::ids::*;
 use types::{encoded, BlockNumber};
 
-use block::OpenBlock;
-use engines::EthEngine;
-use error::Error;
-use state::StateInfo;
+use crate::block::OpenBlock;
+use crate::engines::EthEngine;
+use crate::error::Error;
+use crate::state::StateInfo;
 
 /// State information to be used during client query
 pub enum StateOrBlock {

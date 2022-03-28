@@ -19,9 +19,9 @@
 
 use ethereum_types::{Address, U256};
 
-use block::ExecutedBlock;
-use machine::Machine;
-use trace::{self, ExecutiveTracer, Tracer, Tracing};
+use crate::block::ExecutedBlock;
+use crate::machine::Machine;
+use crate::trace::{self, ExecutiveTracer, Tracer, Tracing};
 use types::BlockNumber;
 
 /// The kind of block reward.

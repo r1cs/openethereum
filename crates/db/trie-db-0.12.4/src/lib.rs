@@ -126,15 +126,8 @@ where
 impl<T, E> Error for TrieError<T, E>
 where
     T: fmt::Debug,
-    E: Error,
+    E: fmt::Debug,
 {
-    fn description(&self) -> &str {
-        match *self {
-            TrieError::InvalidStateRoot(_) => "Invalid state root",
-            TrieError::IncompleteDatabase(_) => "Incomplete database",
-            TrieError::DecoderError(_, ref err) => err.description(),
-        }
-    }
 }
 
 /// Trie result type. Boxed to avoid copying around extra space for the `Hasher`s `Out` on successful queries.

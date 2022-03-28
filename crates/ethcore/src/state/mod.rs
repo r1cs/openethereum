@@ -26,15 +26,15 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt;
 use std::sync::Arc;
 
-use error::Error;
-use executed::{Executed, ExecutionError};
-use executive::{Executive, TransactOptions};
-use factory::{Factories, VmFactory};
-use machine::EthereumMachine as Machine;
-use pod_account::*;
-use pod_state::{self, PodState};
-use state_db::StateDB;
-use trace::{self, FlatTrace, VMTrace};
+use crate::error::Error;
+use crate::executed::{Executed, ExecutionError};
+use crate::executive::{Executive, TransactOptions};
+use crate::factory::{Factories, VmFactory};
+use crate::machine::EthereumMachine as Machine;
+use crate::pod_account::*;
+use crate::pod_state::{self, PodState};
+use crate::state_db::StateDB;
+use crate::trace::{self, FlatTrace, VMTrace};
 use types::basic_account::BasicAccount;
 use types::receipt::{LegacyReceipt, TransactionOutcome, TypedReceipt};
 use types::state_diff::StateDiff;
@@ -231,10 +231,7 @@ pub fn prove_transaction_virtual<H: AsHashDB<KeccakHasher, DBValue> + Send + Syn
     let options = TransactOptions::with_no_tracing().dont_check_nonce().save_output_from_contract();
     match state.execute(env_info, machine, transaction, options, true) {
         Err(ExecutionError::Internal(_)) => None,
-        Err(e) => {
-            trace!(target: "state", "Proved call failed: {}", e);
-            Some((Vec::new(), state.drop().1.extract_proof()))
-        }
+        Err(e) => Some((Vec::new(), state.drop().1.extract_proof())),
         Ok(res) => Some((res.output, state.drop().1.extract_proof())),
     }
 }
@@ -616,7 +613,6 @@ impl<B: Backend> State<B> {
                                 // commit, then it can only be created from a new contract, where the base storage root
                                 // would always be empty. Note that this branch is actually never called, because
                                 // `cached_storage_at` handled this case.
-                                warn!(target: "state", "Trying to get an account's cached storage value, but base storage root does not equal to original storage root! Assuming the value is empty.");
                                 return Ok(Some(H256::default()));
                             }
                         }
@@ -761,7 +757,6 @@ impl<B: Backend> State<B> {
     pub fn add_balance(
         &mut self, a: &Address, incr: &U256, cleanup_mode: CleanupMode,
     ) -> TrieResult<()> {
-        trace!(target: "state", "add_balance({}, {}): {}", a, incr, self.balance(a)?);
         let is_value_transfer = !incr.is_zero();
         if is_value_transfer || (cleanup_mode == CleanupMode::ForceCreate && !self.exists(a)?) {
             self.require(a, false)?.add_balance(incr);
@@ -778,7 +773,6 @@ impl<B: Backend> State<B> {
     pub fn sub_balance(
         &mut self, a: &Address, decr: &U256, cleanup_mode: &mut CleanupMode,
     ) -> TrieResult<()> {
-        trace!(target: "state", "sub_balance({}, {}): {}", a, decr, self.balance(a)?);
         if !decr.is_zero() || !self.exists(a)? {
             self.require(a, false)?.sub_balance(decr);
         }
@@ -804,7 +798,6 @@ impl<B: Backend> State<B> {
 
     /// Mutate storage of account `a` so that it is `value` for `key`.
     pub fn set_storage(&mut self, a: &Address, key: H256, value: H256) -> TrieResult<()> {
-        trace!(target: "state", "set_storage({}:{:x} to {:x})", a, key, value);
         if self.storage_at(a, &key)? != value {
             self.require(a, false)?.set_storage(key, value)
         }
@@ -886,7 +879,6 @@ impl<B: Backend> State<B> {
             t.tx_type(),
             LegacyReceipt::new(outcome, e.cumulative_gas_used, e.logs),
         );
-        trace!(target: "state", "Transaction receipt: {:?}", receipt);
 
         Ok(ApplyOutcome { receipt, output, trace: e.trace, vm_trace: e.vm_trace })
     }
@@ -956,7 +948,6 @@ impl<B: Backend> State<B> {
     // t_nb 9.4 Propagate local cache into shared canonical state cache.
     fn propagate_to_global_cache(&mut self) {
         let mut addresses = self.cache.borrow_mut();
-        trace!("Committing cache {:?} entries", addresses.len());
         for (address, a) in addresses.drain().filter(|&(_, ref a)| {
             a.state == AccountState::Committed || a.state == AccountState::CleanFresh
         }) {
@@ -1407,17 +1398,18 @@ fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ethereum;
+    use crate::machine::EthereumMachine;
+    use crate::spec::*;
+    use crate::test_helpers::{get_temp_state, get_temp_state_db};
+    use crate::trace::{trace, FlatTrace, TraceError};
     use crypto::publickey::Secret;
     use ethereum_types::{Address, BigEndianHash, H256, U256};
     use evm::CallType;
     use hash::{keccak, KECCAK_NULL_RLP};
-    use machine::EthereumMachine;
     use rustc_hex::FromHex;
-    use spec::*;
     use std::str::FromStr;
     use std::sync::Arc;
-    use test_helpers::{get_temp_state, get_temp_state_db};
-    use trace::{trace, FlatTrace, TraceError};
     use types::transaction::*;
     use vm::EnvInfo;
 
@@ -1426,7 +1418,7 @@ mod tests {
     }
 
     fn make_frontier_machine(max_depth: usize) -> EthereumMachine {
-        let mut machine = ::ethereum::new_frontier_test_machine();
+        let mut machine = ethereum::new_frontier_test_machine();
         machine.set_schedule_creation_rules(Box::new(move |s, _| s.max_depth = max_depth));
         machine
     }
@@ -1467,7 +1459,7 @@ mod tests {
                 ],
             }),
             result: trace::Res::Create(trace::CreateResult {
-                gas_used: U256::from(3224),
+                gas_used: U256::from(3224u32),
                 address: Address::from_str("8988167e088c87cd314df6d3c2b83da5acb93ace").unwrap(),
                 code: vec![96, 0, 53, 84, 21, 96, 9, 87, 0, 91, 96, 32, 53, 96, 0, 53],
             }),
@@ -1548,7 +1540,10 @@ mod tests {
                 input: vec![],
                 call_type: CallType::Call,
             }),
-            result: trace::Res::Call(trace::CallResult { gas_used: U256::from(3), output: vec![] }),
+            result: trace::Res::Call(trace::CallResult {
+                gas_used: U256::from(3u32),
+                output: vec![],
+            }),
             subtraces: 0,
         }];
 
@@ -1587,7 +1582,10 @@ mod tests {
                 input: vec![],
                 call_type: CallType::Call,
             }),
-            result: trace::Res::Call(trace::CallResult { gas_used: U256::from(0), output: vec![] }),
+            result: trace::Res::Call(trace::CallResult {
+                gas_used: U256::from(0u32),
+                output: vec![],
+            }),
             subtraces: 0,
         }];
 
@@ -1627,7 +1625,7 @@ mod tests {
                 call_type: CallType::Call,
             }),
             result: trace::Res::Call(trace::CallResult {
-                gas_used: U256::from(3000),
+                gas_used: U256::from(3000u32),
                 output: vec![],
             }),
             subtraces: 0,
@@ -1675,7 +1673,7 @@ mod tests {
                 call_type: CallType::Call,
             }),
             result: trace::Res::Call(trace::CallResult {
-                gas_used: U256::from(3_721), // in post-eip150
+                gas_used: U256::from(3_721u32), // in post-eip150
                 output: vec![],
             }),
             subtraces: 0,
@@ -1798,7 +1796,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(736), // in post-eip150
+                    gas_used: U256::from(736u32), // in post-eip150
                     output: vec![],
                 }),
             },
@@ -1910,7 +1908,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(69),
+                    gas_used: U256::from(69u32),
                     output: vec![],
                 }),
             },
@@ -1926,7 +1924,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(3),
+                    gas_used: U256::from(3u32),
                     output: vec![],
                 }),
             },
@@ -1976,7 +1974,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(31761),
+                    gas_used: U256::from(31761u32),
                     output: vec![],
                 }),
             },
@@ -2038,7 +2036,7 @@ mod tests {
                 call_type: CallType::Call,
             }),
             result: trace::Res::Call(trace::CallResult {
-                gas_used: U256::from(31761),
+                gas_used: U256::from(31761u32),
                 output: vec![],
             }),
         }];
@@ -2090,7 +2088,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(79_000),
+                    gas_used: U256::from(79_000u32),
                     output: vec![],
                 }),
             },
@@ -2162,7 +2160,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(135),
+                    gas_used: U256::from(135u32),
                     output: vec![],
                 }),
             },
@@ -2178,7 +2176,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(69),
+                    gas_used: U256::from(69u32),
                     output: vec![],
                 }),
             },
@@ -2194,7 +2192,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(3),
+                    gas_used: U256::from(3u32),
                     output: vec![],
                 }),
             },
@@ -2254,7 +2252,7 @@ mod tests {
                     call_type: CallType::Call,
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(79_000),
+                    gas_used: U256::from(79_000u32),
                     output: vec![],
                 }),
             },
@@ -2283,7 +2281,7 @@ mod tests {
                     input: vec![],
                 }),
                 result: trace::Res::Call(trace::CallResult {
-                    gas_used: U256::from(3),
+                    gas_used: U256::from(3u32),
                     output: vec![],
                 }),
             },

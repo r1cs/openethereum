@@ -55,7 +55,7 @@ checksum = "43bb833f0bf979d8475d38fbf09ed3b8a55e1885fe93ad3f93239fc6a4f17b98"
 dependencies = [
  "getrandom 0.2.2",
  "once_cell",
- "version_check 0.9.4",
+ "version_check",
 ]
 
 [[package]]
@@ -66,12 +66,6 @@ checksum = "58fb5e95d83b38284460a5fda7d6470aa0b8844d283a0b614b8535e880800d2d"
 dependencies = [
  "memchr",
 ]
-
-[[package]]
-name = "ansi_term"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b3568b48b7cefa6b8ce125f9bb4989e52fbcc29ebea88df04cc7c5f12f70455"
 
 [[package]]
 name = "arrayvec"
@@ -321,7 +315,7 @@ dependencies = [
  "clap",
  "criterion-plot",
  "csv",
- "itertools 0.8.1",
+ "itertools",
  "lazy_static",
  "libc",
  "num-traits",
@@ -345,7 +339,7 @@ checksum = "76f9212ddf2f4a9eb2d401635190600656a1f88a932ef53d06e7fa4c7e02fb8e"
 dependencies = [
  "byteorder",
  "cast",
- "itertools 0.8.1",
+ "itertools",
 ]
 
 [[package]]
@@ -510,15 +504,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "error-chain"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ab49e9dcb602294bc42f9a7dfc9bc6e936fca4418ea300dbfb84fe16de0b7d9"
-dependencies = [
- "version_check 0.1.5",
-]
-
-[[package]]
 name = "eth_pairings"
 version = "0.6.0"
 source = "git+https://github.com/matter-labs/eip1962.git?rev=ece6cbabc41948db4200e41f0bfdab7ab94c7af8#ece6cbabc41948db4200e41f0bfdab7ab94c7af8"
@@ -570,13 +555,11 @@ dependencies = [
 name = "ethcore"
 version = "1.12.0"
 dependencies = [
- "ansi_term",
  "common-types",
  "criterion",
  "crypto",
  "eip-152",
  "env_logger 0.5.13",
- "error-chain",
  "ethash",
  "ethcore-builtin",
  "ethereum-types",
@@ -585,16 +568,14 @@ dependencies = [
  "globset",
  "hash-db 0.12.4",
  "hex-literal 0.2.1",
- "itertools 0.5.10",
+ "itertools",
  "keccak-hash",
  "keccak-hasher 0.1.1",
- "log",
  "lru",
  "macros",
  "maplit",
  "memory-db 0.11.0",
  "parity-bytes",
- "parking_lot",
  "patricia-trie-ethereum",
  "rand 0.7.3",
  "rayon",
@@ -950,15 +931,6 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.5.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4833d6978da405305126af4ac88569b5d71ff758581ce5a987dbfa3755f694fc"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "87fa75c9dea7b07be3138c49abbb83fd4bea199b5cdc76f9804458edc5da0d6e"
@@ -1025,15 +997,6 @@ name = "libc"
 version = "0.2.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "538c092e5586f4cdd7dd8078c4a79220e3e168880218124dcbce860f0ea938c6"
-
-[[package]]
-name = "lock_api"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a3c91c24eae6777794bb1997ad98bbb87daf92890acab859f7eaa4320333176"
-dependencies = [
- "scopeguard",
-]
 
 [[package]]
 name = "log"
@@ -1189,13 +1152,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2839e79665f131bdb5782e51f2c6c9599c133c6098982a54c794358bf432529c"
 
 [[package]]
-name = "openethereum"
-version = "3.3.4"
-dependencies = [
- "ethcore",
-]
-
-[[package]]
 name = "parity-bytes"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1247,31 +1203,6 @@ dependencies = [
  "cfg-if 0.1.10",
  "clear_on_drop",
  "malloc_size_of_derive",
- "winapi",
-]
-
-[[package]]
-name = "parking_lot"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d7744ac029df22dca6284efe4e898991d28e3085c706c972bcd7da4a27a15eb"
-dependencies = [
- "instant",
- "lock_api",
- "parking_lot_core",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa7a782938e745763fe6907fc6ba86946d72f49fe7e21de074e08128a99fb018"
-dependencies = [
- "cfg-if 1.0.0",
- "instant",
- "libc",
- "redox_syscall",
- "smallvec",
  "winapi",
 ]
 
@@ -1675,6 +1606,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "riscv-l2chain"
+version = "0.1.0"
+dependencies = [
+ "ethcore",
+]
+
+[[package]]
 name = "rlp"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1847,12 +1785,6 @@ dependencies = [
  "rustc-hex 2.1.0",
  "static_assertions",
 ]
-
-[[package]]
-name = "smallvec"
-version = "1.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
 
 [[package]]
 name = "static_assertions"
@@ -2097,12 +2029,6 @@ name = "unicode-xid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
-
-[[package]]
-name = "version_check"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
 
 [[package]]
 name = "version_check"

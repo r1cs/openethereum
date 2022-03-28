@@ -20,7 +20,8 @@
 // https://github.com/openethereum/openethereum/issues/10302
 #![allow(deprecated)]
 
-use std::{error, fmt};
+use std::error;
+use std::fmt::{self, Display};
 
 use ethereum_types::{Address, Bloom, H256, U256};
 use ethtrie::TrieError;
@@ -29,9 +30,9 @@ use types::transaction::Error as TransactionError;
 use types::BlockNumber;
 use unexpected::{Mismatch, OutOfBounds};
 
-use engines::EngineError;
+use crate::engines::EngineError;
 
-pub use executed::{CallError, ExecutionError};
+pub use crate::executed::ExecutionError;
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 /// Errors concerning block processing.
@@ -163,112 +164,7 @@ impl fmt::Display for BlockError {
     }
 }
 
-impl error::Error for BlockError {
-    fn description(&self) -> &str {
-        "Block error"
-    }
-}
-
-error_chain! {
-    types {
-        QueueError, QueueErrorKind, QueueErrorResultExt, QueueErrorResult;
-    }
-
-    errors {
-        #[doc = "Queue is full"]
-        Full(limit: usize) {
-            description("Queue is full")
-            display("The queue is full ({})", limit)
-        }
-    }
-}
-
-error_chain! {
-    types {
-        ImportError, ImportErrorKind, ImportErrorResultExt, ImportErrorResult;
-    }
-
-    errors {
-        #[doc = "Already in the block chain."]
-        AlreadyInChain {
-            description("Block already in chain")
-            display("Block already in chain")
-        }
-
-        #[doc = "Already in the block queue"]
-        AlreadyQueued {
-            description("block already in the block queue")
-            display("block already in the block queue")
-        }
-
-        #[doc = "Already marked as bad from a previous import (could mean parent is bad)."]
-        KnownBad {
-            description("block known to be bad")
-            display("block known to be bad")
-        }
-    }
-}
-
-/// Api-level error for transaction import
-#[derive(Debug, Clone)]
-pub enum TransactionImportError {
-    /// Transaction error
-    Transaction(TransactionError),
-    /// Other error
-    Other(String),
-}
-
-impl From<Error> for TransactionImportError {
-    fn from(e: Error) -> Self {
-        match e {
-            Error(ErrorKind::Transaction(transaction_error), _) => {
-                TransactionImportError::Transaction(transaction_error)
-            }
-            _ => TransactionImportError::Other(format!("other block import error: {:?}", e)),
-        }
-    }
-}
-
-error_chain! {
-    types {
-        Error, ErrorKind, ErrorResultExt, EthcoreResult;
-    }
-
-    links {
-        Import(ImportError, ImportErrorKind) #[doc = "Error concerning block import." ];
-        Queue(QueueError, QueueErrorKind) #[doc = "Io channel queue error"];
-    }
-
-    foreign_links {
-        StdIo(::std::io::Error) #[doc = "Error concerning the Rust standard library's IO subsystem."];
-        Trie(TrieError) #[doc = "Error concerning TrieDBs."];
-        Execution(ExecutionError) #[doc = "Error concerning EVM code execution."];
-        Block(BlockError) #[doc = "Error concerning block processing."];
-        Transaction(TransactionError) #[doc = "Error concerning transaction processing."];
-        Engine(EngineError) #[doc = "Consensus vote error."];
-        Decoder(rlp::DecoderError) #[doc = "RLP decoding errors"];
-    }
-
-    errors {
-        #[doc = "PoW hash is invalid or out of date."]
-        PowHashInvalid {
-            description("PoW hash is invalid or out of date.")
-            display("PoW hash is invalid or out of date.")
-        }
-
-        #[doc = "The value of the nonce or mishash is invalid."]
-        PowInvalid {
-            description("The value of the nonce or mishash is invalid.")
-            display("The value of the nonce or mishash is invalid.")
-        }
-
-        #[doc = "Unknown engine given"]
-        UnknownEngineName(name: String) {
-            description("Unknown engine name")
-            display("Unknown engine name ({})", name)
-        }
-    }
-}
+impl error::Error for BlockError {}
 
 impl<E> From<Box<E>> for Error
 where
@@ -276,5 +172,96 @@ where
 {
     fn from(err: Box<E>) -> Error {
         Error::from(*err)
+    }
+}
+
+impl ::std::error::Error for Error {}
+
+///Error concerning TrieDBs.
+impl From<TrieError> for Error {
+    fn from(e: TrieError) -> Self {
+        Error::Trie(e)
+    }
+}
+
+///Error concerning EVM code execution.
+impl From<ExecutionError> for Error {
+    fn from(e: ExecutionError) -> Self {
+        Error::Execution(e)
+    }
+}
+
+///Error concerning block processing.
+impl From<BlockError> for Error {
+    fn from(e: BlockError) -> Self {
+        Error::Block(e)
+    }
+}
+
+///Error concerning transaction processing.
+impl From<TransactionError> for Error {
+    fn from(e: TransactionError) -> Self {
+        Error::Transaction(e)
+    }
+}
+
+///Consensus vote error.
+impl From<EngineError> for Error {
+    fn from(e: EngineError) -> Self {
+        Error::Engine(e)
+    }
+}
+
+///RLP decoding errors
+impl From<rlp::DecoderError> for Error {
+    fn from(e: rlp::DecoderError) -> Self {
+        Error::Decoder(e)
+    }
+}
+
+/// The kind of an error.
+#[derive(Debug)]
+pub enum Error {
+    /// A convenient variant for String.
+    Msg(String),
+    ///Error concerning TrieDBs.
+    Trie(TrieError),
+    ///Error concerning EVM code execution.
+    Execution(ExecutionError),
+    ///Error concerning block processing.
+    Block(BlockError),
+    ///Error concerning transaction processing.
+    Transaction(TransactionError),
+    ///Consensus vote error.
+    Engine(EngineError),
+    ///RLP decoding errors
+    Decoder(rlp::DecoderError),
+}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::Error::*;
+        let msg = match self {
+            Msg(s) => format!("err: {}", s),
+            Trie(trie) => format!("trie err: {}", trie),
+            Execution(e) => format!("exec err: {}", e),
+            Block(e) => format!("block err: {}", e),
+            Transaction(e) => format!("transaction err: {}", e),
+            Engine(e) => format!("consensus err: {}", e),
+            Decoder(e) => format!("rlp err: {}", e),
+        };
+        f.write_fmt(format_args!("Block error ({})", msg))
+    }
+}
+
+impl<'a> From<&'a str> for Error {
+    fn from(s: &'a str) -> Self {
+        Error::Msg(s.to_string())
+    }
+}
+
+impl From<String> for Error {
+    fn from(s: String) -> Self {
+        Error::Msg(s)
     }
 }

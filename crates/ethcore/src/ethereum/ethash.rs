@@ -19,20 +19,23 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use ethereum_types::{H256, H64, U256};
-use ethjson;
-use ethjson::uint::Uint;
 use hash::KECCAK_EMPTY_LIST_RLP;
 use rlp::Rlp;
-use types::header::{ExtendedHeader, Header};
+use types::header::Header;
 use types::BlockNumber;
 use unexpected::{Mismatch, OutOfBounds};
 
-use block::ExecutedBlock;
-use engines::block_reward::{self, RewardKind};
-use engines::{self, Engine};
-use error::{BlockError, Error};
+use crate::block::ExecutedBlock;
+use crate::engines::block_reward::{self, RewardKind};
+use crate::engines::Engine;
+use crate::error::{BlockError, Error};
+use crate::machine::EthereumMachine;
 use ethash::{boundary_to_difficulty, quick_get_difficulty};
-use machine::EthereumMachine;
+
+#[cfg(feature = "std")]
+use ethjson;
+#[cfg(feature = "std")]
+use ethjson::uint::Uint;
 
 /// Ethash specific seal
 #[derive(Debug, PartialEq)]
@@ -97,6 +100,7 @@ pub struct EthashParams {
     pub progpow_transition: u64,
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::spec::EthashParams> for EthashParams {
     fn from(p: ethjson::spec::EthashParams) -> Self {
         EthashParams {
@@ -134,7 +138,7 @@ impl From<ethjson::spec::EthashParams> for EthashParams {
                             panic!("No block rewards are found in config");
                         }
                         // add block reward from genesis and put reward to zero.
-                        multi.entry(Uint(U256::from(0))).or_insert(Uint(U256::from(0)));
+                        multi.entry(Uint(U256::from(0u32))).or_insert(Uint(U256::from(0u32)));
                         multi
                             .into_iter()
                             .map(|(block, reward)| (block.into(), reward.into()))
@@ -195,10 +199,6 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
 
     fn maximum_uncle_count(&self, _block: BlockNumber) -> usize {
         2
-    }
-
-    fn maximum_gas_limit(&self) -> Option<U256> {
-        Some(0x7fff_ffff_ffff_ffffu64.into())
     }
 
     fn populate_from_parent(&self, header: &mut Header, parent: &Header) {
@@ -265,7 +265,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
 
     #[cfg(feature = "miner-debug")]
     fn verify_local_seal(&self, _header: &Header) -> Result<(), Error> {
-        warn!("Skipping seal verification, running in miner testing mode.");
+        //warn!("Skipping seal verification, running in miner testing mode.");
         Ok(())
     }
 
@@ -326,10 +326,6 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
 
         Ok(())
     }
-
-    fn fork_choice(&self, new: &ExtendedHeader, current: &ExtendedHeader) -> engines::ForkChoice {
-        engines::total_difficulty_fork_choice(new, current)
-    }
 }
 
 impl Ethash {
@@ -367,7 +363,7 @@ impl Ethash {
                 *parent.difficulty() + (*parent.difficulty() / difficulty_bound_divisor)
             }
         } else {
-            trace!(target: "ethash", "Calculating difficulty parent.difficulty={}, header.timestamp={}, parent.timestamp={}", parent.difficulty(), header.timestamp(), parent.timestamp());
+            //trace!(target: "ethash", "Calculating difficulty parent.difficulty={}, header.timestamp={}, parent.timestamp={}", parent.difficulty(), header.timestamp(), parent.timestamp());
             //block_diff = parent_diff + parent_diff // 2048 * max(1 - (block_timestamp - parent_timestamp) // 10, -99)
             let (increment_divisor, threshold) =
                 if header.number() < self.ethash_params.eip100b_transition {
@@ -401,7 +397,7 @@ impl Ethash {
             }
             let period = (number / EXP_DIFF_PERIOD) as usize;
             if period > 1 {
-                target = cmp::max(min_difficulty, target + (U256::from(1) << (period - 2)));
+                target = cmp::max(min_difficulty, target + (U256::from(1u32) << (period - 2)));
             }
         }
         target
@@ -414,10 +410,10 @@ fn ecip1017_eras_block_reward(era_rounds: u64, mut reward: U256, block_number: u
     } else {
         block_number / era_rounds
     };
-    let mut divi = U256::from(1);
+    let mut divi = U256::from(1u32);
     for _ in 0..eras {
-        reward = reward * U256::from(4);
-        divi = divi * U256::from(5);
+        reward = reward * U256::from(4u32);
+        divi = divi * U256::from(5u32);
     }
     reward = reward / divi;
     (eras, reward)
@@ -427,16 +423,16 @@ fn ecip1017_eras_block_reward(era_rounds: u64, mut reward: U256, block_number: u
 mod tests {
     use super::super::{new_homestead_test_machine, new_morden};
     use super::{ecip1017_eras_block_reward, Ethash, EthashParams};
-    use block::*;
-    use engines::Engine;
-    use error::{BlockError, Error, ErrorKind};
+    use crate::block::*;
+    use crate::engines::Engine;
+    use crate::error::{BlockError, Error};
+    use crate::spec::Spec;
+    use crate::test_helpers::get_temp_state_db;
     use ethereum_types::{Address, H256, H64, U256};
     use rlp;
-    use spec::Spec;
     use std::collections::BTreeMap;
     use std::str::FromStr;
     use std::sync::Arc;
-    use test_helpers::get_temp_state_db;
     use types::header::Header;
 
     fn test_spec() -> Spec {
@@ -445,8 +441,8 @@ mod tests {
 
     fn get_default_ethash_params() -> EthashParams {
         EthashParams {
-            minimum_difficulty: U256::from(131072),
-            difficulty_bound_divisor: U256::from(2048),
+            minimum_difficulty: U256::from(131072u32),
+            difficulty_bound_divisor: U256::from(2048u32),
             difficulty_increment_divisor: 10,
             metropolis_difficulty_increment_divisor: 9,
             homestead_transition: 1150000,
@@ -457,7 +453,7 @@ mod tests {
                 ret
             },
             difficulty_hardfork_transition: u64::max_value(),
-            difficulty_hardfork_bound_divisor: U256::from(0),
+            difficulty_hardfork_bound_divisor: U256::from(0u32),
             bomb_defuse_transition: u64::max_value(),
             eip100b_transition: u64::max_value(),
             ecip1017_era_rounds: u64::max_value(),
@@ -584,7 +580,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidSealArity(_)), _)) => {}
+            Err(Error::Block(BlockError::InvalidSealArity(_))) => {}
             Err(_) => {
                 panic!("should be block seal-arity mismatch error (got {:?})", verify_result);
             }
@@ -603,7 +599,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::DifficultyOutOfBounds(_)), _)) => {}
+            Err(Error::Block(BlockError::DifficultyOutOfBounds(_))) => {}
             Err(_) => {
                 panic!("should be block difficulty error (got {:?})", verify_result);
             }
@@ -626,7 +622,7 @@ mod tests {
         let verify_result = engine.verify_block_basic(&header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidProofOfWork(_)), _)) => {}
+            Err(Error::Block(BlockError::InvalidProofOfWork(_))) => {}
             Err(_) => {
                 panic!("should be invalid proof of work error (got {:?})", verify_result);
             }
@@ -645,7 +641,7 @@ mod tests {
         let verify_result = engine.verify_block_family(&header, &parent_header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::RidiculousNumber(_)), _)) => {}
+            Err(Error::Block(BlockError::RidiculousNumber(_))) => {}
             Err(_) => {
                 panic!("should be invalid block number fail (got {:?})", verify_result);
             }
@@ -666,7 +662,7 @@ mod tests {
         let verify_result = engine.verify_block_family(&header, &parent_header);
 
         match verify_result {
-            Err(Error(ErrorKind::Block(BlockError::InvalidDifficulty(_)), _)) => {}
+            Err(Error::Block(BlockError::InvalidDifficulty(_))) => {}
             Err(_) => {
                 panic!("should be invalid difficulty fail (got {:?})", verify_result);
             }

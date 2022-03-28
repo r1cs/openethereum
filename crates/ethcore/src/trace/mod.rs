@@ -36,8 +36,8 @@ pub use self::types::trace::{
 };
 pub use self::types::{filter, flat, localized, trace, Tracing};
 
+use common_types::BlockNumber;
 use ethereum_types::{Address, H256, U256};
-use types::BlockNumber;
 use vm::{ActionParams, Error as VmError};
 
 /// This trait is used by executive to build traces.

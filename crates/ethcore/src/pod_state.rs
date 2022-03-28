@@ -16,10 +16,9 @@
 
 //! State of all accounts in the system expressed in Plain Old Data.
 
+use crate::pod_account::{self, PodAccount};
 use ethereum_types::{Address, H256};
-use ethjson;
 use itertools::Itertools;
-use pod_account::{self, PodAccount};
 use std::collections::BTreeMap;
 use std::fmt;
 use triehash::sec_trie_root;
@@ -56,6 +55,7 @@ impl PodState {
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::blockchain::State> for PodState {
     fn from(s: ethjson::blockchain::State) -> PodState {
         let state = s.into_iter().map(|(addr, acc)| (addr.into(), PodAccount::from(acc))).collect();
@@ -63,6 +63,7 @@ impl From<ethjson::blockchain::State> for PodState {
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::spec::State> for PodState {
     fn from(s: ethjson::spec::State) -> PodState {
         let state: BTreeMap<_, _> = s
@@ -101,8 +102,8 @@ pub fn diff_pod(pre: &PodState, post: &PodState) -> StateDiff {
 #[cfg(test)]
 mod test {
     use super::PodState;
+    use crate::pod_account::PodAccount;
     use ethereum_types::H160;
-    use pod_account::PodAccount;
     use std::collections::BTreeMap;
     use types::account_diff::*;
     use types::state_diff::*;
@@ -111,8 +112,8 @@ mod test {
     fn create_delete() {
         let a = PodState::from(map![
             H160::from_low_u64_be(1) => PodAccount {
-                balance: 69.into(),
-                nonce: 0.into(),
+                balance: 69u32.into(),
+                nonce: 0u32.into(),
                 code: Some(Vec::new()),
                 storage: map![],
             }
@@ -122,8 +123,8 @@ mod test {
             StateDiff {
                 raw: map![
                     H160::from_low_u64_be(1) => AccountDiff{
-                        balance: Diff::Died(69.into()),
-                        nonce: Diff::Died(0.into()),
+                        balance: Diff::Died(69u32.into()),
+                        nonce: Diff::Died(0u32.into()),
                         code: Diff::Died(vec![]),
                         storage: map![],
                     }
@@ -135,8 +136,8 @@ mod test {
             StateDiff {
                 raw: map![
                     H160::from_low_u64_be(1) => AccountDiff{
-                        balance: Diff::Born(69.into()),
-                        nonce: Diff::Born(0.into()),
+                        balance: Diff::Born(69u32.into()),
+                        nonce: Diff::Born(0u32.into()),
                         code: Diff::Born(vec![]),
                         storage: map![],
                     }
@@ -174,8 +175,8 @@ mod test {
             StateDiff {
                 raw: map![
                     H160::from_low_u64_be(2) => AccountDiff{
-                        balance: Diff::Born(69.into()),
-                        nonce: Diff::Born(0.into()),
+                        balance: Diff::Born(69u32.into()),
+                        nonce: Diff::Born(0u32.into()),
                         code: Diff::Born(vec![]),
                         storage: map![],
                     }
@@ -187,8 +188,8 @@ mod test {
             StateDiff {
                 raw: map![
                     H160::from_low_u64_be(2) => AccountDiff{
-                        balance: Diff::Died(69.into()),
-                        nonce: Diff::Died(0.into()),
+                        balance: Diff::Died(69u32.into()),
+                        nonce: Diff::Died(0u32.into()),
                         code: Diff::Died(vec![]),
                         storage: map![],
                     }
@@ -233,7 +234,7 @@ mod test {
                 raw: map![
                     H160::from_low_u64_be(1) => AccountDiff{
                         balance: Diff::Same,
-                        nonce: Diff::Changed(0.into(), 1.into()),
+                        nonce: Diff::Changed(0u32.into(), 1u32.into()),
                         code: Diff::Same,
                         storage: map![],
                     }

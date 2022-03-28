@@ -1,18 +1,13 @@
 [package]
-description = "OpenEthereum"
-name = "openethereum"
-# NOTE Make sure to update util/version/Cargo.toml as well
-version = "3.3.4"
-license = "GPL-3.0"
-authors = [
-	"OpenEthereum developers",
-	"Parity Technologies <admin@parity.io>"
-]
+description = "Riscv L2 Chain"
+name = "riscv-l2chain"
+version = "0.1.0"
+edition = "2021"
 
 [lib]
 
 [dependencies]
-ethcore = {path = "crates/ethcore"}
+ethcore = {path = "crates/ethcore", default-features = false}
 
 [features]
 json-tests = ["ethcore/json-tests"]

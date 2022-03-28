@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use block::ExecutedBlock;
-use engines::{Engine, Seal, SealingState};
-use machine::Machine;
+use crate::block::ExecutedBlock;
+use crate::engines::{Engine, Seal};
+use crate::machine::Machine;
 use std::sync::atomic::{AtomicU64, Ordering};
-use types::header::{ExtendedHeader, Header};
+use types::header::Header;
 
 /// `InstantSeal` params.
 #[derive(Default, Debug, PartialEq)]
@@ -27,8 +27,9 @@ pub struct InstantSealParams {
     pub millisecond_timestamp: bool,
 }
 
-impl From<::ethjson::spec::InstantSealParams> for InstantSealParams {
-    fn from(p: ::ethjson::spec::InstantSealParams) -> Self {
+#[cfg(feature = "std")]
+impl From<ethjson::spec::InstantSealParams> for InstantSealParams {
+    fn from(p: ethjson::spec::InstantSealParams) -> Self {
         InstantSealParams { millisecond_timestamp: p.millisecond_timestamp }
     }
 }
@@ -55,17 +56,6 @@ impl<M: Machine> Engine<M> for InstantSeal<M> {
 
     fn machine(&self) -> &M {
         &self.machine
-    }
-
-    fn sealing_state(&self) -> SealingState {
-        SealingState::Ready
-    }
-
-    fn should_reseal_on_update(&self) -> bool {
-        // We would like for the miner to `update_sealing` if there are local_pending_transactions
-        // in the pool to prevent transactions sent in parallel from stalling in the transaction
-        // pool. (see #9660)
-        true
     }
 
     fn generate_seal(&self, block: &ExecutedBlock, _parent: &Header) -> Seal {
@@ -103,20 +93,16 @@ impl<M: Machine> Engine<M> for InstantSeal<M> {
     fn is_timestamp_valid(&self, header_timestamp: u64, parent_timestamp: u64) -> bool {
         header_timestamp >= parent_timestamp
     }
-
-    fn fork_choice(&self, new: &ExtendedHeader, current: &ExtendedHeader) -> super::ForkChoice {
-        super::total_difficulty_fork_choice(new, current)
-    }
 }
 
 #[cfg(test)]
 mod tests {
-    use block::*;
-    use engines::Seal;
+    use crate::block::*;
+    use crate::engines::Seal;
+    use crate::spec::Spec;
+    use crate::test_helpers::get_temp_state_db;
     use ethereum_types::{Address, H520};
-    use spec::Spec;
     use std::sync::Arc;
-    use test_helpers::get_temp_state_db;
     use types::header::Header;
 
     #[test]

@@ -15,14 +15,14 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Transaction Execution environment.
+use crate::executive::{into_message_call_result, *};
+use crate::machine::EthereumMachine as Machine;
+use crate::state::{Backend as StateBackend, CleanupMode, State, Substate};
+use crate::trace::{Tracer, VMTracer};
 use bytes::Bytes;
 use ethereum_types::{Address, H256, U256};
-use executive::*;
-use machine::EthereumMachine as Machine;
-use state::{Backend as StateBackend, CleanupMode, State, Substate};
 use std::cmp;
 use std::sync::Arc;
-use trace::{Tracer, VMTracer};
 use types::transaction::UNSIGNED_SENDER;
 use vm::{
     self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind
@@ -118,7 +118,6 @@ where
                 .map(|v| v.unwrap_or_default())
                 .map_err(Into::into)
         } else {
-            warn!(target: "externalities", "Detected existing account {:#x} where a forced contract creation happened.", self.origin_info.address);
             Ok(H256::zero())
         }
     }
@@ -180,7 +179,6 @@ where
         let (address, code_hash) = match self.state.nonce(&self.origin_info.address) {
             Ok(nonce) => contract_address(address_scheme, &self.origin_info.address, &nonce, &code),
             Err(e) => {
-                debug!(target: "ext", "Database corruption encountered: {:?}", e);
                 return Ok(ContractCreateResult::Failed);
             }
         };
@@ -205,7 +203,6 @@ where
         if !self.static_flag {
             if !self.schedule.keep_unsigned_nonce || params.sender != UNSIGNED_SENDER {
                 if let Err(e) = self.state.inc_nonce(&self.origin_info.address) {
-                    debug!(target: "ext", "Database corruption encountered: {:?}", e);
                     return Ok(ContractCreateResult::Failed);
                 }
             }
@@ -247,8 +244,6 @@ where
         &mut self, gas: &U256, sender_address: &Address, receive_address: &Address,
         value: Option<U256>, data: &[u8], code_address: &Address, call_type: CallType, trap: bool,
     ) -> ::std::result::Result<MessageCallResult, TrapKind> {
-        trace!(target: "externalities", "call");
-
         let code_res = self
             .state
             .code(code_address)
@@ -369,7 +364,6 @@ where
             // TODO [todr] To be consistent with CPP client we set balance to 0 in that case.
             self.state.sub_balance(&address, &balance, &mut CleanupMode::NoEmpty)?;
         } else {
-            trace!(target: "ext", "Suiciding {} -> {} (xfer: {})", address, refund_address, balance);
             self.state.transfer_balance(
                 &address,
                 refund_address,
@@ -451,12 +445,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::machine::EthereumMachine;
+    use crate::spec::Spec;
+    use crate::state::{State, Substate};
+    use crate::state_db::StateDB;
+    use crate::test_helpers::get_temp_state;
+    use crate::trace::{NoopTracer, NoopVMTracer};
     use ethereum_types::{Address, U256};
     use evm::{CallType, EnvInfo, Ext};
-    use state::{State, Substate};
     use std::str::FromStr;
-    use test_helpers::get_temp_state;
-    use trace::{NoopTracer, NoopVMTracer};
 
     fn get_test_origin() -> OriginInfo {
         OriginInfo {
@@ -481,8 +478,8 @@ mod tests {
     }
 
     struct TestSetup {
-        state: State<::state_db::StateDB>,
-        machine: ::machine::EthereumMachine,
+        state: State<StateDB>,
+        machine: EthereumMachine,
         schedule: Schedule,
         sub_state: Substate,
         env_info: EnvInfo,
@@ -496,7 +493,7 @@ mod tests {
 
     impl TestSetup {
         fn new() -> Self {
-            let machine = ::spec::Spec::new_test_machine();
+            let machine = Spec::new_test_machine();
             let env_info = get_test_env_info();
             let schedule = machine.schedule(env_info.number);
             TestSetup {
@@ -825,7 +822,7 @@ mod tests {
                 &mut vm_tracer,
                 false,
             );
-            ext.ret(&U256::from(10000), &data, true)
+            ext.ret(&U256::from(10000u32), &data, true)
         };
 
         let data = ReturnData::new(vec![0xefu8], 0, 1);

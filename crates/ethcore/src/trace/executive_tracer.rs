@@ -16,13 +16,12 @@
 
 //! Simple executive tracer.
 
-use ethereum_types::{Address, U256};
-use log::{debug, warn};
-use std::cmp::min;
-use trace::trace::{
+use crate::trace::trace::{
     Action, Call, CallResult, Create, CreateResult, MemoryDiff, Res, Reward, RewardType, StorageDiff, Suicide, VMExecutedOperation, VMOperation, VMTrace
 };
-use trace::{FlatTrace, Tracer, VMTracer};
+use crate::trace::{FlatTrace, Tracer, VMTracer};
+use ethereum_types::{Address, U256};
+use std::cmp::min;
 use vm::{ActionParams, Error as VmError};
 
 /// Simple executive tracer. Traces all calls and creates. Ignores delegatecalls.
@@ -157,7 +156,7 @@ impl Tracer for ExecutiveTracer {
             result: Res::None,
             trace_address: self.index_stack.clone(),
         };
-        debug!(target: "trace", "Traced suicide {:?}", trace);
+        //debug!(target: "trace", "Traced suicide {:?}", trace);
         self.traces.push(trace);
 
         if let Some(index) = self.index_stack.last_mut() {
@@ -176,7 +175,7 @@ impl Tracer for ExecutiveTracer {
             result: Res::None,
             trace_address: self.index_stack.clone(),
         };
-        debug!(target: "trace", "Traced reward {:?}", trace);
+        //debug!(target: "trace", "Traced reward {:?}", trace);
         self.traces.push(trace);
 
         if let Some(index) = self.index_stack.last_mut() {
@@ -256,7 +255,7 @@ impl VMTracer for ExecutiveVMTracer {
             self.trace_stack.pop().expect("pushed in trace_prepare_execute; qed");
         let mem_diff = mem_written.map(|(o, s)| {
             if o + s > mem.len() {
-                warn!(target: "trace", "mem_written is out of bounds");
+                //warn!(target: "trace", "mem_written is out of bounds");
             }
             (o, &mem[min(mem.len(), o)..min(o + s, mem.len())])
         });
@@ -314,7 +313,7 @@ mod tests {
         tracer.done_trace_call(U256::zero(), &[]);
 
         let drained = tracer.drain();
-        assert!(drained[0].trace_address.len() == 0);
+        assert_eq!(drained[0].trace_address.len(), 0);
         assert_eq!(&drained[1].trace_address, &[0]);
         assert_eq!(&drained[2].trace_address, &[0, 0]);
         assert_eq!(&drained[3].trace_address, &[0, 1]);

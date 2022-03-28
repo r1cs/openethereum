@@ -26,11 +26,11 @@ use types::transaction::{self, SignedTransaction, TypedTransaction, UnverifiedTr
 use types::BlockNumber;
 use vm::{CreateContractAddress, EnvInfo, Schedule};
 
-use block::ExecutedBlock;
+use crate::block::ExecutedBlock;
+use crate::error::Error;
+use crate::spec::CommonParams;
+use crate::state::CleanupMode;
 use builtin::Builtin;
-use error::Error;
-use spec::CommonParams;
-use state::CleanupMode;
 
 /// Ethash-specific extensions.
 #[derive(Debug, Clone)]
@@ -45,8 +45,9 @@ pub struct EthashExtensions {
     pub dao_hardfork_accounts: Vec<Address>,
 }
 
-impl From<::ethjson::spec::EthashParams> for EthashExtensions {
-    fn from(p: ::ethjson::spec::EthashParams) -> Self {
+#[cfg(feature = "std")]
+impl From<ethjson::spec::EthashParams> for EthashExtensions {
+    fn from(p: ethjson::spec::EthashParams) -> Self {
         EthashExtensions {
             homestead_transition: p.homestead_transition.map_or(0, Into::into),
             dao_hardfork_transition: p.dao_hardfork_transition.map_or(u64::max_value(), Into::into),
@@ -274,7 +275,7 @@ impl EthereumMachine {
         &self, transaction: &[u8], schedule: &Schedule,
     ) -> Result<UnverifiedTransaction, transaction::Error> {
         if transaction.len() > self.params().max_transaction_size {
-            debug!("Rejected oversized transaction of {} bytes", transaction.len());
+            //debug!("Rejected oversized transaction of {} bytes", transaction.len());
             return Err(transaction::Error::TooBig);
         }
 
@@ -326,7 +327,7 @@ impl EthereumMachine {
         // Block eip1559_transition + 1 has base_fee = calculated
         let base_fee_denominator = match self.params().eip1559_base_fee_max_change_denominator {
             None => panic!("Can't calculate base fee if base fee denominator does not exist."),
-            Some(denominator) if denominator == U256::from(0) => {
+            Some(denominator) if denominator == U256::from(0u32) => {
                 panic!("Can't calculate base fee if base fee denominator is zero.")
             }
             Some(denominator) => denominator,
@@ -344,7 +345,7 @@ impl EthereumMachine {
             let gas_used_delta = parent.gas_used() - parent_gas_target;
             let base_fee_per_gas_delta = max(
                 parent_base_fee * gas_used_delta / parent_gas_target / base_fee_denominator,
-                U256::from(1),
+                U256::from(1u32),
             );
             parent_base_fee + base_fee_per_gas_delta
         } else {
@@ -402,7 +403,7 @@ impl super::Machine for EthereumMachine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ethereum::new_london_test_machine;
+    use crate::ethereum::{self, new_london_test_machine};
     use ethereum_types::H160;
     use std::str::FromStr;
 
@@ -421,7 +422,7 @@ mod tests {
         let rlp = "ea80843b9aca0083015f90948921ebb5f79e9e3920abe571004d0b1d5119c154865af3107a400080038080";
         let raw_tx: Vec<u8> = ::rustc_hex::FromHex::from_hex(rlp).unwrap();
         let transaction: UnverifiedTransaction = TypedTransaction::decode(&raw_tx).unwrap();
-        let spec = ::ethereum::new_ropsten_test();
+        let spec = ethereum::new_ropsten_test();
         let ethparams = get_default_ethash_extensions();
 
         let machine = EthereumMachine::with_ethash_extensions(
@@ -440,52 +441,52 @@ mod tests {
     fn calculate_base_fee_success() {
         let machine = new_london_test_machine();
         let parent_base_fees = [
-            U256::from(1000000000),
-            U256::from(1000000000),
-            U256::from(1000000000),
-            U256::from(1072671875),
-            U256::from(1059263476),
-            U256::from(1049238967),
-            U256::from(1049238967),
-            U256::from(0),
-            U256::from(1),
-            U256::from(2),
+            U256::from(1000000000u32),
+            U256::from(1000000000u32),
+            U256::from(1000000000u32),
+            U256::from(1072671875u32),
+            U256::from(1059263476u32),
+            U256::from(1049238967u32),
+            U256::from(1049238967u32),
+            U256::from(0u32),
+            U256::from(1u32),
+            U256::from(2u32),
         ];
         let parent_gas_used = [
-            U256::from(10000000),
-            U256::from(10000000),
-            U256::from(10000000),
-            U256::from(9000000),
-            U256::from(10001000),
-            U256::from(0),
-            U256::from(10000000),
-            U256::from(10000000),
-            U256::from(10000000),
-            U256::from(10000000),
+            U256::from(10000000u32),
+            U256::from(10000000u32),
+            U256::from(10000000u32),
+            U256::from(9000000u32),
+            U256::from(10001000u32),
+            U256::from(0u32),
+            U256::from(10000000u32),
+            U256::from(10000000u32),
+            U256::from(10000000u32),
+            U256::from(10000000u32),
         ];
         let parent_gas_limit = [
-            U256::from(10000000),
-            U256::from(12000000),
-            U256::from(14000000),
-            U256::from(10000000),
-            U256::from(14000000),
-            U256::from(2000000),
-            U256::from(18000000),
-            U256::from(18000000),
-            U256::from(18000000),
-            U256::from(18000000),
+            U256::from(10000000u32),
+            U256::from(12000000u32),
+            U256::from(14000000u32),
+            U256::from(10000000u32),
+            U256::from(14000000u32),
+            U256::from(2000000u32),
+            U256::from(18000000u32),
+            U256::from(18000000u32),
+            U256::from(18000000u32),
+            U256::from(18000000u32),
         ];
         let expected_base_fee = [
-            U256::from(1125000000),
-            U256::from(1083333333),
-            U256::from(1053571428),
-            U256::from(1179939062),
-            U256::from(1116028649),
-            U256::from(918084097),
-            U256::from(1063811730),
-            U256::from(1),
-            U256::from(2),
-            U256::from(3),
+            U256::from(1125000000u32),
+            U256::from(1083333333u32),
+            U256::from(1053571428u32),
+            U256::from(1179939062u32),
+            U256::from(1116028649u32),
+            U256::from(918084097u32),
+            U256::from(1063811730u32),
+            U256::from(1u32),
+            U256::from(2u32),
+            U256::from(3u32),
         ];
 
         for i in 0..parent_base_fees.len() {

@@ -16,6 +16,7 @@
 
 //! Parameters for a block chain.
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryFrom;
 use std::io::Read;
@@ -23,32 +24,36 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use ethereum_types::{Address, Bloom, H256, U256};
-use ethjson;
 use hash::{keccak, KECCAK_NULL_RLP};
-use parking_lot::RwLock;
 use rlp::{Rlp, RlpStream};
 use types::header::Header;
 use types::BlockNumber;
 use vm::{AccessList, ActionParams, ActionValue, CallType, EnvInfo, ParamsType};
 
+use crate::engines::{EthEngine, InstantSeal, InstantSealParams, NullEngine};
+use crate::error::Error;
+use crate::ethereum;
+use crate::executive::Executive;
+use crate::factory::Factories;
+use crate::machine::EthereumMachine;
+use crate::pod_state::PodState;
+use crate::spec::seal::Generic as GenericSeal;
+use crate::spec::Genesis;
+use crate::state::backend::Basic as BasicBackend;
+use crate::state::{Backend, State, Substate};
+use crate::trace::{NoopTracer, NoopVMTracer};
 use builtin::Builtin;
-use engines::{EthEngine, InstantSeal, InstantSealParams, NullEngine};
-use error::Error;
-use executive::Executive;
-use factory::Factories;
 use keccak_hasher::KeccakHasher;
-use machine::EthereumMachine;
-use maplit::btreeset;
-use pod_state::PodState;
-use spec::seal::Generic as GenericSeal;
-use spec::Genesis;
-use state::backend::Basic as BasicBackend;
-use state::{Backend, State, Substate};
-use trace::{NoopTracer, NoopVMTracer};
 use trie::DBValue;
+
+#[cfg(feature = "std")]
+use ethjson;
+#[cfg(feature = "std")]
+use maplit::btreeset;
 
 const MAX_TRANSACTION_SIZE: usize = 300 * 1024;
 
+#[cfg(feature = "std")]
 // helper for formatting errors.
 fn fmt_err<F: ::std::fmt::Display>(f: F) -> String {
     format!("Spec json is invalid: {}", f)
@@ -290,6 +295,7 @@ impl CommonParams {
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::spec::Params> for CommonParams {
     fn from(p: ethjson::spec::Params) -> Self {
         CommonParams {
@@ -443,7 +449,7 @@ pub struct Spec {
     constructors: Vec<(Address, Bytes)>,
 
     /// May be prepopulated if we know this in advance.
-    state_root_memo: RwLock<H256>,
+    state_root_memo: RefCell<H256>,
 
     /// Genesis state as plain old data.
     genesis_state: PodState,
@@ -469,13 +475,14 @@ impl Clone for Spec {
             seal_rlp: self.seal_rlp.clone(),
             hard_forks: self.hard_forks.clone(),
             constructors: self.constructors.clone(),
-            state_root_memo: RwLock::new(*self.state_root_memo.read()),
+            state_root_memo: RefCell::new(*self.state_root_memo.borrow()),
             genesis_state: self.genesis_state.clone(),
             base_fee: self.base_fee.clone(),
         }
     }
 }
 
+#[cfg(feature = "std")]
 fn load_machine_from(s: ethjson::spec::Spec) -> EthereumMachine {
     let builtins = s
         .accounts
@@ -488,6 +495,7 @@ fn load_machine_from(s: ethjson::spec::Spec) -> EthereumMachine {
     Spec::machine(&s.engine, params, builtins)
 }
 
+#[cfg(feature = "std")]
 fn convert_json_to_spec(
     (address, builtin): (ethjson::hash::Address, ethjson::spec::builtin::Builtin),
 ) -> Result<(Address, Builtin), Error> {
@@ -495,6 +503,7 @@ fn convert_json_to_spec(
     Ok((address.into(), builtin))
 }
 
+#[cfg(feature = "std")]
 /// Load from JSON object.
 fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
     let builtins: Result<BTreeMap<Address, Builtin>, _> =
@@ -529,7 +538,7 @@ fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
             .into_iter()
             .map(|(a, c)| (a.into(), c.into()))
             .collect(),
-        state_root_memo: RwLock::new(Default::default()), // will be overwritten right after.
+        state_root_memo: RefCell::new(Default::default()), // will be overwritten right after.
         genesis_state: s.accounts.into(),
     };
 
@@ -544,6 +553,7 @@ fn load_from(s: ethjson::spec::Spec) -> Result<Spec, Error> {
     Ok(s)
 }
 
+#[cfg(feature = "std")]
 macro_rules! load_bundled {
     ($e:expr) => {
         Spec::load(include_bytes!(concat!("../../res/chainspec/", $e, ".json")) as &[u8])
@@ -564,6 +574,7 @@ fn new_memory_db() -> memory_db::MemoryDB<KeccakHasher, DBValue> {
 }
 
 impl Spec {
+    #[cfg(feature = "std")]
     // create an instance of an Ethereum state machine, minus consensus logic.
     fn machine(
         engine_spec: &ethjson::spec::Engine, params: CommonParams,
@@ -576,6 +587,7 @@ impl Spec {
         }
     }
 
+    #[cfg(feature = "std")]
     /// Convert engine spec into a arc'd Engine of the right underlying type.
     /// TODO avoid this hard-coded nastiness - use dynamic-linked plugin framework instead.
     fn engine(
@@ -647,7 +659,7 @@ impl Spec {
                     }
                 }
 
-                Arc::new(::ethereum::Ethash::new(ethash.params.into(), machine))
+                Arc::new(ethereum::Ethash::new(ethash.params.into(), machine))
             }
             ethjson::spec::Engine::InstantSeal(Some(instant_seal)) => {
                 Arc::new(InstantSeal::new(instant_seal.params.into(), machine))
@@ -704,8 +716,6 @@ impl Spec {
             if !self.constructors.is_empty() {
                 let from = Address::default();
                 for &(ref address, ref constructor) in self.constructors.iter() {
-                    trace!(target: "spec", "run_constructors: Creating a contract at {}.", address);
-                    trace!(target: "spec", "  .. root before = {}", state.root());
                     let params = ActionParams {
                         code_address: address.clone(),
                         code_hash: Some(keccak(constructor)),
@@ -731,15 +741,11 @@ impl Spec {
                         if let Err(e) =
                             exec.create(params, &mut substate, &mut NoopTracer, &mut NoopVMTracer)
                         {
-                            warn!(target: "spec", "Genesis constructor execution at {} failed: {}.", address, e);
+                            //warn!(target: "spec", "Genesis constructor execution at {} failed: {}.", address, e);
                         }
                     }
 
-                    if let Err(e) = state.commit() {
-                        warn!(target: "spec", "Genesis constructor trie commit at {} failed: {}.", address, e);
-                    }
-
-                    trace!(target: "spec", "  .. root after = {}", state.root());
+                    if let Err(e) = state.commit() {}
                 }
             } else {
                 state.populate_from(self.genesis_state().to_owned());
@@ -748,13 +754,13 @@ impl Spec {
             state.drop()
         };
 
-        *self.state_root_memo.write() = root;
+        *self.state_root_memo.borrow_mut() = root;
         Ok(db)
     }
 
     /// Return the state root for the genesis state, memoising accordingly.
     pub fn state_root(&self) -> H256 {
-        self.state_root_memo.read().clone()
+        self.state_root_memo.borrow().clone()
     }
 
     /// Get common blockchain parameters.
@@ -808,7 +814,6 @@ impl Spec {
             r.iter().map(|f| f.as_raw().to_vec()).collect()
         });
         header.set_base_fee(self.base_fee.clone());
-        trace!(target: "spec", "Header hash is {}", header.hash());
         header
     }
 
@@ -857,7 +862,7 @@ impl Spec {
         // TODO: get rid of this function and ensure state root always is valid.
         // we're mostly there, but `self.genesis_state.root()` doesn't encompass
         // post-constructor state.
-        *self.state_root_memo.read() == self.genesis_state.root()
+        *self.state_root_memo.borrow() == self.genesis_state.root()
     }
 
     /// Ensure that the given state DB has the trie nodes in for the genesis state.
@@ -872,11 +877,13 @@ impl Spec {
         Ok(db)
     }
 
+    #[cfg(feature = "std")]
     /// Loads just the state machine from a json file.
     pub fn load_machine<R: Read>(reader: R) -> Result<EthereumMachine, String> {
         ethjson::spec::Spec::load(reader).map_err(fmt_err).map(load_machine_from)
     }
 
+    #[cfg(feature = "std")]
     /// Loads spec from json file. Provide factories for executing contracts and ensuring
     /// storage goes to the right place.
     pub fn load<'a, R>(reader: R) -> Result<Self, String>
@@ -888,6 +895,7 @@ impl Spec {
             .and_then(|x| load_from(x).map_err(fmt_err))
     }
 
+    #[cfg(feature = "std")]
     /// Create a new Spec with InstantSeal consensus which does internal sealing (not requiring
     /// work).
     pub fn new_instant() -> Spec {
@@ -973,10 +981,10 @@ impl Spec {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::state::State;
+    use crate::test_helpers::get_temp_state_db;
     use ethereum_types::{H160, H256};
-    use state::State;
     use std::str::FromStr;
-    use test_helpers::get_temp_state_db;
     use types::view;
     use types::views::BlockView;
 

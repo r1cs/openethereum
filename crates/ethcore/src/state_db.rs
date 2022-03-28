@@ -18,10 +18,10 @@
 
 use std::sync::Arc;
 
+use crate::state::{self, Account};
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
-use state::{self, Account};
 
 use trie::DBValue;
 
@@ -42,9 +42,6 @@ use trie::DBValue;
 pub struct StateDB {
     /// Backing database.
     db: Box<dyn HashDB<KeccakHasher, DBValue>>,
-    /// Hash of the block on top of which this instance was created or
-    /// `None` if cache is disabled
-    parent_hash: Option<H256>,
 }
 
 impl StateDB {
@@ -52,8 +49,8 @@ impl StateDB {
     /// of the LRU cache in bytes. Actual used memory may (read: will) be higher due to bookkeeping.
     // TODO: make the cache size actually accurate by moving the account storage cache
     // into the `AccountCache` structure as its own `LruCache<(Address, H256), H256>`.
-    pub fn new(db: Box<dyn HashDB<KeccakHasher, DBValue>>, cache_size: usize) -> StateDB {
-        StateDB { db: db, parent_hash: None }
+    pub fn new(db: Box<dyn HashDB<KeccakHasher, DBValue>>, _cache_size: usize) -> StateDB {
+        StateDB { db }
     }
 
     /// Conversion method to interpret self as `HashDB` reference
@@ -81,26 +78,26 @@ impl state::Backend for StateDB {
         self.db.as_hash_db_mut()
     }
 
-    fn add_to_account_cache(&mut self, addr: Address, data: Option<Account>, modified: bool) {
+    fn add_to_account_cache(&mut self, _addr: Address, _data: Option<Account>, _modified: bool) {
         return;
     }
 
-    fn cache_code(&self, hash: H256, code: Arc<Vec<u8>>) {
+    fn cache_code(&self, _hash: H256, _code: Arc<Vec<u8>>) {
         return;
     }
 
-    fn get_cached_account(&self, addr: &Address) -> Option<Option<Account>> {
+    fn get_cached_account(&self, _addr: &Address) -> Option<Option<Account>> {
         None
     }
 
-    fn get_cached<F, U>(&self, a: &Address, f: F) -> Option<U>
+    fn get_cached<F, U>(&self, _a: &Address, _f: F) -> Option<U>
     where
         F: FnOnce(Option<&mut Account>) -> U,
     {
         None
     }
 
-    fn get_cached_code(&self, hash: &H256) -> Option<Arc<Vec<u8>>> {
+    fn get_cached_code(&self, _hash: &H256) -> Option<Arc<Vec<u8>>> {
         None
     }
 }

@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use block::ExecutedBlock;
-use engines::block_reward::{self, RewardKind};
-use engines::Engine;
+use crate::block::ExecutedBlock;
+use crate::engines::block_reward::{self, RewardKind};
+use crate::engines::Engine;
+use crate::machine::Machine;
 use ethereum_types::U256;
-use machine::Machine;
-use types::ancestry_action::AncestryAction;
-use types::header::{ExtendedHeader, Header};
+use types::header::Header;
 use types::BlockNumber;
 
 /// Params for a null engine.
@@ -32,7 +31,8 @@ pub struct NullEngineParams {
     pub immediate_finalization: bool,
 }
 
-impl From<::ethjson::spec::NullEngineParams> for NullEngineParams {
+#[cfg(feature = "std")]
+impl From<ethjson::spec::NullEngineParams> for NullEngineParams {
     fn from(p: ::ethjson::spec::NullEngineParams) -> Self {
         NullEngineParams {
             block_reward: p.block_reward.map_or_else(Default::default, Into::into),
@@ -108,20 +108,5 @@ impl<M: Machine> Engine<M> for NullEngine<M> {
 
     fn verify_local_seal(&self, _header: &Header) -> Result<(), M::Error> {
         Ok(())
-    }
-
-    fn fork_choice(&self, new: &ExtendedHeader, current: &ExtendedHeader) -> super::ForkChoice {
-        super::total_difficulty_fork_choice(new, current)
-    }
-
-    fn ancestry_actions(
-        &self, _header: &Header, ancestry: &mut dyn Iterator<Item = ExtendedHeader>,
-    ) -> Vec<AncestryAction> {
-        if self.params.immediate_finalization {
-            // always mark parent finalized
-            ancestry.take(1).map(|e| AncestryAction::MarkFinalized(e.header.hash())).collect()
-        } else {
-            Vec::new()
-        }
     }
 }

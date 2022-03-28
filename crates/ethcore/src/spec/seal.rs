@@ -17,7 +17,6 @@
 //! Spec seal.
 
 use ethereum_types::{H256, H520, H64};
-use ethjson;
 use rlp::RlpStream;
 
 /// Classic ethereum seal.
@@ -84,6 +83,7 @@ pub enum Seal {
     Generic(Generic),
 }
 
+#[cfg(feature = "std")]
 impl From<ethjson::spec::Seal> for Seal {
     fn from(s: ethjson::spec::Seal) -> Self {
         match s {
