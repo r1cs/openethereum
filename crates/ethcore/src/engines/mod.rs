@@ -30,9 +30,10 @@ pub use types::engines::ForkChoice;
 
 use alloc::collections::BTreeMap;
 use alloc::sync::{Arc, Weak};
+use core::fmt;
 use hashbrown::HashMap;
 #[cfg(feature = "std")]
-use std::{error, fmt};
+use std::error;
 
 use crate::error::Error;
 use crate::spec::CommonParams;

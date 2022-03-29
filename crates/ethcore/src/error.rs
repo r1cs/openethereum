@@ -164,7 +164,7 @@ impl fmt::Display for BlockError {
         f.write_fmt(format_args!("Block error ({})", msg))
     }
 }
-
+#[cfg(feature = "std")]
 impl error::Error for BlockError {}
 
 impl<E> From<Box<E>> for Error
