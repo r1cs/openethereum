@@ -149,7 +149,7 @@ impl fmt::Display for EngineError {
         f.write_fmt(format_args!("Engine error ({})", msg))
     }
 }
-
+#[cfg(feature = "std")]
 impl error::Error for EngineError {
     fn description(&self) -> &str {
         "Engine error"
