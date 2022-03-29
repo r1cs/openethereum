@@ -36,7 +36,7 @@ use trie::{DBValue, TrieFactory};
 use triehash::sec_trie_root;
 use types::account_diff::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 /// An account, expressed as Plain-Old-Data (hence the name).
 /// Does not have a DB overlay cache, code hash or anything like that.
 pub struct PodAccount {
@@ -44,7 +44,6 @@ pub struct PodAccount {
     pub balance: U256,
     /// The nonce of the account.
     pub nonce: U256,
-    #[serde(serialize_with = "opt_bytes_to_hex")]
     /// The code of the account or `None` in the special case that it is unknown.
     pub code: Option<Bytes>,
     /// The storage of the account.

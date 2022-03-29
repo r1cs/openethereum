@@ -586,7 +586,6 @@ dependencies = [
  "rlp_derive",
  "rustc-hex 2.1.0",
  "serde",
- "serde_derive",
  "serde_json",
  "tempdir",
  "tempfile",

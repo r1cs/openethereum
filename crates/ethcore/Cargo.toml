@@ -32,8 +32,7 @@ rustc-hex = {version = "2.1", default-features = false }
 triehash-ethereum = { version = "0.2",  path = "../util/triehash-ethereum", default-features = false }
 unexpected = { path = "../util/unexpected", default-features = false }
 vm = { path = "../vm/vm", default-features = false }
-serde = "1.0"
-serde_derive = "1.0"
+serde = {version="1.0",default-features = false}
 serde_json = {version = "1.0", optional = true }
 ethjson = { path = "../ethjson", optional = true }
 globset = {version = "0.4", optional = true}

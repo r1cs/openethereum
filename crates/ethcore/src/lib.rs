@@ -22,8 +22,6 @@
 extern crate macros;
 #[macro_use]
 extern crate rlp_derive;
-#[macro_use]
-extern crate serde_derive;
 
 extern crate common_types as types;
 extern crate ethcore_builtin as builtin;
