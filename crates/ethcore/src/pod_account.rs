@@ -19,8 +19,8 @@
 use crate::alloc::string::ToString;
 use crate::state::Account;
 use alloc::collections::BTreeMap;
+use alloc::vec;
 use alloc::vec::Vec;
-use alloc::{format, vec};
 use bytes::Bytes;
 use core::fmt;
 use ethereum_types::{BigEndianHash, H256, U256};
@@ -101,7 +101,7 @@ impl PodAccount {
         let mut r = H256::default();
         let mut t = factory.create(db, &mut r);
         for (k, v) in &self.storage {
-            if let Err(e) = t.insert(k.as_bytes(), &rlp::encode(&v.into_uint())) {
+            if let Err(_) = t.insert(k.as_bytes(), &rlp::encode(&v.into_uint())) {
                 //warn!("Encountered potential DB corruption: {}", e);
             }
         }

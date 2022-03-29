@@ -180,7 +180,7 @@ where
         // create new contract address
         let (address, code_hash) = match self.state.nonce(&self.origin_info.address) {
             Ok(nonce) => contract_address(address_scheme, &self.origin_info.address, &nonce, &code),
-            Err(e) => {
+            Err(_) => {
                 return Ok(ContractCreateResult::Failed);
             }
         };

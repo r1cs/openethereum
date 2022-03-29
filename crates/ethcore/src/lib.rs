@@ -25,7 +25,6 @@ extern crate rlp_derive;
 
 extern crate common_types as types;
 extern crate ethcore_builtin as builtin;
-extern crate hashbrown;
 extern crate keccak_hash as hash;
 extern crate parity_bytes as bytes;
 extern crate patricia_trie_ethereum as ethtrie;

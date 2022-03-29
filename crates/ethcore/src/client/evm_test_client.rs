@@ -53,7 +53,6 @@ impl<E: Into<error::Error>> From<E> for EvmTestError {
 impl fmt::Display for EvmTestError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         use self::EvmTestError::*;
-        use core::write;
 
         match *self {
             Trie(ref err) => write!(fmt, "Trie: {}", err),

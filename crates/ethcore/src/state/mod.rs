@@ -235,7 +235,7 @@ pub fn prove_transaction_virtual<H: AsHashDB<KeccakHasher, DBValue> + Send + Syn
     let options = TransactOptions::with_no_tracing().dont_check_nonce().save_output_from_contract();
     match state.execute(env_info, machine, transaction, options, true) {
         Err(ExecutionError::Internal(_)) => None,
-        Err(e) => Some((Vec::new(), state.drop().1.extract_proof())),
+        Err(_) => Some((Vec::new(), state.drop().1.extract_proof())),
         Ok(res) => Some((res.output, state.drop().1.extract_proof())),
     }
 }

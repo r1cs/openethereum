@@ -23,7 +23,6 @@ use rlp::NULL_RLP;
 use trie::DBValue;
 
 use alloc::boxed::Box;
-use alloc::vec::Vec;
 
 /// A factory for different kinds of account dbs.
 #[derive(Debug, Clone)]
