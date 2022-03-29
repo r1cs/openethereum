@@ -18,9 +18,10 @@
 
 use super::flat::FlatTrace;
 use super::trace::{Action, Res};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::ops::Range;
 use ethereum_types::{Address, Bloom, BloomInput};
-
 /// Addresses filter.
 ///
 /// Used to create bloom possibilities and match filters.

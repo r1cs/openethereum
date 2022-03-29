@@ -28,6 +28,8 @@ use vm::{
     self, ActionParams, ActionValue, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule, TrapKind
 };
 
+use alloc::vec::Vec;
+
 /// Policy for handling output data on `RETURN` opcode.
 pub enum OutputPolicy {
     /// Return reference to fixed sized output.

@@ -51,6 +51,9 @@ use keccak_hasher::KeccakHasher;
 use ethtrie::{Result as TrieResult, TrieDB};
 use trie::{DBValue, Recorder, Trie, TrieError};
 
+use alloc::boxed::Box;
+use alloc::vec::Vec;
+
 mod account;
 mod substate;
 

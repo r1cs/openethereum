@@ -32,6 +32,11 @@ use crate::error::{BlockError, Error};
 use crate::machine::EthereumMachine;
 use ethash::{boundary_to_difficulty, quick_get_difficulty};
 
+use crate::alloc::borrow::ToOwned;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
+
 #[cfg(feature = "std")]
 use ethjson;
 #[cfg(feature = "std")]

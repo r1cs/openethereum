@@ -27,10 +27,16 @@ use types::transaction::{self, SignedTransaction, TypedTransaction, UnverifiedTr
 use types::BlockNumber;
 use vm::{CreateContractAddress, EnvInfo, Schedule};
 
+use crate::alloc::borrow::ToOwned;
+use crate::alloc::string::ToString;
 use crate::block::ExecutedBlock;
 use crate::error::Error;
 use crate::spec::CommonParams;
 use crate::state::CleanupMode;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use builtin::Builtin;
 
 /// Ethash-specific extensions.

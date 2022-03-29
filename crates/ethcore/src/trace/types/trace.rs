@@ -21,6 +21,7 @@ use ethereum_types::{Address, Bloom, BloomInput, U256};
 use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
 
 use super::error::Error;
+use alloc::vec::Vec;
 use evm::CallType;
 use vm::ActionParams;
 

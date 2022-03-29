@@ -29,7 +29,7 @@ pub use self::null_engine::NullEngine;
 pub use types::engines::ForkChoice;
 
 use alloc::collections::BTreeMap;
-use alloc::sync::{Arc, Weak};
+use alloc::sync::Arc;
 use core::fmt;
 use hashbrown::HashMap;
 #[cfg(feature = "std")]
@@ -45,6 +45,9 @@ use vm::{CreateContractAddress, EnvInfo, Schedule};
 
 use crate::block::ExecutedBlock;
 use crate::machine::{self, Machine};
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
 use bytes::Bytes;
 use ethereum_types::{Address, H256, H64, U256};
 use unexpected::{Mismatch, OutOfBounds};

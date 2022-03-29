@@ -22,6 +22,7 @@ pub mod blocks {
     use types::transaction::{TypedTransaction, UnverifiedTransaction};
     use types::BlockNumber;
 
+    use alloc::vec::Vec;
     use bytes::Bytes;
 
     /// An unverified block.

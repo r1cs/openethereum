@@ -21,6 +21,8 @@ use keccak_hasher::KeccakHasher;
 use trie::TrieFactory;
 use vm::{ActionParams, Exec, Schedule};
 
+use alloc::boxed::Box;
+
 /// Virtual machine factory
 #[derive(Default, Clone)]
 pub struct VmFactory {

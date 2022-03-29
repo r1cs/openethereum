@@ -22,8 +22,10 @@ use crate::state::{self, Account};
 use ethereum_types::{Address, H256};
 use hash_db::HashDB;
 use keccak_hasher::KeccakHasher;
-
 use trie::DBValue;
+
+use alloc::boxed::Box;
+use alloc::vec::Vec;
 
 /// State database abstraction.
 /// Manages shared global state cache which reflects the canonical

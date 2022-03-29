@@ -27,6 +27,7 @@ use crate::block::OpenBlock;
 use crate::engines::EthEngine;
 use crate::error::Error;
 use crate::state::StateInfo;
+use alloc::boxed::Box;
 
 /// State information to be used during client query
 pub enum StateOrBlock {

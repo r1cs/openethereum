@@ -25,6 +25,8 @@ use bytes::Bytes;
 use types::header::Header;
 use types::transaction::SignedTransaction;
 
+use alloc::vec::Vec;
+
 /// Preprocessed block data gathered in `verify_block_unordered` call
 pub struct PreverifiedBlock {
     /// Populated block header

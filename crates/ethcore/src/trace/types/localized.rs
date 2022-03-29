@@ -20,6 +20,8 @@ use super::trace::{Action, Res};
 use ethereum_types::H256;
 use types::BlockNumber;
 
+use alloc::vec::Vec;
+
 /// Localized trace.
 #[derive(Debug, PartialEq, Clone)]
 pub struct LocalizedTrace {

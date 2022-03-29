@@ -1,6 +1,6 @@
 use crate::engines::Engine;
 use crate::machine::Machine;
-use std::cmp::max;
+use core::cmp::max;
 use types::header::Header;
 
 /// An engine which does not provide any consensus mechanism, just seals blocks internally.

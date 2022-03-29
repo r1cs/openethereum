@@ -31,6 +31,7 @@ use types::header::Header;
 use types::BlockNumber;
 use vm::{AccessList, ActionParams, ActionValue, CallType, EnvInfo, ParamsType};
 
+use crate::alloc::borrow::ToOwned;
 use crate::engines::{EthEngine, InstantSeal, InstantSealParams, NullEngine};
 use crate::error::Error;
 use crate::ethereum;
@@ -43,6 +44,8 @@ use crate::spec::Genesis;
 use crate::state::backend::Basic as BasicBackend;
 use crate::state::{Backend, State, Substate};
 use crate::trace::{NoopTracer, NoopVMTracer};
+use alloc::string::String;
+use alloc::vec::Vec;
 use builtin::Builtin;
 use keccak_hasher::KeccakHasher;
 use trie::DBValue;

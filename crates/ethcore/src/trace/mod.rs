@@ -40,6 +40,8 @@ use common_types::BlockNumber;
 use ethereum_types::{Address, H256, U256};
 use vm::{ActionParams, Error as VmError};
 
+use alloc::vec::Vec;
+
 /// This trait is used by executive to build traces.
 pub trait Tracer: Send {
     /// Data returned when draining the Tracer.

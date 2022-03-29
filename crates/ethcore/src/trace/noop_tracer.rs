@@ -18,6 +18,8 @@
 
 use crate::trace::trace::{RewardType, VMTrace};
 use crate::trace::{FlatTrace, Tracer, VMTracer};
+use alloc::vec;
+use alloc::vec::Vec;
 use ethereum_types::{Address, U256};
 use vm::{ActionParams, Error as VmError};
 

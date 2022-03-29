@@ -18,13 +18,18 @@
 
 use crate::factory::{self, Factories};
 use crate::{client, error, executive, pod_state, spec, state, state_db, trace};
-use alloc::sync::Arc;
-use core::fmt;
 use ethereum_types::{H160, H256, U256};
 use evm::{FinalizationResult, VMType};
 use types::{log_entry, receipt, transaction};
 use vm::{self, ActionParams};
 use {ethtrie, trie_db as trie};
+
+use alloc::string::String;
+use alloc::sync::Arc;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::fmt;
+use core::option::Option;
 
 /// EVM test Error.
 #[derive(Debug)]
@@ -48,6 +53,7 @@ impl<E: Into<error::Error>> From<E> for EvmTestError {
 impl fmt::Display for EvmTestError {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         use self::EvmTestError::*;
+        use core::write;
 
         match *self {
             Trie(ref err) => write!(fmt, "Trie: {}", err),

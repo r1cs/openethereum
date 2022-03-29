@@ -26,6 +26,7 @@ use core::cell::RefCell;
 use hashbrown::HashSet;
 
 use crate::state::Account;
+use alloc::vec::Vec;
 use ethereum_types::{Address, H256};
 use hash_db::{AsHashDB, HashDB};
 use keccak_hasher::KeccakHasher;

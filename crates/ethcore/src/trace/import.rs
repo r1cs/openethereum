@@ -20,6 +20,7 @@ use types::BlockNumber;
 
 use crate::trace::FlatBlockTraces;
 
+use alloc::vec::Vec;
 /// Traces import request.
 pub struct ImportRequest {
     /// Traces to import.

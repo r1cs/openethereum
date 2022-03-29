@@ -16,6 +16,14 @@
 
 #![warn(missing_docs, unused_extern_crates)]
 //! Ethcore library
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[macro_use]
+extern crate macros;
+#[macro_use]
+extern crate rlp_derive;
+#[macro_use]
+extern crate serde_derive;
 
 extern crate common_types as types;
 extern crate ethcore_builtin as builtin;
@@ -25,13 +33,6 @@ extern crate parity_bytes as bytes;
 extern crate patricia_trie_ethereum as ethtrie;
 extern crate trie_db as trie;
 extern crate triehash_ethereum as triehash;
-
-#[macro_use]
-extern crate macros;
-#[macro_use]
-extern crate rlp_derive;
-#[macro_use]
-extern crate serde_derive;
 
 pub mod block;
 pub mod client;

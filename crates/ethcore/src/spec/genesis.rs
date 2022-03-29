@@ -15,6 +15,7 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::spec::seal::Seal;
+use alloc::vec::Vec;
 use ethereum_types::{Address, H256, U256};
 use hash::KECCAK_NULL_RLP;
 

@@ -20,6 +20,8 @@ use super::trace::{Action, Res};
 use ethereum_types::Bloom;
 use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
 
+use alloc::vec::Vec;
+
 /// Trace localized in vector of traces produced by a single transaction.
 ///
 /// Parent and children indexes refer to positions in this vector.

@@ -33,7 +33,11 @@ use unexpected::{Mismatch, OutOfBounds};
 
 use crate::engines::EngineError;
 
+use crate::alloc::string::ToString;
 pub use crate::executed::ExecutionError;
+use alloc::boxed::Box;
+use alloc::format;
+use alloc::string::String;
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 /// Errors concerning block processing.

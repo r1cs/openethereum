@@ -16,6 +16,7 @@
 
 //! Spec seal.
 
+use alloc::vec::Vec;
 use ethereum_types::{H256, H520, H64};
 use rlp::RlpStream;
 

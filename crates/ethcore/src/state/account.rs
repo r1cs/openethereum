@@ -33,6 +33,8 @@ use rlp::{encode, RlpStream};
 use trie::{DBValue, Recorder, Trie};
 use types::basic_account::BasicAccount;
 
+use alloc::vec;
+use alloc::vec::Vec;
 use core::cell::{Cell, RefCell};
 use core::ops::Deref;
 

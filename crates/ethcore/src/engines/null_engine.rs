@@ -22,6 +22,8 @@ use ethereum_types::U256;
 use types::header::Header;
 use types::BlockNumber;
 
+use alloc::vec::Vec;
+
 /// Params for a null engine.
 #[derive(Clone, Default)]
 pub struct NullEngineParams {

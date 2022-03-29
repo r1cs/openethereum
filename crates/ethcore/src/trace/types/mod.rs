@@ -23,6 +23,8 @@ pub mod localized;
 pub mod trace;
 
 use self::flat::FlatTransactionTraces;
+use alloc::vec;
+use alloc::vec::Vec;
 
 /// Container for block traces.
 #[derive(Clone)]

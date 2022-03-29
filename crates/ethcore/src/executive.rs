@@ -15,6 +15,7 @@
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Transaction Execution environment.
+use crate::alloc::string::ToString;
 use crate::executed::ExecutionError;
 pub use crate::executed::{Executed, ExecutionResult};
 use crate::externalities::*;
@@ -23,7 +24,10 @@ use crate::machine::EthereumMachine as Machine;
 use crate::state::{Backend as StateBackend, CleanupMode, State, Substate};
 use crate::trace::{self, Tracer, VMTracer};
 use crate::transaction_ext::Transaction;
+use alloc::boxed::Box;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
+use alloc::{format, vec};
 use bytes::{Bytes, BytesRef};
 use core::cmp;
 use core::convert::TryFrom;

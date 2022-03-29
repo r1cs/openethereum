@@ -20,6 +20,8 @@ use crate::trace::trace::{
     Action, Call, CallResult, Create, CreateResult, MemoryDiff, Res, Reward, RewardType, StorageDiff, Suicide, VMExecutedOperation, VMOperation, VMTrace
 };
 use crate::trace::{FlatTrace, Tracer, VMTracer};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::cmp::min;
 use ethereum_types::{Address, U256};
 use vm::{ActionParams, Error as VmError};

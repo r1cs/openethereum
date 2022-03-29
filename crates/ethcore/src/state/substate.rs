@@ -16,12 +16,12 @@
 
 //! Execution environment substate.
 use super::CleanupMode;
+use alloc::vec::Vec;
 use ethereum_types::Address;
 use evm::{CleanDustMode, Schedule};
 use hashbrown::HashSet;
 use types::log_entry::LogEntry;
 use vm::access_list::AccessList;
-
 /// State changes which should be applied in finalize,
 /// after transaction is fully executed.
 #[derive(Debug, Default)]
