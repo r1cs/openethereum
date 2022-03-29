@@ -19,12 +19,13 @@
 //! Unconfirmed sub-states are managed with `checkpoint`s which may be canonicalized
 //! or rolled back.
 
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::sync::Arc;
+use core::cell::{RefCell, RefMut};
+use core::fmt;
 use hash::{KECCAK_EMPTY, KECCAK_NULL_RLP};
-use std::cell::{RefCell, RefMut};
-use std::collections::hash_map::Entry;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::fmt;
-use std::sync::Arc;
+use hashbrown::hash_map::Entry;
+use hashbrown::{HashMap, HashSet};
 
 use crate::error::Error;
 use crate::executed::{Executed, ExecutionError};
@@ -1403,13 +1404,13 @@ mod tests {
     use crate::spec::*;
     use crate::test_helpers::{get_temp_state, get_temp_state_db};
     use crate::trace::{trace, FlatTrace, TraceError};
+    use alloc::sync::Arc;
+    use core::str::FromStr;
     use crypto::publickey::Secret;
     use ethereum_types::{Address, BigEndianHash, H256, U256};
     use evm::CallType;
     use hash::{keccak, KECCAK_NULL_RLP};
     use rustc_hex::FromHex;
-    use std::str::FromStr;
-    use std::sync::Arc;
     use types::transaction::*;
     use vm::EnvInfo;
 

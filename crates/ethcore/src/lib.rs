@@ -19,6 +19,7 @@
 
 extern crate common_types as types;
 extern crate ethcore_builtin as builtin;
+extern crate hashbrown;
 extern crate keccak_hash as hash;
 extern crate parity_bytes as bytes;
 extern crate patricia_trie_ethereum as ethtrie;
@@ -59,6 +60,7 @@ pub mod json_tests;
 #[cfg(any(test, feature = "test-helpers"))]
 pub mod test_helpers;
 
+extern crate alloc;
 pub use evm::CreateContractAddress;
 pub use executive::contract_address;
 pub use trie::TrieSpec;

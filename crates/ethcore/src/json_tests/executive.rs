@@ -22,13 +22,12 @@ use crate::machine::EthereumMachine as Machine;
 use crate::state::{Backend as StateBackend, State, Substate};
 use crate::test_helpers::get_temp_state;
 use crate::trace::{NoopTracer, NoopVMTracer, Tracer, VMTracer};
+use alloc::sync::Arc;
 use bytes::Bytes;
 use ethereum_types::BigEndianHash;
 use evm::Finalize;
 use hash::keccak;
 use rlp::RlpStream;
-use std::path::Path;
-use std::sync::Arc;
 use vm::{
     self, ActionParams, CallType, ContractCreateResult, CreateContractAddress, EnvInfo, Ext, MessageCallResult, ReturnData, Schedule
 };
@@ -246,7 +245,10 @@ where
     }
 }
 
+#[cfg(feature = "std")]
+use std::path::Path;
 /// run an json executive test
+#[cfg(feature = "std")]
 pub fn json_executive_test<H: FnMut(&str, HookType)>(
     path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {

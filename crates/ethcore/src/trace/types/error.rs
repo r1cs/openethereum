@@ -16,8 +16,8 @@
 
 //! Trace errors.
 
+use core::fmt;
 use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
-use std::fmt;
 use vm::Error as VmError;
 
 /// Trace evm errors.

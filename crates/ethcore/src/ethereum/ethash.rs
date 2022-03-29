@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with OpenEthereum.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::cmp::{self};
-use std::collections::BTreeMap;
-use std::sync::Arc;
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
+use core::cmp::{self};
 
 use ethereum_types::{H256, H64, U256};
 use hash::KECCAK_EMPTY_LIST_RLP;
@@ -209,7 +209,7 @@ impl Engine<EthereumMachine> for Arc<Ethash> {
     /// Apply the block reward on finalisation of the block.
     /// This assumes that all uncles are valid uncles (i.e. of at least one generation before the current).
     fn on_close_block(&self, block: &mut ExecutedBlock) -> Result<(), Error> {
-        use std::ops::Shr;
+        use core::ops::Shr;
 
         let author = *block.header.author();
         let number = block.header.number();

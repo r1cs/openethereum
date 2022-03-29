@@ -29,8 +29,9 @@ pub mod runner;
 pub use self::executive::json_executive_test;
 pub use self::test_common::{debug_include_test, find_json_files_recursive, HookType};
 
+#[cfg(feature = "std")]
 use std::io;
-
+#[cfg(feature = "std")]
 fn flushln(s: String) {
     let _ = io::Write::write(&mut io::stdout(), s.as_bytes());
     let _ = io::Write::write(&mut io::stdout(), b"\n");

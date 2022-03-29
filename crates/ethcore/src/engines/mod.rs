@@ -28,8 +28,10 @@ pub use self::null_engine::NullEngine;
 
 pub use types::engines::ForkChoice;
 
-use std::collections::{BTreeMap, HashMap};
-use std::sync::Arc;
+use alloc::collections::BTreeMap;
+use alloc::sync::{Arc, Weak};
+use hashbrown::HashMap;
+#[cfg(feature = "std")]
 use std::{error, fmt};
 
 use crate::error::Error;

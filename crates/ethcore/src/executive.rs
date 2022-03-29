@@ -23,13 +23,13 @@ use crate::machine::EthereumMachine as Machine;
 use crate::state::{Backend as StateBackend, CleanupMode, State, Substate};
 use crate::trace::{self, Tracer, VMTracer};
 use crate::transaction_ext::Transaction;
+use alloc::sync::Arc;
 use bytes::{Bytes, BytesRef};
+use core::cmp;
+use core::convert::TryFrom;
 use ethereum_types::{Address, H256, U256, U512};
 use evm::{CallType, FinalizationResult, Finalize};
 use hash::keccak;
-use std::cmp;
-use std::convert::TryFrom;
-use std::sync::Arc;
 use types::transaction::{Action, SignedTransaction, TypedTransaction};
 use vm::{
     self, AccessList, ActionParams, ActionValue, CleanDustMode, CreateContractAddress, EnvInfo, ResumeCall, ResumeCreate, ReturnData, Schedule, TrapError
@@ -1473,13 +1473,13 @@ mod tests {
     use crate::trace::{
         trace, ExecutiveTracer, ExecutiveVMTracer, FlatTrace, MemoryDiff, NoopTracer, NoopVMTracer, StorageDiff, Tracer, VMExecutedOperation, VMOperation, VMTrace, VMTracer
     };
+    use alloc::sync::Arc;
     use bytes::Bytes;
+    use core::str::FromStr;
     use crypto::publickey::{Generator, Random};
     use ethereum_types::{Address, BigEndianHash, H160, H256, U256, U512};
     use evm::{evm_test, evm_test_ignore, Factory, VMType};
     use rustc_hex::FromHex;
-    use std::str::FromStr;
-    use std::sync::Arc;
     use types::transaction::{
         AccessListTx, Action, EIP1559TransactionTx, Transaction, TypedTransaction
     };

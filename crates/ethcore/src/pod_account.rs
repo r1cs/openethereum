@@ -17,7 +17,9 @@
 //! Account system expressed in Plain Old Data.
 
 use crate::state::Account;
+use alloc::collections::BTreeMap;
 use bytes::Bytes;
+use core::fmt;
 use ethereum_types::{BigEndianHash, H256, U256};
 use ethtrie::RlpCodec;
 use hash::keccak;
@@ -27,8 +29,6 @@ use keccak_hasher::KeccakHasher;
 use rlp::{self, RlpStream};
 use rustc_hex::ToHex;
 use serde::Serializer;
-use std::collections::BTreeMap;
-use std::fmt;
 use trie::{DBValue, TrieFactory};
 use triehash::sec_trie_root;
 use types::account_diff::*;
@@ -206,8 +206,8 @@ pub fn diff_pod(pre: Option<&PodAccount>, post: Option<&PodAccount>) -> Option<A
 #[cfg(test)]
 mod test {
     use super::{diff_pod, PodAccount};
+    use alloc::collections::BTreeMap;
     use ethereum_types::H256;
-    use std::collections::BTreeMap;
     use types::account_diff::*;
 
     #[test]

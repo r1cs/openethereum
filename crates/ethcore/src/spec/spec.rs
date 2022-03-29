@@ -16,11 +16,12 @@
 
 //! Parameters for a block chain.
 
-use std::cell::RefCell;
-use std::collections::{BTreeMap, BTreeSet};
-use std::convert::TryFrom;
+use alloc::collections::{BTreeMap, BTreeSet};
+use alloc::sync::Arc;
+use core::cell::RefCell;
+use core::convert::TryFrom;
+#[cfg(feature = "std")]
 use std::io::Read;
-use std::sync::Arc;
 
 use bytes::Bytes;
 use ethereum_types::{Address, Bloom, H256, U256};

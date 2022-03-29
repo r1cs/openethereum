@@ -3,6 +3,7 @@ use ethjson::test::{
 };
 use globset::Glob;
 use rayon::prelude::*;
+#[cfg(feature = "std")]
 use std::path::{Path, PathBuf};
 use trie::TrieSpec;
 
@@ -29,6 +30,7 @@ impl TestResult {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::ops::Add for TestResult {
     type Output = Self;
 
@@ -39,7 +41,7 @@ impl std::ops::Add for TestResult {
         mself
     }
 }
-
+#[cfg(feature = "std")]
 impl std::ops::AddAssign for TestResult {
     fn add_assign(&mut self, other: Self) {
         self.success += other.success;
@@ -49,7 +51,7 @@ impl std::ops::AddAssign for TestResult {
 
 /// An executor of ethereum/json tests
 pub struct TestRunner(EthereumTestSuite);
-
+#[cfg(feature = "std")]
 impl TestRunner {
     /// Loads a new JSON Test suite
     pub fn load<R>(reader: R) -> Result<Self, serde_json::Error>
@@ -172,6 +174,7 @@ impl TestRunner {
     }
 }
 
+#[cfg(feature = "std")]
 #[test]
 fn ethereum_json_tests() {
     use super::flushln;

@@ -18,17 +18,18 @@
 
 use crate::error::Error;
 use crate::pod_account::*;
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
 use bytes::{Bytes, ToPretty};
+use core::fmt;
 use ethereum_types::{Address, BigEndianHash, H256, U256};
 use ethtrie::{Result as TrieResult, SecTrieDB, TrieDB, TrieFactory};
 use hash::{keccak, KECCAK_EMPTY, KECCAK_NULL_RLP};
 use hash_db::HashDB;
+use hashbrown::HashMap;
 use keccak_hasher::KeccakHasher;
 use lru::LruCache;
 use rlp::{encode, RlpStream};
-use std::collections::{BTreeMap, HashMap};
-use std::fmt;
-use std::sync::Arc;
 use trie::{DBValue, Recorder, Trie};
 use types::basic_account::BasicAccount;
 

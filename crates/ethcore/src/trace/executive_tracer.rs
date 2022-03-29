@@ -20,8 +20,8 @@ use crate::trace::trace::{
     Action, Call, CallResult, Create, CreateResult, MemoryDiff, Res, Reward, RewardType, StorageDiff, Suicide, VMExecutedOperation, VMOperation, VMTrace
 };
 use crate::trace::{FlatTrace, Tracer, VMTracer};
+use core::cmp::min;
 use ethereum_types::{Address, U256};
-use std::cmp::min;
 use vm::{ActionParams, Error as VmError};
 
 /// Simple executive tracer. Traces all calls and creates. Ignores delegatecalls.

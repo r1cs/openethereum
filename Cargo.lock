@@ -567,6 +567,7 @@ dependencies = [
  "evm",
  "globset",
  "hash-db 0.12.4",
+ "hashbrown 0.12.0",
  "hex-literal 0.2.1",
  "itertools",
  "keccak-hash",
@@ -654,7 +655,7 @@ dependencies = [
  "criterion",
  "ethcore-builtin",
  "ethereum-types",
- "hashbrown",
+ "hashbrown 0.11.2",
  "hex-literal 0.2.1",
  "keccak-hash",
  "log",
@@ -808,6 +809,15 @@ name = "hashbrown"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
+dependencies = [
+ "ahash",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c21d40587b92fa6a6c6e3c1bdbf87d75511db5672f9c93175574b3a00df1758"
 dependencies = [
  "ahash",
 ]
@@ -1934,7 +1944,7 @@ dependencies = [
  "elastic-array",
  "env_logger 0.6.2",
  "hash-db 0.12.4",
- "hashbrown",
+ "hashbrown 0.11.2",
  "hex-literal 0.1.4",
  "keccak-hasher 0.12.4",
  "log",
@@ -2042,7 +2052,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum-types",
  "ethjson",
- "hashbrown",
+ "hashbrown 0.11.2",
  "keccak-hash",
  "parity-bytes",
  "patricia-trie-ethereum",

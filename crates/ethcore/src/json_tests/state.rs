@@ -20,6 +20,7 @@ use crate::client::{EvmTestClient, EvmTestError, TransactErr, TransactSuccess};
 use crate::pod_state::PodState;
 use crate::trace;
 use ethjson::spec::ForkSpec;
+#[cfg(feature = "std")]
 use std::path::Path;
 use vm::EnvInfo;
 
@@ -38,7 +39,7 @@ fn skip_test(
         }
     })
 }
-
+#[cfg(feature = "std")]
 pub fn json_state_test<H: FnMut(&str, HookType)>(
     state_test: &ethjson::test::StateTests, path: &Path, json_data: &[u8], start_stop_hook: &mut H,
 ) -> Vec<String> {
